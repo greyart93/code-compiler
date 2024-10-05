@@ -63,7 +63,7 @@ const Ace = () => {
   return (
     <div>
       <label htmlFor="lang" className=" text-sky-400 font-bold">Language: </label>
-      <select id="lang" value={language} onChange={handleLanguageChange} className="bg-slate-600" >
+      <select id="lang" value={language} onChange={handleLanguageChange} className="bg-slate-600 text-zinc-50" >
         <option value="text" disabled>
           Choose a language
         </option>
@@ -74,7 +74,7 @@ const Ace = () => {
       </select>
       <br/>
       <label htmlFor="theme" className="text-sky-400 font-bold">Theme: </label>
-      <select value={theme} onChange={handleThemeChange} className="bg-slate-600">
+      <select value={theme} onChange={handleThemeChange} className="bg-slate-600 text-zinc-50">
         <optgroup label="Light">
           <option value="chrome">Chrome</option>
           <option value="dawn">Dawn</option>

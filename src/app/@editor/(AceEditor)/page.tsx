@@ -7,7 +7,13 @@ import "ace-builds/src-noconflict/mode-c_cpp";
 import "ace-builds/src-noconflict/mode-java";
 
 
-export default function AcePage({language, theme, defaultCode, scode, onValueChange}) {
+export default function AcePage({language, theme, defaultCode, scode, onValueChange} : { 
+  language: string,
+  theme: string,
+  defaultCode: string,
+  scode: string,
+  onValueChange: (x: string) => void
+}) {
     return (
         <AceEditor
         showPrintMargin={false}

@@ -33,7 +33,8 @@ const Ace = () => {
   const [theme, setTheme] = useState("monokai");
   const [defaultCode, setDefaultCode] = useState(``)
   const [scode, setCode] = useState(``);
-  const {code, updateCode, updateLanguage} = useCodeStore();
+  const { updateCode, updateLanguage} = useCodeStore();
+  // const {code} = useCodeStore()
 
 
   function onValueChange(newValue: SetStateAction<string>) {

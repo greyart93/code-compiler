@@ -9,9 +9,14 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@types/request": "^2.48.12",
+    "axios": "^1.7.7",
+    "next": "14.2.14",
     "react": "^18",
+    "react-ace": "^12.0.0",
     "react-dom": "^18",
-    "next": "14.2.14"
+    "request": "^2.88.2",
+    "zustand": "^5.0.0-rc.2"
   },
   "devDependencies": {
     "typescript": "^5",

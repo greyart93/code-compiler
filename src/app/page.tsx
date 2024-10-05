@@ -1,6 +1,6 @@
-import Ace from "./@editor/page";
-import InputPage from "./@cinput/page";
-import ExecuteCode from "./@output/page";
+import Ace from "./_editor/page";
+import InputPage from "./_input/page";
+import ExecuteCode from "./_output/page";
 
 
 export default function Home() {

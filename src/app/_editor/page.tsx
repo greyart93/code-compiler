@@ -73,7 +73,7 @@ const Ace = () => {
         <option value="java">Java</option>
       </select>
       <br/>
-      <label htmlFor="theme" className="bg-slate-600 text-sky-400 font-bold">Theme: </label>
+      <label htmlFor="theme" className="text-sky-400 font-bold">Theme: </label>
       <select value={theme} onChange={handleThemeChange} className="bg-slate-600">
         <optgroup label="Light">
           <option value="chrome">Chrome</option>

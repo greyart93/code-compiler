@@ -31,7 +31,7 @@ import { useCodeStore } from "@/store/code-store";
 const Ace = () => {
   const [language, setLanguage] = useState("text");
   const [theme, setTheme] = useState("monokai");
-  const [defaultCode, setDefaultCode] = useState(codeSnippets[0])
+  const [defaultCode, setDefaultCode] = useState(codeSnippets['text'])
   const [scode, setCode] = useState(``);
   const { updateCode, updateLanguage} = useCodeStore();
   // const {code} = useCodeStore()

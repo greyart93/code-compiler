@@ -9,6 +9,7 @@
   - NextJS
   - TypeScript
   - TailwindCSS
+  - Zustand
 
 # Requirements Specification
   ## Functional Requirements

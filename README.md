@@ -1,8 +1,8 @@
 # Abstract
 - CodeVit is a code editor and compiler supporting JavaScript, C++, Python and Java.
 - Used NextJS with TypeScript for building this project.
-- Used AceEditor to build the code editor. reference: https://github.com/ajaxorg/ace
-- Used Glot API to run the code, reference: reference: https://github.com/glotcode/docker-run
+- Used AceEditor to build the code editor, reference: https://github.com/ajaxorg/ace
+- Used Glot API to run the code, reference: https://github.com/glotcode/docker-run
 - Used Zustand for global state management, reference: https://github.com/pmndrs/zustand
 
 # Tech Stack

@@ -55,7 +55,7 @@ export async function POST(request: Request) {
             status: response.status,
             headers: { 'Content-Type': 'application/json' }
         });
-
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
         console.error("API Error:", error.message || error);
         return new Response(

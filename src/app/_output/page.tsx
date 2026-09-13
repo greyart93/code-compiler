@@ -29,7 +29,7 @@ const Output = () => {
             }
 
             const data = await response.json();
-            setOutput(data.stdout || data.stderr); // Display stdout or stderr from the response
+            setOutput(data.data.stdout || data.data.stderr); // Display stdout or stderr from the response
             
             setError(null); // Clear any previous error
             setIsError(false)

@@ -1,3 +1,4 @@
+# Black Book: https://docs.google.com/document/d/1f1VTjpY6gCaAhBC-0RmTNlGeUzdK8zs2EOPj4v8MeG4/edit?usp=sharing
 # Abstract
 - CodeVit is a code editor and compiler supporting JavaScript, C++, Python and Java.
 - Used NextJS with TypeScript for building this project.

@@ -8,6 +8,8 @@ import "ace-builds/src-noconflict/mode-javascript";
 import "ace-builds/src-noconflict/mode-python";
 import "ace-builds/src-noconflict/mode-c_cpp";
 import "ace-builds/src-noconflict/mode-java";
+import "ace-builds/src-noconflict/mode-golang";
+import "ace-builds/src-noconflict/mode-rust";
 // import "ace-builds/src-noconflict/mode-html";
 // import "ace-builds/src-noconflict/mode-mysql";
 // import "ace-builds/src-noconflict/mode-kotlin";
@@ -71,8 +73,10 @@ const Ace = () => {
         <option value="python">Python</option>
         <option value="c_cpp">C++</option>
         <option value="java">Java</option>
+        <option value="go">Go</option>
+        <option value="rust">Rust</option>
       </select>
-      <br/>
+      {/* <br/> */} &nbsp;
       <label htmlFor="theme" className="text-sky-400 font-bold">Theme: </label>
       <select value={theme} onChange={handleThemeChange} className="bg-slate-600 text-zinc-50">
         <optgroup label="Light">
@@ -94,5 +98,3 @@ const Ace = () => {
 };
 
 export default Ace;
-
-//

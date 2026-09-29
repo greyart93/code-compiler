@@ -20,6 +20,8 @@ export async function POST(request: Request) {
             javascript: "javascript:latest",
             c_cpp: "clang:latest",
             java: "java:latest",
+            go: "golang:latest",
+            rust: "rust:latest",
         };
 
         const langEndpoint = languageMap[language] || "python:latest";
@@ -34,6 +36,10 @@ export async function POST(request: Request) {
                     return "main.cpp";
                 case "java":
                     return `${javaClassName}.java`;
+                case "go":
+                    return "main.go";
+                case "rust":
+                    return "main.rs";
                 case "python":
                 default:
                     return "main.py";
@@ -47,8 +53,12 @@ export async function POST(request: Request) {
                     return ["clang++ -std=c++11 -o a.out main.cpp"];
                 case "java":
                     return [`javac ${javaClassName}.java`];
-                case "javascript":
-                case "python":
+                case "go":
+                    return ["go build -o a.out main.go"];
+                case "rust":
+                    return ["rustc -O -o main main.rs"];
+                case "javascript": [];
+                case "python": [];
                 default:
                     return [];
             }
@@ -63,6 +73,10 @@ export async function POST(request: Request) {
                     return "./a.out";
                 case "java":
                     return `java ${javaClassName}`;
+                case "go":
+                    return "./a.out";
+                case "rust":
+                    return "./main";
                 case "python":
                 default:
                     return "python3 main.py";

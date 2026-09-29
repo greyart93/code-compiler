@@ -5,7 +5,8 @@ import "ace-builds/src-noconflict/mode-javascript";
 import "ace-builds/src-noconflict/mode-python";
 import "ace-builds/src-noconflict/mode-c_cpp";
 import "ace-builds/src-noconflict/mode-java";
-
+import "ace-builds/src-noconflict/mode-golang";
+import "ace-builds/src-noconflict/mode-rust";
 
 export default function AcePage({language, theme, defaultCode, scode, onValueChange} : { 
   language: string,
@@ -23,7 +24,7 @@ export default function AcePage({language, theme, defaultCode, scode, onValueCha
          height="300px"
          width="100%"
          showGutter={true}
-           mode={language}
+           mode={language === "go" ? "golang" : language}
            theme={theme}
            defaultValue={defaultCode}
            value={scode}

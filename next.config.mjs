@@ -1,4 +1,7 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
+const nextConfig = {
+  // nextstepjs ships ESM only
+  transpilePackages: ["nextstepjs"],
+};
 
-export default nextConfig;
+export default nextConfig;

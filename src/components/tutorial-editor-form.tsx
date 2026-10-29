@@ -199,7 +199,7 @@ export function TutorialForm({
       {/* ── toolbar: medium keeps controls in one slim strip ───────────── */}
       <div
         id="editor-toolbar"
-        className="sticky top-14 z-30 -mx-2 mb-6 flex flex-wrap items-center gap-1 rounded-lg border bg-background/90 px-2 py-1.5 backdrop-blur"
+        className="sticky top-[76px] z-30 -mx-2 mb-6 flex flex-wrap items-center gap-1 rounded-2xl border border-border bg-card/90 px-2 py-1.5 backdrop-blur"
       >
         <Btn label="Undo" onClick={() => editor?.chain().focus().undo().run()}>
           <Undo2 className="size-4" />
@@ -357,7 +357,7 @@ export function TutorialForm({
       </div>
 
       {/* ── the writing surface: title first, then the body ───────────── */}
-      <div className="rounded-lg border">
+      <div className="overflow-hidden rounded-2xl border border-border bg-card">
         <div className="px-6 pt-8 sm:px-10">
           <textarea
             ref={titleRef}
@@ -367,7 +367,7 @@ export function TutorialForm({
             placeholder="Title"
             aria-label="Post title"
             id="editor-title"
-            className="w-full resize-none overflow-hidden bg-transparent text-[2.1rem] font-bold leading-[1.15] tracking-[-0.03em] outline-none placeholder:text-muted-foreground/50 sm:text-4xl"
+            className="display w-full resize-none overflow-hidden bg-transparent text-[2.2rem] leading-[1.1] outline-none placeholder:text-muted-foreground/40 sm:text-[2.6rem]"
           />
         </div>
 
@@ -390,17 +390,17 @@ export function TutorialForm({
         )}
       </div>
 
-      <p className="mt-3 text-xs text-muted-foreground">
-        Tip: press the terminal button (or type <span className="font-mono">```</span>{" "}
-        then Enter) for a highlighted code block, and pick its language from the
-        dropdown on the right. Switch to <span className="font-medium">Preview</span>{" "}
-        to read the post as your readers will.
+      <p className="mt-3 text-[11.5px] leading-relaxed text-muted-foreground">
+        Tip: press the terminal button (or type <span className="font-mono">```</span> then Enter) for a
+        highlighted code block and pick its language on the right. Switch to{" "}
+        <span className="font-medium text-foreground">Preview</span> to read the post exactly as your
+        readers will.
       </p>
 
       {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
 
-      <div className="mt-4 flex items-center gap-2">
-        <Button type="submit" id="editor-publish" disabled={busy}>
+      <div className="mt-5 flex items-center gap-2 border-t border-border pt-4">
+        <Button type="submit" id="editor-publish" disabled={busy} className="min-w-[132px]">
           {submitLabel}
         </Button>
         {onCancel && (
@@ -408,6 +408,9 @@ export function TutorialForm({
             Cancel
           </Button>
         )}
+        <span className="ml-auto hidden text-[11px] text-muted-foreground sm:inline">
+          Autosaved to your account when you publish
+        </span>
       </div>
     </form>
   );

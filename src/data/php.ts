@@ -13,11 +13,11 @@ export const PHP_BASICS: SectionSeed = {
       md: [
         "PHP files start with an opening tag and can mix HTML and code.",
         "",
-        "```php\n[object Object]\n```",
+        "```php\n<?php\necho \"Hello, PHP!\";\n\n// everything echoes in a web context\n$x = 1; # hash comment\n/* block comment */\n```",
         "",
         "### Arrays are ordered maps",
         "",
-        "```php\n[object Object]\n```",
+        "```php\n$xs = [1, 2, 3];\n$ages = ['ada' => 36, 'bob' => 25];   // keys can be strings\n\necho $ages['ada'];\n```",
       ].join("\n"),
       exercises: [
         { type: "fill-blank", prompt: "Complete the opening tag so PHP code is recognised", template: "___php\necho \"hi\";", explanation: "`<?php` marks the start of a PHP block in an HTML file.", blanks: [{ options: ["<?", "<?"], answer: "<?" }] },
@@ -29,7 +29,7 @@ export const PHP_BASICS: SectionSeed = {
       title: "Functions & scope",
       minutes: 7,
       md: [
-        "```php\n[object Object]\n```",
+        "```php\nfunction add(int $a, int $b = 0): int {\n    return $a + $b;\n}\n\n$double = fn($n) => $n * 2;   // arrow function\n\n$xs = [1, 2, 3];\n$ys = array_map(fn($n) => $n * 2, $xs);\n```",
         "",
         "Names: `$var` for variables, `functionName` for functions, `CONSTANT_CASE` for constants, `ClassName` for classes.",
         "",
@@ -44,7 +44,7 @@ export const PHP_BASICS: SectionSeed = {
       title: "OOP",
       minutes: 8,
       md: [
-        "```php\n[object Object]\n```",
+        "```php\nclass Dog {\n    private string $name;\n\n    public function __construct(string $name) {\n        $this->name = $name;\n    }\n\n    public function bark(): string {\n        return $this->name . ' says woof';\n    }\n}\n\n$d = new Dog('Rex');\necho $d->bark();\n```",
         "",
         "`->` calls on an object, `::` for static members. Properties are commonly `private` with getters and setters.",
       ].join("\n"),
@@ -57,7 +57,7 @@ export const PHP_BASICS: SectionSeed = {
       title: "Strings & arrays",
       minutes: 8,
       md: [
-        "```php\n[object Object]\n```",
+        "```php\n$s = \"hello\";\nstrlen($s);        // 5\nstrtoupper($s);\nstrpos($s, \"ll\");  // 2\nexplode(\" \", \"a b c\");        // [\"a\",\"b\",\"c\"]\nimplode(\",\", $xs);\n\n$xs = array_map(fn($n) => $n * 2, [1, 2, 3]);\narray_filter($xs, fn($n) => $n > 2);\narray_reduce($xs, fn($c, $n) => $c + $n, 0);\n```",
         "",
         "Prefer the `array_*` functions over manual loops — they are faster and clearer.",
       ].join("\n"),
@@ -77,7 +77,7 @@ export const PHP_ADVANCED: SectionSeed = {
       title: "Type declarations & strict mode",
       minutes: 8,
       md: [
-        "```php\n[object Object]\n```",
+        "```php\ndeclare(strict_types=1);   // must be the first line\n\nfunction add(int $a, int $b): int {\n    return $a + $b;\n}\n\nfunction maybe(): ?string { return null; }   // nullable\n\n// union types (PHP 8)\nfunction id(int|string $v): int|string { return $v; }\n```",
         "",
         "Without `strict_types`, PHP coerces `\"5\"` into `5`. With it, passing the wrong type throws a `TypeError`.",
       ].join("\n"),
@@ -90,7 +90,7 @@ export const PHP_ADVANCED: SectionSeed = {
       title: "Exceptions & error handling",
       minutes: 8,
       md: [
-        "```php\n[object Object]\n```",
+        "```php\ntry {\n    $r = 1 / 0;\n} catch (DivisionByZeroError $e) {\n    echo $e->getMessage();\n} finally {\n    echo \"always\";\n}\n\n// custom\nclass ValidationError extends Exception {}\n```",
         "",
         "PHP 7 turned most warnings into `Error`/`Exception` objects that can be caught. Use `finally` for cleanup.",
       ].join("\n"),
@@ -103,7 +103,7 @@ export const PHP_ADVANCED: SectionSeed = {
       title: "Traits & interfaces",
       minutes: 8,
       md: [
-        "```php\n[object Object]\n```",
+        "```php\ninterface Jsonable {\n    public function toJson(): string;\n}\n\ntrait Timestamped {\n    public function touch(): void {\n        $this->updated = time();\n    }\n}\n\nclass Post implements Jsonable {\n    use Timestamped;      // mix in the behaviour\n\n    public function toJson(): string {\n        return json_encode(['title' => $this->title]);\n    }\n}\n```",
         "",
         "Traits are PHP's answer to the single-inheritance limit — they bundle methods you can reuse across unrelated classes.",
       ].join("\n"),
@@ -116,7 +116,7 @@ export const PHP_ADVANCED: SectionSeed = {
       title: "Composer & modern PHP",
       minutes: 8,
       md: [
-        "```php\n[object Object]\n```",
+        "```php\ncomposer require monolog/monolog\ncomposer require --dev phpunit/phpunit\ncomposer install\ncomposer dump-autoload\n```",
         "",
         "### What modern PHP (8+) gives you",
         "",
@@ -126,7 +126,7 @@ export const PHP_ADVANCED: SectionSeed = {
         "- Match expressions instead of long `switch` chains",
         "- Enums",
         "",
-        "```php\n[object Object]\n```",
+        "```php\nenum Status {\n    case Draft;\n    case Published;\n}\n\n$status = Status::Draft;\n```",
       ].join("\n"),
       exercises: [
         { type: "quiz", prompt: "What is Composer's analogue to npm?", answers: ["package manager", "a package manager", "dependency manager"], placeholder: "what", hint: "It installs libraries.", explanation: "Composer is PHP's dependency manager — `composer.json` declares requirements, `composer install` resolves them." },

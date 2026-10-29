@@ -9,6 +9,13 @@
  * 🟢 You can import this file directly.
  */
 export type * from './models/User'
+export type * from './models/ActivityDay'
+export type * from './models/Streak'
+export type * from './models/Note'
+export type * from './models/InterviewSession'
+export type * from './models/LiveInterviewRoom'
+export type * from './models/Signal'
+export type * from './models/CodeAttempt'
 export type * from './models/CourseProgress'
 export type * from './models/Snippet'
 export type * from './models/Like'

@@ -11,11 +11,11 @@ export const LUA_BASICS: SectionSeed = {
       title: "Hello, Lua",
       minutes: 6,
       md: [
-        "```lua\n[object Object]\n```",
+        "```lua\nprint(\"Hello, Lua!\")\n```",
         "",
         "### Tables are the only data structure",
         "",
-        "```lua\n[object Object]\n```",
+        "```lua\nlocal t = { 1, 2, 3 }           -- array\nlocal cfg = { mode = \"dark\" } -- dict\nprint(t[1], cfg.mode)      -- arrays start at 1\n\nfor i, v in ipairs(t) do print(i, v) end\nfor k, v in pairs(cfg) do print(k, v) end\n```",
       ].join("\n"),
       exercises: [
         { type: "quiz", prompt: "What is the index of the **first** element of a Lua array?", answers: ["1", "1\n"], snippet: "local t = { 10, 20 }\nprint(t[?])", placeholder: "the index", hint: "Lua arrays are 1-based.", explanation: "`1` — unlike most languages, Lua arrays start at index 1, so `t[1]` is the first element." },
@@ -26,7 +26,7 @@ export const LUA_BASICS: SectionSeed = {
       title: "Functions & tables",
       minutes: 8,
       md: [
-        "```lua\n[object Object]\n```",
+        "```lua\nlocal function add(a, b)\n  return a + b\nend\n\nlocal xs = { 1, 2, 3 }\ntable.insert(xs, 4)\ntable.remove(xs, 1)\ntable.sort(xs)\nprint(#xs)              -- length operator\nprint(table.concat(xs, \", \"))\n```",
         "",
         "`local` keeps the variable scoped — prefer it at file scope.",
       ].join("\n"),
@@ -39,7 +39,7 @@ export const LUA_BASICS: SectionSeed = {
       title: "Metatables & OOP",
       minutes: 8,
       md: [
-        "```lua\n[object Object]\n```",
+        "```lua\nlocal Dog = {}\nDog.__index = Dog          -- lookups fall back here\n\nfunction Dog.new(name)\n  return setmetatable({ name = name }, Dog)\nend\n\nfunction Dog:speak()        -- : passes self\n  return self.name .. \" says woof\"\nend\n\nlocal d = Dog.new(\"Rex\")\nprint(d:speak())\n```",
       ].join("\n"),
       exercises: [
         { type: "quiz", prompt: "What does `Dog.__index = Dog` do?", answers: ["makes missing keys look up on Dog", "sets the lookup fallback", "it is the method lookup mechanism"], snippet: "Dog.__index = Dog", placeholder: "what", hint: "It is how methods get found.", explanation: "It sets the metatable's `__index` field — any key not found on the instance is looked up on `Dog`, which is how methods resolve." },

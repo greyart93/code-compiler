@@ -11,11 +11,11 @@ export const KT_BASICS: SectionSeed = {
       title: "Hello, Kotlin",
       minutes: 6,
       md: [
-        "```kotlin\n[object Object]\n```",
+        "```kotlin\nfun main() {\n    println(\"Hello, Kotlin!\")\n}\n```",
         "",
         "### Null safety is built in",
         "",
-        "```kotlin\n[object Object]\n```",
+        "```kotlin\nvar name: String = \"ada\"    // non-null\nvar nick: String? = null   // nullable\n\nfun greet(who: String) {\n    println(\"Hi $who\")\n}\n\ngreet(nick)          // compile error — String? is not String\ngreet(nick ?: \"friend\")   // Elvis operator supplies a default\ngreet(nick!!)         // assert non-null — throws if it is\n```",
         "",
         "Kotlin also has data classes, expression bodies and no semicolons.",
       ].join("\n"),
@@ -29,7 +29,7 @@ export const KT_BASICS: SectionSeed = {
       title: "Data classes & collections",
       minutes: 8,
       md: [
-        "```kotlin\n[object Object]\n```",
+        "```kotlin\ndata class User(val name: String, val age: Int)\n\nval u = User(\"ada\", 36)\nval v = u.copy(age = 37)\nprintln(u)              // User(name=ada, age=36)\n\nval xs = listOf(1, 2, 3)\nval m = mapOf(\"a\" to 1)\nval evens = xs.filter { it % 2 == 0 }\nval doubled = xs.map { it * 2 }\nval total = xs.sum()\n```",
         "",
         "`data class` generates `equals`, `hashCode`, `toString` and `copy` for you.",
       ].join("\n"),
@@ -42,7 +42,7 @@ export const KT_BASICS: SectionSeed = {
       title: "Scope functions",
       minutes: 8,
       md: [
-        "```kotlin\n[object Object]\n```",
+        "```kotlin\nval u = User(\"ada\", 36)\n\nval age = u.let { it.age }          // lambda param is `it`\nval a = u.apply { println(it.name) }   // `this` = u, returns u\nval b = u.also { log(it) }            // side effect, returns u\nwith(u) { println(name) }        // `this` = u\nval c = u.run { age + 1 }           // `this` = u, returns result\n```",
       ].join("\n"),
       exercises: [
         { type: "quiz", prompt: "Which scope function runs a block with `this` bound to the object and returns the object?", answers: ["apply", "also", "apply\n"], snippet: "val u = User(...)\nval same = u.apply { ... }", placeholder: "the function", hint: "You configured the object.", explanation: "`apply` configures and returns the receiver. `also` is for logging; `run` computes a result instead." },
@@ -60,7 +60,7 @@ export const KT_ADVANCED: SectionSeed = {
       title: "Coroutines",
       minutes: 10,
       md: [
-        "```kotlin\n[object Object]\n```",
+        "```kotlin\nsuspend fun fetch(): String {\n    delay(1000)          // non-blocking pause\n    return \"done\"\n}\n\nfun main() = runBlocking {\n    launch { println(fetch()) }   // starts a coroutine\n    val v = fetch()              // suspends here, not the thread\n    println(v)\n}\n```",
         "",
         "`suspend` functions can only be called from another coroutine. `Dispatchers.IO` moves work off the main thread.",
       ].join("\n"),
@@ -73,7 +73,7 @@ export const KT_ADVANCED: SectionSeed = {
       title: "Extension functions",
       minutes: 8,
       md: [
-        "```kotlin\n[object Object]\n```",
+        "```kotlin\nfun String.shout(): String = this.uppercase() + \"!\"\n\nprintln(\"hi\".shout())     // HI!\n\nfun List<Int>.second(): Int = this[1]\n\n// used for the same helper in every project, without subclassing\nfun Int.clamp(to: Int) = if (this > to) to else this\n```",
         "",
         "Extensions cannot access private members, and member functions always win over extensions.",
       ].join("\n"),
@@ -86,7 +86,7 @@ export const KT_ADVANCED: SectionSeed = {
       title: "Sealed classes & when",
       minutes: 8,
       md: [
-        "```kotlin\n[object Object]\n```",
+        "```kotlin\nsealed interface Result<out T>\n{\n    data class Ok<T>(val value: T) : Result<T>\n    data class Err(val message: String) : Result<Nothing>\n}\n\nfun <T> render(r: Result<T>): String = when (r) {\n    is Result.Ok  -> r.value.toString()\n    is Result.Err -> r.message\n}\n```",
         "",
         "A `sealed` hierarchy is closed, so `when` can be exhaustive without an `else`.",
       ].join("\n"),

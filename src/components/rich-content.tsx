@@ -2,13 +2,24 @@
 
 import { useEffect, useRef } from "react";
 import hljs from "highlight.js/lib/common";
+import { marked } from "marked";
 
 /**
  * Renders trusted TipTap HTML and decorates every code block:
  * - copies the language from the `code.language-*` class onto `data-language`
  *   (TipTap v3 stores it there, our CSS label reads `pre[data-language]`)
  * - injects a hover "Copy" button like Medium's code blocks
+ *
+ * Older seed posts store markdown rather than TipTap HTML. If the body has no
+ * HTML tags at all, parse it as markdown so those posts still read properly.
  */
+function toHtml(input: string) {
+  if (/<(p|h[1-6]|ul|ol|li|blockquote|pre|figure|table|div|section)\b[^>]*>/i.test(input)) {
+    return input;
+  }
+  return marked.parse(input) as string;
+}
+
 export function RichContent({
   html,
   className,
@@ -83,7 +94,7 @@ export function RichContent({
     <div
       ref={ref}
       className={className}
-      dangerouslySetInnerHTML={{ __html: html }}
+      dangerouslySetInnerHTML={{ __html: toHtml(html) }}
     />
   );
 }

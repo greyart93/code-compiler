@@ -763,7 +763,7 @@ export const RUST_SECTIONS = [
             type: "fill-blank",
             prompt: "Complete the operator to return early on error",
             template: "let s = std::fs::read_to_string(p)___;",
-            blanks: [{ options: ["?", "!", "?"], answer: "?" }],
+            blanks: [{ options: ["?", "!", "."], answer: "?" }],
             explanation:
               "The `?` operator returns `Err` if the value is an error and unwraps it on success.",
           },
@@ -946,11 +946,11 @@ export const RUST_SECTIONS = [
           "",
           "### Everyday commands",
           "",
-          S("cargo build --release      // optimised\ncargo test\ncargo clippy -- -D warnings   // lints\ncargo fmt\ncargo doc --open\n\ncargo add serde\ncargo tree          # why is this dependency here?"),
+          S("cargo build --release        // optimised\ncargo test\ncargo clippy -- -D warnings  // lints\ncargo fmt\ncargo doc --open\n\ncargo add serde\ncargo tree                   # why is this dependency here?"),
           "",
           "### Modules",
           "",
-          S("mod shapes;                    // src/shapes.rs\nmod utils;                       // src/utils.rs\n\npub mod geometry;                 // src/shapes/geometry.rs"),
+          S("mod shapes;                // src/shapes.rs\nmod utils;                  // src/utils.rs\n\npub mod geometry;             // re-exported from src/shapes.rs"),
         ],
         exercises: [
           {

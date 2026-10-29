@@ -16,6 +16,7 @@ export type SessionUser = {
   email: string;
   name: string | null;
   image?: string | null;
+  createdAt?: Date;
 };
 
 export async function hashPassword(password: string) {
@@ -61,7 +62,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     if (!payload.sub) return null;
     const user = await prisma.user.findUnique({
       where: { id: payload.sub },
-      select: { id: true, username: true, email: true, name: true, image: true },
+      select: { id: true, username: true, email: true, name: true, image: true, createdAt: true },
     });
     return user;
   } catch {

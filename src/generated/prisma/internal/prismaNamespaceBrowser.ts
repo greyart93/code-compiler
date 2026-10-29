@@ -52,6 +52,13 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   User: 'User',
+  ActivityDay: 'ActivityDay',
+  Streak: 'Streak',
+  Note: 'Note',
+  InterviewSession: 'InterviewSession',
+  LiveInterviewRoom: 'LiveInterviewRoom',
+  Signal: 'Signal',
+  CodeAttempt: 'CodeAttempt',
   CourseProgress: 'CourseProgress',
   Snippet: 'Snippet',
   Like: 'Like',
@@ -91,6 +98,95 @@ export const UserScalarFieldEnum = {
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const ActivityDayScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  day: 'day',
+  kind: 'kind'
+} as const
+
+export type ActivityDayScalarFieldEnum = (typeof ActivityDayScalarFieldEnum)[keyof typeof ActivityDayScalarFieldEnum]
+
+
+export const StreakScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  current: 'current',
+  longest: 'longest',
+  lastDay: 'lastDay'
+} as const
+
+export type StreakScalarFieldEnum = (typeof StreakScalarFieldEnum)[keyof typeof StreakScalarFieldEnum]
+
+
+export const NoteScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  title: 'title',
+  body: 'body',
+  courseSlug: 'courseSlug',
+  lessonId: 'lessonId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type NoteScalarFieldEnum = (typeof NoteScalarFieldEnum)[keyof typeof NoteScalarFieldEnum]
+
+
+export const InterviewSessionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  kind: 'kind',
+  topic: 'topic',
+  questions: 'questions',
+  score: 'score',
+  createdAt: 'createdAt'
+} as const
+
+export type InterviewSessionScalarFieldEnum = (typeof InterviewSessionScalarFieldEnum)[keyof typeof InterviewSessionScalarFieldEnum]
+
+
+export const LiveInterviewRoomScalarFieldEnum = {
+  id: 'id',
+  code: 'code',
+  interviewerId: 'interviewerId',
+  candidateId: 'candidateId',
+  phase: 'phase',
+  cursor: 'cursor',
+  questions: 'questions',
+  codeState: 'codeState',
+  codeLang: 'codeLang',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type LiveInterviewRoomScalarFieldEnum = (typeof LiveInterviewRoomScalarFieldEnum)[keyof typeof LiveInterviewRoomScalarFieldEnum]
+
+
+export const SignalScalarFieldEnum = {
+  id: 'id',
+  roomId: 'roomId',
+  sender: 'sender',
+  type: 'type',
+  payload: 'payload',
+  createdAt: 'createdAt'
+} as const
+
+export type SignalScalarFieldEnum = (typeof SignalScalarFieldEnum)[keyof typeof SignalScalarFieldEnum]
+
+
+export const CodeAttemptScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  problemId: 'problemId',
+  passed: 'passed',
+  score: 'score',
+  createdAt: 'createdAt'
+} as const
+
+export type CodeAttemptScalarFieldEnum = (typeof CodeAttemptScalarFieldEnum)[keyof typeof CodeAttemptScalarFieldEnum]
 
 
 export const CourseProgressScalarFieldEnum = {
@@ -207,6 +303,13 @@ export const SortOrder = {
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
+
+
 export const QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
@@ -221,4 +324,13 @@ export const NullsOrder = {
 } as const
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 

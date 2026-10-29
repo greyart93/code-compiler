@@ -2,9 +2,29 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import { TourProvider } from "@/components/tour/tour-provider";
 import { Toaster } from "@/components/ui/toaster";
 
+/* Portfolio typography: Inter for body text, Bricolage Grotesque for   display/headings, JetBrains Mono for code — all variable, latin subset. */
+const inter = localFont({
+  src: "./fonts/InterVariable.woff2",
+  variable: "--font-sans",
+  weight: "100 900",
+  display: "swap",
+});
+const bricolage = localFont({
+  src: "./fonts/BricolageGrotesqueVF.woff2",
+  variable: "--font-heading",
+  weight: "200 800",
+  display: "swap",
+});
+const jetbrainsMono = localFont({
+  src: "./fonts/JetBrainsMono.woff2",
+  variable: "--font-mono",
+  weight: "400 500",
+  display: "swap",
+});
+
+/* Base loads kept for the landing page, which is deliberately left on the   original system so only the rest of the app moves to the portfolio set */
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
@@ -14,20 +34,6 @@ const geistMono = localFont({
   src: "./fonts/GeistMonoVF.woff",
   variable: "--font-geist-mono",
   weight: "100 900",
-});
-// Landing-page display font (Bricolage Grotesque) and its code companion
-// (JetBrains Mono) — latin subset shipped with the redesign.
-const bricolage = localFont({
-  src: "./fonts/BricolageGrotesqueVF.woff2",
-  variable: "--font-bricolage",
-  weight: "400 800",
-  display: "swap",
-});
-const jetbrainsMono = localFont({
-  src: "./fonts/JetBrainsMono.woff2",
-  variable: "--font-jetbrains-mono",
-  weight: "400 500",
-  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -48,10 +54,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} ${jetbrainsMono.variable} antialiased`}
+        className={`${inter.variable} ${bricolage.variable} ${jetbrainsMono.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-          <TourProvider>{children}</TourProvider>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
+          {children}
           <Toaster />
         </ThemeProvider>
       </body>

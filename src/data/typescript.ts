@@ -13,7 +13,7 @@ export const TS_BASICS: SectionSeed = {
       md: [
         "TypeScript is JavaScript with types checked before it runs.",
         "",
-        "```typescript\n[object Object]\n```",
+        "```typescript\nlet n: number = 1;\nlet s: string = \"hi\";\nlet b: boolean = true;\nlet xs: number[] = [1, 2];\n\nfunction add(a: number, b: number): number {\n  return a + b;\n}\n```",
         "",
         "- `number`, `string`, `boolean`, `null`, `undefined`",
         "- `any` opts out — treat it as a last resort",
@@ -29,11 +29,11 @@ export const TS_BASICS: SectionSeed = {
       title: "Interfaces & type aliases",
       minutes: 7,
       md: [
-        "```typescript\n[object Object]\n```",
+        "```typescript\ninterface User {\n  id: number;\n  name: string;\n  email?: string;   // optional\n}\n\ntype Id = string | number;   // union\ntype Pair = [string, number]; // tuple\n\nconst u: User = { id: 1, name: \"ada\" };\n```",
         "",
         "`interface` for object shapes, `type` for everything else. Use `extends`:",
         "",
-        "```typescript\n[object Object]\n```",
+        "```typescript\ninterface Admin extends User {\n  level: \"root\" | \"staff\";\n}\n```",
       ].join("\n"),
       exercises: [
         { type: "quiz", prompt: "What marks an interface property as optional?", answers: ["?", "a question mark", "?"], snippet: "interface U {\n  email?: string;\n}", placeholder: "the syntax", hint: "One character.", explanation: "A `?` after the name — the property may be absent or `undefined`." },
@@ -44,11 +44,11 @@ export const TS_BASICS: SectionSeed = {
       title: "Generics",
       minutes: 8,
       md: [
-        "```typescript\n[object Object]\n```",
+        "```typescript\nfunction first<T>(xs: T[]): T | undefined {\n  return xs[0];\n}\n\nconst n = first([1, 2, 3]);   // number | undefined\n\nfunction pair<A, B>(a: A, b: B): [A, B] {\n  return [a, b];\n}\n```",
         "",
         "### Constraints",
         "",
-        "```typescript\n[object Object]\n```",
+        "```typescript\nfunction len<T extends { length: number }>(x: T): number {\n  return x.length;\n}\n\nfunction uniq<T>(xs: T[]): T[] { ... }\n```",
       ].join("\n"),
       exercises: [
         { type: "quiz", prompt: "What does a generic `<T>` give you?", answers: ["a reusable type-safe container", "type safety for any type", "reusable type-safe code"], snippet: "function first<T>(xs: T[]): T { ... }", placeholder: "why", hint: "Compare with `any`.", explanation: "You write the logic once and it stays fully type-checked for every type you use it with." },
@@ -59,11 +59,11 @@ export const TS_BASICS: SectionSeed = {
       title: "Narrowing & unions",
       minutes: 8,
       md: [
-        "```typescript\n[object Object]\n```",
+        "```typescript\nfunction print(x: string | number) {\n  if (typeof x === \"string\") {\n    x.toUpperCase();   // narrowed to string\n  } else {\n    x.toFixed(2);      // narrowed to number\n  }\n}\n```",
         "",
         "### Discriminated unions",
         "",
-        "```typescript\n[object Object]\n```",
+        "```typescript\ntype Shape =\n  | { kind: \"circle\"; r: number }\n  | { kind: \"rect\"; w: number; h: number };\n\nfunction area(s: Shape) {\n  switch (s.kind) {\n    case \"circle\": return Math.PI * s.r ** 2;\n    case \"rect\":   return s.w * s.h;\n  }\n}\n```",
         "",
         "Other guards: `in`, `instanceof`, `Array.isArray`, and user-defined `x is T` predicates.",
       ].join("\n"),
@@ -76,7 +76,7 @@ export const TS_BASICS: SectionSeed = {
       title: "Utility types",
       minutes: 6,
       md: [
-        "```typescript\n[object Object]\n```",
+        "```typescript\ninterface User {\n  id: number;\n  name: string;\n  email: string;\n}\n\ntype PartialUser = Partial<User>;        // all optional\ntype ReadonlyUser = Readonly<User>;    // none assignable\ntype Pick1 = Pick<User, \"id\" | \"name\">;\ntype Omit1 = Omit<User, \"email\">;\ntype Rec = Record<\"a\" | \"b\", number>;\n\nfunction update(u: User): Partial<User> {\n  return { name: \"new\" };    // typechecked against User\n}\n```",
         "",
         "These turn an interface into derived types without repeating the fields — and they stay in sync automatically.",
       ].join("\n"),
@@ -89,7 +89,7 @@ export const TS_BASICS: SectionSeed = {
       title: "Classes & access modifiers",
       minutes: 7,
       md: [
-        "```typescript\n[object Object]\n```",
+        "```typescript\nclass Counter {\n  private count = 0;\n  readonly id: number;\n\n  constructor(id: number) {\n    this.id = id;\n  }\n\n  increment(): this {\n    this.count++;\n    return this;\n  }\n\n  get value(): number { return this.count; }\n}\n```",
         "",
         "Modifiers: `private` (class only), `protected` (class + subclasses), `public` (default). `readonly` blocks writes after construction.",
       ].join("\n"),
@@ -109,15 +109,15 @@ export const TS_ADVANCED: SectionSeed = {
       title: "Type guards & conditional types",
       minutes: 9,
       md: [
-        "```typescript\n[object Object]\n```",
+        "```typescript\nfunction isString(x: unknown): x is string {\n  return typeof x === \"string\";\n}\n\nfunction f(x: unknown) {\n  if (isString(x)) x.toUpperCase();   // narrowed\n}\n```",
         "",
         "### Conditional and mapped types",
         "",
-        "```typescript\n[object Object]\n```",
+        "```typescript\ntype IsString<T> = T extends string ? true : false;\ntype Unwrap<T> = T extends Promise<infer U> ? U : T;\n\ntype Flags<T> = { readonly [K in keyof T]?: boolean };\n\ntype Getters<T> = { [K in keyof T as `get${Capitalize<string & K>}`]: () => T[K] };\n```",
         "",
         "### `as const`",
         "",
-        "```typescript\n[object Object]\n```",
+        "```typescript\nconst cfg = { mode: \"dark\" } as const;\n// cfg.mode is the literal \"dark\", not string\n```",
       ].join("\n"),
       exercises: [
         { type: "quiz", prompt: "What does the `is` part of `x is string` do?", answers: ["makes it a type guard", "it creates a type predicate", "declares a type guard"], snippet: "function isString(x: unknown): x is string { ... }", placeholder: "what", hint: "The caller benefits from it.", explanation: "It declares a **type predicate** — TypeScript narrows the argument wherever the guard returns true." },
@@ -128,11 +128,11 @@ export const TS_ADVANCED: SectionSeed = {
       title: "Modules & declarations",
       minutes: 7,
       md: [
-        "```typescript\n[object Object]\n```",
+        "```typescript\n// named\nexport function f() {}\nexport const x = 1;\n\n// default\nexport default function App() {}\n\n// re-export\n// utils.ts\nexport * from \"./math\";\nexport { helper as calc } from \"./math\";\n```",
         "",
         "### Ambient types for untyped JS",
         "",
-        "```typescript\n[object Object]\n```",
+        "```typescript\n// types.d.ts\ndeclare module \"legacy-lib\" {\n  export function old(a: number): string;\n}\n\n// path aliases in tsconfig.json\n{ \"compilerOptions\": { \"paths\": { \"@/*\": [\"./src/*\"] } } }\n```",
       ].join("\n"),
       exercises: [
         { type: "quiz", prompt: "How many modules can a file export by default?", answers: ["one", "1", "only one"], snippet: "export default App;", placeholder: "how many", hint: "Named exports can be many.", explanation: "Exactly one `export default`. Named `export`s can be unlimited, and a module can have both." },
@@ -171,7 +171,7 @@ export const TS_ADVANCED: SectionSeed = {
       title: "Typing the DOM & APIs",
       minutes: 8,
       md: [
-        "```typescript\n[object Object]\n```",
+        "```typescript\nconst el = document.querySelector<HTMLInputElement>(\"#name\");\nel?.value;\n\ninterface Window {\n  myApp: { version: string };\n}\n\nasync function load(url: string): Promise<unknown> {\n  const res = await fetch(url);\n  if (!res.ok) throw new Error(res.statusText);\n  return res.json();\n}\n```",
         "",
         "The DOM ships with types. For third-party libraries, either install `@types/*` or write a `.d.ts` declaration yourself.",
       ].join("\n"),

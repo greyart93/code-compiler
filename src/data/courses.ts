@@ -22,6 +22,19 @@ import { RB_BASICS } from "./ruby";
 import { LUA_BASICS } from "./lua";
 import { BASH_BASICS } from "./bash";
 import { ASM_BASICS } from "./assembly";
+import { REACT_SECTIONS } from "./react-course";
+import { NEXTJS_SECTIONS } from "./nextjs-course";
+import { SQL_BASICS, SQL_ADVANCED, MONGO_BASICS, MONGO_ADVANCED } from "./sql-mongo-prisma-courses";
+import {
+  PRISMA_FOUNDATIONS,
+  PRISMA_QUERYING,
+  PRISMA_PRODUCTION,
+} from "./prisma-course";
+import {
+  GITHUB_FOUNDATIONS,
+  GITHUB_COLLABORATION,
+  GITHUB_PRO,
+} from "./github-course";
 
 const JAVA_SECTIONS: SectionSeed[] = [JAVA_BASICS, JAVA_OOP, JAVA_ADVANCED];
 const CPP_SECTIONS: SectionSeed[] = [CPP_BASICS, CPP_OOP, CPP_ADVANCED];
@@ -40,6 +53,20 @@ const RUBY_SECTIONS: SectionSeed[] = [RB_BASICS];
 const LUA_SECTIONS: SectionSeed[] = [LUA_BASICS];
 const BASH_SECTIONS: SectionSeed[] = [BASH_BASICS];
 const ASM_SECTIONS: SectionSeed[] = [ASM_BASICS];
+const REACT_SECTIONS_GROUP: SectionSeed[] = REACT_SECTIONS;
+const NEXT_SECTIONS: SectionSeed[] = NEXTJS_SECTIONS;
+const SQL_SECTIONS: SectionSeed[] = [SQL_BASICS, SQL_ADVANCED];
+const MONGO_SECTIONS: SectionSeed[] = [MONGO_BASICS, MONGO_ADVANCED];
+const PRISMA_SECTIONS_GROUP: SectionSeed[] = [
+  PRISMA_FOUNDATIONS,
+  PRISMA_QUERYING,
+  PRISMA_PRODUCTION,
+];
+const GITHUB_SECTIONS: SectionSeed[] = [
+  GITHUB_FOUNDATIONS,
+  GITHUB_COLLABORATION,
+  GITHUB_PRO,
+];
 
 export type { Exercise, LessonSeed, SectionSeed };
 
@@ -64,6 +91,16 @@ export type CourseMeta = {
   description: string;
   icon: string; // emoji or short label shown in the chip
   accent: string; // tailwind classes for the icon chip
+  /**
+   * False when the lesson code is illustrative rather than executable in the
+   * Playground (database clients, framework server code, local Git commands).
+   * Non-runnable courses hide every Run control instead of opening the editor
+   * on a snippet that is guaranteed to fail.
+   */
+  runnable?: boolean;
+  /** Official docs linked from non-runnable courses. */
+  docsUrl?: string;
+  docsLabel?: string;
   load: () => Promise<{ sections: SectionMeta[]; lessons: Record<string, LessonData> }>;
 };
 
@@ -298,6 +335,72 @@ const groupedToLoader =
 
 export const COURSES: CourseMeta[] = [
   {
+    slug: "react",
+    title: "React",
+    description:
+      "A complete React course — JSX, state and hooks through context, forms, data fetching, performance, testing and Server Components.",
+    icon: "⚛",
+    accent: "bg-sky-400/15 text-sky-400",
+    load: groupedToLoader(REACT_SECTIONS_GROUP),
+  },
+  {
+    slug: "nextjs",
+    title: "Next.js",
+    description:
+      "A complete Next.js App Router course — layouts and routing through server components, streaming, middleware and production caching.",
+    icon: "▲",
+    accent: "bg-neutral-200/20 text-neutral-100",
+    runnable: false,
+    docsUrl: "https://nextjs.org/docs",
+    docsLabel: "Next.js docs",
+    load: groupedToLoader(NEXT_SECTIONS),
+  },
+  {
+    slug: "sql",
+    title: "SQL",
+    description:
+      "A complete SQL course — SELECT and aggregates through joins, indexing, window functions, CTEs, transactions and schema design.",
+    icon: "🗄",
+    accent: "bg-slate-500/15 text-slate-300",
+    load: groupedToLoader(SQL_SECTIONS),
+  },
+  {
+    slug: "mongodb",
+    title: "MongoDB",
+    description:
+      "A complete MongoDB course — documents and CRUD through aggregation, indexing, and real-world Mongoose + Node patterns.",
+    icon: "🍃",
+    accent: "bg-green-500/15 text-green-500",
+    runnable: false,
+    docsUrl: "https://www.mongodb.com/docs/",
+    docsLabel: "MongoDB docs",
+    load: groupedToLoader(MONGO_SECTIONS),
+  },
+  {
+    slug: "prisma",
+    title: "Prisma 7.10",
+    description:
+      "A complete Prisma 7.10 course — driver adapters and the generated client through schema design, migrations, CRUD, relations, transactions, error handling, performance and deployment.",
+    icon: "🔺",
+    accent: "bg-blue-400/15 text-blue-400",
+    runnable: false,
+    docsUrl: "https://www.prisma.io/docs/orm/v7",
+    docsLabel: "Prisma 7 docs",
+    load: groupedToLoader(PRISMA_SECTIONS_GROUP),
+  },
+  {
+    slug: "github",
+    title: "GitHub",
+    description:
+      "A complete GitHub course — repositories, branches and pull requests through issues, Actions, Pages, security, the CLI and open-source collaboration.",
+    icon: "GH",
+    accent: "bg-neutral-800/10 text-neutral-700 dark:text-neutral-200",
+    runnable: false,
+    docsUrl: "https://docs.github.com/",
+    docsLabel: "GitHub docs",
+    load: groupedToLoader(GITHUB_SECTIONS),
+  },
+  {
     slug: "javascript",
     title: "JavaScript",
     description:
@@ -341,7 +444,7 @@ export const COURSES: CourseMeta[] = [
     description:
       "A complete C++ course — syntax and pointers through OOP, templates, the STL, RAII, move semantics and concurrency.",
     icon: "C+",
-    accent: "bg-indigo-500/15 text-indigo-400",
+    accent: "bg-blue-500/15 text-blue-400",
     load: groupedToLoader(CPP_SECTIONS),
   },
   {
@@ -377,7 +480,7 @@ export const COURSES: CourseMeta[] = [
     description:
       "A complete PHP course — arrays and functions through OOP, strict types, exceptions, traits and Composer.",
     icon: "php",
-    accent: "bg-violet-500/15 text-violet-400",
+    accent: "bg-sky-500/15 text-sky-400",
     load: groupedToLoader(PHP_SECTIONS),
   },
   {
@@ -386,7 +489,7 @@ export const COURSES: CourseMeta[] = [
     description:
       "A complete C# course — types and nullability through OOP, LINQ, generics, async/await and the dotnet CLI.",
     icon: "C#",
-    accent: "bg-purple-500/15 text-purple-500",
+    accent: "bg-blue-500/15 text-blue-500",
     load: groupedToLoader(CSHARP_SECTIONS),
   },
   {
@@ -395,7 +498,7 @@ export const COURSES: CourseMeta[] = [
     description:
       "A complete Kotlin course — data classes and collections through scope functions, coroutines and sealed types.",
     icon: "Ko",
-    accent: "bg-fuchsia-500/15 text-fuchsia-400",
+    accent: "bg-red-500/15 text-red-400",
     load: groupedToLoader(KOTLIN_SECTIONS),
   },
   {

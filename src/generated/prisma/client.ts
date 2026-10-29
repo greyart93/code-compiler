@@ -47,6 +47,43 @@ export { Prisma }
  */
 export type User = Prisma.UserModel
 /**
+ * Model ActivityDay
+ * * Daily activity log — one row per day the user does anything learning-related.
+ *  *  Streak = consecutive days with an activity row, recomputed on write.
+ */
+export type ActivityDay = Prisma.ActivityDayModel
+/**
+ * Model Streak
+ * * Denormalized streak cache, updated whenever an ActivityDay is written.
+ */
+export type Streak = Prisma.StreakModel
+/**
+ * Model Note
+ * * A note a user saves while learning (from a lesson or standalone).
+ */
+export type Note = Prisma.NoteModel
+/**
+ * Model InterviewSession
+ * * One IRIS interview session (tech interview or english warmup).
+ */
+export type InterviewSession = Prisma.InterviewSessionModel
+/**
+ * Model LiveInterviewRoom
+ * * A leetcode-style code test attempt (passed = all tests green).
+ * * A live interviewer↔candidate interview room.
+ */
+export type LiveInterviewRoom = Prisma.LiveInterviewRoomModel
+/**
+ * Model Signal
+ * * Ephemeral per-room events (join/leave, editor edits, cursor moves, whiteboard strokes).
+ */
+export type Signal = Prisma.SignalModel
+/**
+ * Model CodeAttempt
+ * 
+ */
+export type CodeAttempt = Prisma.CodeAttemptModel
+/**
  * Model CourseProgress
  * 
  */

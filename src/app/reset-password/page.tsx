@@ -3,13 +3,12 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { motion } from "motion/react";
-import { Code2, Loader2 } from "lucide-react";
+import { KeyRound, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SiteHeader } from "@/components/site-header";
+import { AuthShell } from "@/components/auth-shell";
+import { PasswordEyeToggle } from "@/components/password-eye-toggle";
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -17,7 +16,9 @@ function ResetPasswordForm() {
   const token = search.get("token") ?? "";
 
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [confirm, setConfirm] = useState("");
+  const [showConfirm, setShowConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,9 +51,15 @@ function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <div className="text-center">
-        <p className="mb-4 text-sm text-destructive">This reset link is missing its token.</p>
-        <Button variant="outline" asChild>
+      <div className="grid gap-4">
+        <span className="grid size-12 place-items-center rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">
+          <KeyRound className="size-5" />
+        </span>
+        <p className="text-[13px] leading-relaxed text-muted-foreground">
+          This reset link is missing its token. Request a fresh link and try again — links are
+          single-use and expire.
+        </p>
+        <Button variant="outline" asChild className="w-full">
           <Link href="/forgot-password">Request a new link</Link>
         </Button>
       </div>
@@ -60,33 +67,70 @@ function ResetPasswordForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit} className="grid gap-4">
       <div className="grid gap-1.5">
         <Label htmlFor="password">New password</Label>
-        <Input
-          id="password"
-          type="password"
-          required
-          minLength={8}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="At least 8 characters"
-        />
+        <div className="relative">
+          <Input
+            id="password"
+            type={showPassword ? "text" : "password"}
+            required
+            minLength={8}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="At least 8 characters"
+            autoComplete="new-password"
+            className="pr-10"
+          />
+          <button
+            type="button"
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition-colors hover:text-foreground active:scale-75"
+            aria-label={showPassword ? "Hide new password" : "Show new password"}
+            aria-pressed={!showPassword}
+            onClick={() => setShowPassword((v) => !v)}
+          >
+            <PasswordEyeToggle hidden={!showPassword} />
+          </button>
+        </div>
       </div>
+
       <div className="grid gap-1.5">
         <Label htmlFor="confirm">Confirm new password</Label>
-        <Input
-          id="confirm"
-          type="password"
-          required
-          minLength={8}
-          value={confirm}
-          onChange={(e) => setConfirm(e.target.value)}
-          placeholder="Repeat it"
-        />
+        <div className="relative">
+          <Input
+            id="confirm"
+            type={showConfirm ? "text" : "password"}
+            required
+            minLength={8}
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            placeholder="Repeat it"
+            autoComplete="new-password"
+            className="pr-10"
+          />
+          <button
+            type="button"
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition-colors hover:text-foreground active:scale-75"
+            aria-label={showConfirm ? "Hide confirmation" : "Show confirmation"}
+            aria-pressed={!showConfirm}
+            onClick={() => setShowConfirm((v) => !v)}
+          >
+            <PasswordEyeToggle hidden={!showConfirm} />
+          </button>
+        </div>
       </div>
-      {error && <p className="text-sm text-destructive">{error}</p>}
-      <Button type="submit" disabled={busy}>
+
+      {password && confirm && password !== confirm && (
+        <p className="text-[11.5px] text-destructive">Passwords don&apos;t match yet.</p>
+      )}
+
+      {error && (
+        <p className="rounded-xl border border-destructive/20 bg-destructive/5 px-3 py-2 text-[12.5px] leading-relaxed text-destructive">
+          {error}
+        </p>
+      )}
+
+      <Button type="submit" disabled={busy} className="w-full">
         {busy && <Loader2 className="size-4 animate-spin" />} Reset password
       </Button>
     </form>
@@ -95,28 +139,14 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="min-h-screen">
-      <SiteHeader />
-      <main className="flex items-center justify-center p-4 pt-16">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-sm"
-        >
-          <Card>
-            <CardHeader className="items-center text-center">
-              <Code2 className="mb-1 size-8 text-primary" />
-              <CardTitle className="text-xl">Set a new password</CardTitle>
-              <CardDescription>Choose something strong and unique</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Suspense fallback={<div className="min-h-[180px]" />}>
-                <ResetPasswordForm />
-              </Suspense>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </main>
-    </div>
+    <AuthShell
+      eyebrow="Password reset"
+      title="Set a new password."
+      description="Choose something strong and unique. You will be signed in with it from now on."
+    >
+      <Suspense fallback={<div className="h-[220px] animate-pulse rounded-xl bg-muted/40" />}>
+        <ResetPasswordForm />
+      </Suspense>
+    </AuthShell>
   );
 }

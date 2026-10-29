@@ -466,10 +466,6 @@ export type SnippetUncheckedUpdateManyWithoutUserNestedInput = {
   deleteMany?: Prisma.SnippetScalarWhereInput | Prisma.SnippetScalarWhereInput[]
 }
 
-export type BoolFieldUpdateOperationsInput = {
-  set?: boolean
-}
-
 export type SnippetCreateNestedOneWithoutLikesInput = {
   create?: Prisma.XOR<Prisma.SnippetCreateWithoutLikesInput, Prisma.SnippetUncheckedCreateWithoutLikesInput>
   connectOrCreate?: Prisma.SnippetCreateOrConnectWithoutLikesInput

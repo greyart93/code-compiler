@@ -7,7 +7,6 @@ import { ArrowLeft, Loader2, ShieldX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { TutorialForm } from "@/components/tutorial-editor-form";
-import { EditorTourButton } from "@/components/tour/editor-tour-button";
 
 type Tutorial = {
   id: string;
@@ -47,11 +46,7 @@ export default function EditTutorialPage() {
       .catch(() => setNotFound(true));
   }, [id]);
 
-  const handleSave = async (data: {
-    title: string;
-    content: string;
-    language: string;
-  }) => {
+  const handleSave = async (data: { title: string; content: string; language: string }) => {
     setError(null);
     setBusy(true);
     try {
@@ -75,15 +70,18 @@ export default function EditTutorialPage() {
 
   if (notFound) {
     return (
-      <div className="min-h-screen">
+      <div className="app-shell">
         <SiteHeader />
-        <main className="mx-auto max-w-3xl px-4 py-20 text-center">
-          <h1 className="text-2xl font-bold">Post not found</h1>
-          <Button variant="outline" className="mt-4" asChild>
-            <Link href="/blog">
-              <ArrowLeft className="size-4" /> Back to Blog
-            </Link>
-          </Button>
+        <main className="page-wrap py-24">
+          <div className="mx-auto max-w-lg rounded-3xl border border-border bg-card p-10 text-center">
+            <p className="mono-label">404 · essay</p>
+            <h1 className="display mt-4 text-[42px]">That page is blank.</h1>
+            <Button variant="outline" className="mt-6 gap-1.5" asChild>
+              <Link href="/blog">
+                <ArrowLeft className="size-4" /> Back to the blog
+              </Link>
+            </Button>
+          </div>
         </main>
       </div>
     );
@@ -91,16 +89,23 @@ export default function EditTutorialPage() {
 
   if (notAllowed) {
     return (
-      <div className="min-h-screen">
+      <div className="app-shell">
         <SiteHeader />
-        <main className="mx-auto max-w-3xl px-4 py-20 text-center">
-          <ShieldX className="mx-auto mb-3 size-10 text-destructive" />
-          <h1 className="text-2xl font-bold">Only the author can edit this post</h1>
-          <Button variant="outline" className="mt-4" asChild>
-            <Link href={`/blog/${id}`}>
-              <ArrowLeft className="size-4" /> Back to post
-            </Link>
-          </Button>
+        <main className="page-wrap py-24">
+          <div className="mx-auto max-w-lg rounded-3xl border border-border bg-card p-10 text-center">
+            <span className="mx-auto grid size-12 place-items-center rounded-full bg-destructive/10 text-destructive">
+              <ShieldX className="size-5" />
+            </span>
+            <h1 className="display mt-5 text-[36px]">Only the author can edit this.</h1>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              You can still read the essay — you just cannot change it.
+            </p>
+            <Button variant="outline" className="mt-6 gap-1.5" asChild>
+              <Link href={`/blog/${id}`}>
+                <ArrowLeft className="size-4" /> Back to the essay
+              </Link>
+            </Button>
+          </div>
         </main>
       </div>
     );
@@ -108,9 +113,9 @@ export default function EditTutorialPage() {
 
   if (!tutorial) {
     return (
-      <div className="min-h-screen">
+      <div className="app-shell">
         <SiteHeader />
-        <div className="flex justify-center py-24">
+        <div className="page-wrap grid place-items-center py-32">
           <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
       </div>
@@ -118,29 +123,37 @@ export default function EditTutorialPage() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="app-shell">
       <SiteHeader />
-      {/* Medium's editor is a single wide column with no page furniture */}
-      <main className="mx-auto w-full max-w-[820px] px-5 pb-24 pt-8 sm:px-8">
-        <div className="mb-4 flex items-center justify-between gap-2">
-          <Button variant="ghost" size="sm" asChild>
-            <Link href={`/blog/${id}`}>
-              <ArrowLeft className="size-4" /> Back to post
+      <main className="page-wrap pb-24 pt-6 sm:pt-8">
+        <header className="reveal flex flex-wrap items-end justify-between gap-6 border-b border-border pb-7">
+          <div className="min-w-0">
+            <p className="mono-label">Editing essay</p>
+            <h1 className="display mt-3 line-clamp-2 text-[clamp(32px,5vw,56px)]">{tutorial.title}</h1>
+            <p className="mt-3 text-[13px] text-muted-foreground">
+              Changes go live the moment you save.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link href={`/blog/${id}`} className="btn btn-outline">
+              <ArrowLeft className="size-4" /> Back to essay
             </Link>
-          </Button>
-          <EditorTourButton />
+          </div>
+        </header>
+
+        <div className="reveal reveal-1 mx-auto mt-8 w-full max-w-[880px]">
+          <TutorialForm
+            key={tutorial.id}
+            initialTitle={tutorial.title}
+            initialLanguage={tutorial.language ?? "general"}
+            initialContent={tutorial.content}
+            submitLabel={busy ? "Saving…" : "Save changes"}
+            busy={busy}
+            error={error}
+            onSubmit={handleSave}
+            onCancel={() => router.push(`/blog/${id}`)}
+          />
         </div>
-        <TutorialForm
-          key={tutorial.id}
-          initialTitle={tutorial.title}
-          initialLanguage={tutorial.language ?? "general"}
-          initialContent={tutorial.content}
-          submitLabel={busy ? "Saving…" : "Save changes"}
-          busy={busy}
-          error={error}
-          onSubmit={handleSave}
-          onCancel={() => router.push(`/blog/${id}`)}
-        />
       </main>
     </div>
   );

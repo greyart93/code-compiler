@@ -11,13 +11,13 @@ export const BASH_BASICS: SectionSeed = {
       title: "Hello, Bash",
       minutes: 6,
       md: [
-        "```bash\n[object Object]\n```",
+        "```bash\n#!/bin/bash\n\necho \"Hello, Bash!\"\n```",
         "",
         "Run with `chmod +x script.sh && ./script.sh`, or source it with `source script.sh`.",
         "",
         "### Variables",
         "",
-        "```bash\n[object Object]\n```",
+        "```bash\nname=\"world\"\necho \"Hello, $name\"        # Hello, world\necho \"Hello, ${name}\"    # braces disambiguate\n\nread -p \"Your name: \" name\necho \"$name\"\n\nexport PATH=\"$PATH:$HOME/bin\"   # visible to child processes\n```",
       ].join("\n"),
       exercises: [
         { type: "fill-blank", prompt: "Complete the declaration so the value is a variable", template: "___=\"world\"\necho \"Hello, $___\"", explanation: "In bash an unquoted assignment sets a variable: `name=\"world\"`.", blanks: [{ options: ["name", "NAME", "var"], answer: "name" }] },
@@ -29,7 +29,7 @@ export const BASH_BASICS: SectionSeed = {
       title: "Arguments, tests & control flow",
       minutes: 8,
       md: [
-        "```bash\n[object Object]\n```",
+        "```bash\n#!/bin/bash\n\nif [ $# -eq 0 ]; then\n    echo \"no args\"\nfi\n\necho \"$@\"      # all args\nfor f in \"$@\"; do echo \"$f\"; done\n\nif [ -f \"$1\" ]; then echo \"file exists\"; fi\n\ncase \"$1\" in\n    start) echo \"starting\" ;;\n    stop)  echo \"stopping\" ;;\n    *)     echo \"usage\"; exit 1 ;;\nesac\n```",
         "",
         "Always quote `\"$var\"` — unquoted values split on whitespace and glob.",
       ].join("\n"),
@@ -43,11 +43,11 @@ export const BASH_BASICS: SectionSeed = {
       title: "Pipes & scripting",
       minutes: 8,
       md: [
-        "```bash\n[object Object]\n```",
+        "```bash\ncat access.log | grep \" 500 \" | awk '{print $7}' | sort | uniq -c | sort -rn | head\n```",
         "",
         "Every stage reads stdin and writes stdout — that is what makes them chainable.",
         "",
-        "```bash\n[object Object]\n```",
+        "```bash\nset -euo pipefail     # exit on error, unset var, or failed pipe\ntrap 'echo \"failed on line $LINENO\"' ERR\n\nfor f in *.txt; do\n    echo \"processing $f\"\ndone\n```",
         "",
         "Redirect with `>` for stdout, `2>` for stderr and `>>` to append.",
       ].join("\n"),

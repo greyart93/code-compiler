@@ -11,11 +11,11 @@ export const SWIFT_BASICS: SectionSeed = {
       title: "Hello, Swift",
       minutes: 6,
       md: [
-        "```swift\n[object Object]\n```",
+        "```swift\nimport Foundation\n\nlet greeting = \"Hello, Swift!\"\nprint(greeting)\n```",
         "",
         "`let` is immutable, `var` is mutable. Types are usually inferred but must be consistent:",
         "",
-        "```swift\n[object Object]\n```",
+        "```swift\nlet n = 42            // Int\nvar s = \"hi\"\nlet d: Double = 3.14  // explicit\n\n// multiple bindings, no type mixing\nlet a = 1, b = 2, c = \"s\"\n```",
       ].join("\n"),
       exercises: [
         { type: "fill-blank", prompt: "Complete the keyword so the value can change", template: "___ count = 0\ncount += 1", explanation: "`var` is mutable; `let` is a constant.", blanks: [{ options: ["var", "let", "mutable"], answer: "var" }] },
@@ -29,7 +29,7 @@ export const SWIFT_BASICS: SectionSeed = {
       md: [
         "Swift has no `null`. A value that may be absent is wrapped in an Optional.",
         "",
-        "```swift\n[object Object]\n```",
+        "```swift\nvar name: String? = \"ada\"\nname = nil\n\nif let n = name {          // unwrap\n    print(n)\n}\n\nguard let n = name else { return }   // else must exit scope\n\nprint(name ?? \"unknown\")   // default\nprint(name!)               // crash if nil — avoid it\n```",
       ].join("\n"),
       exercises: [
         { type: "quiz", prompt: "How do you unwrap an optional safely?", answers: ["if let", "optional binding", "if let or guard let"], snippet: "if let n = name { print(n) }", placeholder: "how", hint: "Two keywords, both common.", explanation: "`if let` or `guard let` bind only when a value exists. Force-unwrapping with `!` crashes on nil." },
@@ -40,7 +40,7 @@ export const SWIFT_BASICS: SectionSeed = {
       title: "Structs, enums & protocols",
       minutes: 9,
       md: [
-        "```swift\n[object Object]\n```",
+        "```swift\nstruct Point {\n    var x: Int\n    var y: Int\n    func sum() -> Int { x + y }\n}\n\nvar p = Point(x: 1, y: 2)\np.x = 5\n\nenum Direction {\n    case north, south\n    case east(Int)          // associated value\n}\n\nprotocol Speak { func speak() -> String }\n\nstruct Dog: Speak {\n    func speak() -> String { \"woof\" }\n}\n```",
         "",
         "Structs are value types (copied on assignment); classes are reference types.",
       ].join("\n"),

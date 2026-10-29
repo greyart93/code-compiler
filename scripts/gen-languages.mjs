@@ -51,7 +51,10 @@ function renderLesson(l, lang, fence) {
   lines.push(`      minutes: ${l.minutes},`);
   lines.push("      md: [");
   for (const part of l.md) {
-    lines.push(`        ${q(typeof part === "string" ? part : fence(part))},`);
+    // code blocks arrive as { code: string } objects — unwrap before fencing,
+    // otherwise the object stringifies to "[object Object]" in the output
+    const text = typeof part === "string" ? part : part.code;
+    lines.push(`        ${q(typeof part === "string" ? part : fence(text))},`);
   }
   lines.push('      ].join("\\n"),');
   const list = l.exercises || (l.exercise ? [l.exercise] : []);

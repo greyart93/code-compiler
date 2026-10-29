@@ -13,7 +13,7 @@ export const ASM_BASICS: SectionSeed = {
       md: [
         "Linux x86-64 assembly uses two calling conventions: **System V** (userland, what `gcc` uses) and **Microsoft** (Windows).",
         "",
-        "```nasm\n[object Object]\n```",
+        "```nasm\nglobal _start\n\nsection .data\n    msg db \"Hello, ASM!\", 10    ; db = define byte, 10 is newline\n    len equ $ - msg              ; length of the string\n\nsection .text\n_start:\n    mov rax, 1          ; sys_write\n    mov rdi, 1          ; stdout\n    mov rsi, msg        ; buffer\n    mov rdx, len        ; count\n    syscall\n\n    mov rax, 60         ; sys_exit\n    xor rdi, rdi        ; exit code 0\n    syscall\n```",
         "",
         "- `syscall` invokes the kernel",
         "- `rax` = syscall number",

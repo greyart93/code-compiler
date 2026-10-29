@@ -11,11 +11,11 @@ export const CS_BASICS: SectionSeed = {
       title: "Hello, C#",
       minutes: 6,
       md: [
-        "```csharp\n[object Object]\n```",
+        "```csharp\nusing System;\n\nclass Program\n{\n    static void Main()\n    {\n        Console.WriteLine(\"Hello, C#!\");\n    }\n}\n```",
         "",
         "Modern top-level statements skip the class entirely:",
         "",
-        "```csharp\n[object Object]\n```",
+        "```csharp\nConsole.WriteLine(\"Hello, C#!\");\n```",
         "",
         "Build: `dotnet new console -o app` then `dotnet run`.",
       ].join("\n"),
@@ -29,14 +29,14 @@ export const CS_BASICS: SectionSeed = {
       title: "Types & nullability",
       minutes: 8,
       md: [
-        "```csharp\n[object Object]\n```",
+        "```csharp\nint i = 42;              // value type\nstring s = \"hi\";        // reference type\nstring? maybe = null;   // nullable\nint? opt = null;\n\n// value types cannot be null unless made nullable\n// var infers the type\nvar xs = new List<int> { 1, 2, 3 };\n```",
         "",
         "### Value vs reference types",
         "",
         "- `struct`, `enum`, primitives are **value types** — copied on assignment",
         "- `class`, `string`, arrays and most library types are **reference types**",
         "",
-        "```csharp\n[object Object]\n```",
+        "```csharp\nstruct P { public int X; }\nvar a = new P { X = 1 };\nvar b = a;\nb.X = 9;\n// a.X is still 1\n```",
       ].join("\n"),
       exercises: [
         { type: "quiz", prompt: "What marks a type as nullable?", answers: ["?", "a question mark", "?"], snippet: "string? maybe = null;", placeholder: "the syntax", hint: "One character after the type.", explanation: "A `?` suffix — `int?` and `string?` can hold `null`, plain `int` cannot." },
@@ -47,7 +47,7 @@ export const CS_BASICS: SectionSeed = {
       title: "OOP & properties",
       minutes: 9,
       md: [
-        "```csharp\n[object Object]\n```",
+        "```csharp\npublic class Dog\n{\n    private string _name;\n\n    public string Name\n    {\n        get => _name;\n        set => _name = value ?? throw new ArgumentNullException();\n    }\n\n    public Dog(string name) => Name = name;\n}\n\n// modern: primary constructor\n// public class Dog(string name) { public string Name { get; } = name; }\n```",
       ].join("\n"),
       exercises: [
         { type: "quiz", prompt: "What keyword declares a read-only auto property?", answers: ["init", "get only", "init;"], snippet: "public string Name { get; init; }", placeholder: "the keyword", hint: "Set once, at construction.", explanation: "`init` allows assignment only in a constructor or object initialiser — effectively immutable after creation." },
@@ -58,7 +58,7 @@ export const CS_BASICS: SectionSeed = {
       title: "Collections & LINQ",
       minutes: 9,
       md: [
-        "```csharp\n[object Object]\n```",
+        "```csharp\nvar xs = new List<int> { 1, 2, 3 };\nvar names = new[] { \"ada\", \"bob\" };\nvar ages = new Dictionary<string, int> { [\"ada\"] = 36 };\n\nvar evens = xs.Where(x => x % 2 == 0).ToList();\nvar doubled = xs.Select(x => x * 2).ToList();\nvar total = xs.Sum();\nvar any = xs.Any(x => x > 2);\nvar first = xs.FirstOrDefault();       // 0 if empty, no exception\n```",
         "",
         "LINQ is lazy until you materialise it with `ToList`, `ToArray`, `Count` or a terminal operator.",
       ].join("\n"),
@@ -78,7 +78,7 @@ export const CS_ADVANCED: SectionSeed = {
       title: "Interfaces & generics",
       minutes: 8,
       md: [
-        "```csharp\n[object Object]\n```",
+        "```csharp\npublic interface IShape\n{\n    double Area { get; }\n}\n\npublic record Circle(double R) : IShape\n{\n    public double Area => Math.PI * R * R;\n}\n\n// generic method\nT Max<T>(T a, T b) where T : IComparable<T>\n    => a.CompareTo(b) >= 0 ? a : b;\n```",
       ].join("\n"),
       exercises: [
         { type: "quiz", prompt: "What is a C# `record`?", answers: ["an immutable class with value equality", "a class with value equality", "immutable data class"], snippet: "public record Circle(double R);", placeholder: "what", hint: "Think of it as a data holder.", explanation: "A reference type with generated value-based `Equals`, `GetHashCode` and `ToString` — ideal for small immutable data." },
@@ -89,7 +89,7 @@ export const CS_ADVANCED: SectionSeed = {
       title: "async & await",
       minutes: 9,
       md: [
-        "```csharp\n[object Object]\n```",
+        "```csharp\npublic async Task<int> LoadAsync()\n{\n    using var client = new HttpClient();\n    var body = await client.GetStringAsync(\"https://api.example.com\");\n    return body.Length;\n}\n\n// concurrent work\nvar results = await Task.WhenAll(ids.Select(id => LoadAsync(id)));\n```",
         "",
         "`async Task<T>` plus `await` is non-blocking. Never `.Result` or `.Wait()` on a task — that deadlocks.",
       ].join("\n"),
@@ -102,7 +102,7 @@ export const CS_ADVANCED: SectionSeed = {
       title: "Exceptions & nullable reference types",
       minutes: 8,
       md: [
-        "```csharp\n[object Object]\n```",
+        "```csharp\ntry\n{\n    int x = int.Parse(s);\n}\ncatch (FormatException ex) when (s.Length < 3)\n{\n    // filtered — only this case\n}\ncatch (Exception ex)\n{\n    Console.WriteLine(ex.Message);\n}\nfinally\n{\n    // cleanup\n}\n```",
         "",
         "With nullable reference types enabled, `string?` may be null and `string` may not — the compiler warns before you hit a `NullReferenceException`.",
       ].join("\n"),
@@ -115,11 +115,11 @@ export const CS_ADVANCED: SectionSeed = {
       title: "dotnet CLI & tooling",
       minutes: 8,
       md: [
-        "```csharp\n[object Object]\n```",
+        "```csharp\ndotnet new console -o app\ndotnet new webapi\ndotnet build\ndotnet run\ndotnet test\ndotnet add package Newtonsoft.Json\n\ndotnet publish -c Release -o out\n```",
         "",
         "### Project layout",
         "",
-        "```csharp\n[object Object]\n```",
+        "```csharp\nMyApp/\n  MyApp.csproj\n  Program.cs\n  Models/User.cs\n  Services/UserService.cs\n  Tests/MyApp.Tests/\n```",
       ].join("\n"),
       exercises: [
         { type: "quiz", prompt: "Which command creates a new console project?", answers: ["dotnet new console", "dotnet new console", "new console"], snippet: "$ dotnet new ___", placeholder: "the command", hint: "It follows `dotnet new`.", explanation: "`dotnet new console -o app` scaffolds a project; `dotnet new` has templates for web, classlib, xunit and more." },

@@ -11,11 +11,11 @@ export const DART_BASICS: SectionSeed = {
       title: "Hello, Dart",
       minutes: 6,
       md: [
-        "```dart\n[object Object]\n```",
+        "```dart\nvoid main() {\n  print(\"Hello, Dart!\");\n}\n```",
         "",
         "Dart is null-safe by default, optionally typed, and the language behind Flutter.",
         "",
-        "```dart\n[object Object]\n```",
+        "```dart\nint n = 42;\nString s = \"hi\";\ndouble? maybe;      // nullable\nvar inferred = 1;   // dynamic-ish, still checked\nfinal fixed = 2;   // runtime constant\nconst compile = 3; // compile-time constant\n```",
       ].join("\n"),
       exercises: [
         { type: "quiz", prompt: "What type does Dart use for a variable that may be null?", answers: ["nullable type", "a nullable type", "int? and string?"], snippet: "int? maybe;", placeholder: "what", hint: "Look at the example.", explanation: "Any type with a `?` suffix — `int?`, `String?`. Plain `int` cannot be null." },
@@ -26,11 +26,11 @@ export const DART_BASICS: SectionSeed = {
       title: "Classes & null safety",
       minutes: 8,
       md: [
-        "```dart\n[object Object]\n```",
+        "```dart\nclass Dog {\n  final String name;\n  int _age;\n\n  Dog(this.name, this._age);   // initialising formals\n\n  int get age => _age;\n\n  set age(int v) {\n    if (v < 0) throw ArgumentError('negative');\n    _age = v;\n  }\n}\n\nfinal d = Dog('Rex', 3);\nprint(d.age);\n```",
         "",
         "### Null-aware operators",
         "",
-        "```dart\n[object Object]\n```",
+        "```dart\nString? s;\nprint(s?.length);      // null — safe call\nprint(s ?? \"default\");  // default\ns ??= \"now set\";        // assign if null\n```",
       ].join("\n"),
       exercises: [
         { type: "fill-blank", prompt: "Complete the operator to call only when not null", template: "print(name___length);", explanation: "`?.` short-circuits to null instead of throwing.", blanks: [{ options: ["?.", "!", "??"], answer: "?." }] },
@@ -41,11 +41,11 @@ export const DART_BASICS: SectionSeed = {
       title: "Collections & async",
       minutes: 9,
       md: [
-        "```dart\n[object Object]\n```",
+        "```dart\nfinal xs = [1, 2, 3];\nfinal ys = xs.where((n) => n.isEven).toList();\nfinal m = <String, int>{'a': 1};\nfinal s = <int>{1, 2, 2};      // a Set dedupes\n\nfinal doubled = xs.map((n) => n * 2).toList();\n```",
         "",
         "### Futures and streams",
         "",
-        "```dart\n[object Object]\n```",
+        "```dart\nFuture<String> load() async {\n  await Future.delayed(Duration(seconds: 1));\n  return 'done';\n}\n\nStream<int> ticks() async* {\n  yield 1;\n  yield 2;\n}\n```",
       ].join("\n"),
       exercises: [
         { type: "quiz", prompt: "What is Dart's equivalent of a promise?", answers: ["future", "a future", "futures"], snippet: "Future<String> load() async { ... }", placeholder: "what", hint: "It resolves to one value.", explanation: "`Future<T>` for one eventual value; `Stream<T>` for a series of them." },

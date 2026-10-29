@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useCodeStore } from "@/store/code-store";
 import { toast } from "@/components/ui/toaster";
 
-export function SaveButton() {
+export function SaveButton({ iconOnly = false }: { iconOnly?: boolean }) {
   const router = useRouter();
   const { code, language, input } = useCodeStore();
   const [state, setState] = useState<"idle" | "saving" | "saved" | "signin" | "error">("idle");
@@ -56,7 +56,12 @@ export function SaveButton() {
       ) : (
         <Save className="size-4" />
       )}
-      {state === "saved" ? "Saved!" : state === "error" ? "Failed" : "Save"}
+      {/* icon-only mode for the collapsed rail; label shown when expanded */}
+      {!iconOnly && (
+        <span>
+          {state === "saved" ? "Saved!" : state === "error" ? "Failed" : "Save"}
+        </span>
+      )}
     </Button>
   );
 }

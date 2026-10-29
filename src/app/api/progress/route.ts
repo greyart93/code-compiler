@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
+import { recordActivity } from "@/lib/streak";
 
 // POST /api/progress { slug } → record course completion (upsert)
 // DELETE /api/progress?slug=  → remove completion (progress dropped below 100%)
@@ -19,6 +20,8 @@ export async function POST(request: Request) {
       create: { userId: user.id, slug },
       update: {}, // keep the original completedAt
     });
+    // counts toward the daily streak
+    await recordActivity(user.id, "lesson");
     return NextResponse.json({ progress });
   } catch (error) {
     console.error("progress POST error:", error);

@@ -717,7 +717,7 @@ export const QUIZZES: Quiz[] = [
     title: "C++",
     description: "References, sizeof tricks and dangling pointers.",
     icon: "C+",
-    accent: "bg-indigo-500/15 text-indigo-400",
+    accent: "bg-blue-500/15 text-blue-400",
     questions: CPP_QUESTIONS,
   },
   {
@@ -749,7 +749,7 @@ export const QUIZZES: Quiz[] = [
     title: "PHP",
     description: "Loose vs strict comparison and array key magic.",
     icon: "php",
-    accent: "bg-violet-500/15 text-violet-400",
+    accent: "bg-sky-500/15 text-sky-400",
     questions: PHP_QUESTIONS,
   },
   {
@@ -757,7 +757,7 @@ export const QUIZZES: Quiz[] = [
     title: "C#",
     description: "Struct vs class semantics and string interning.",
     icon: "C#",
-    accent: "bg-purple-500/15 text-purple-500",
+    accent: "bg-blue-500/15 text-blue-500",
     questions: CSHARP_QUESTIONS,
   },
   {
@@ -773,7 +773,7 @@ export const QUIZZES: Quiz[] = [
     title: "Kotlin",
     description: "val vs var and the elvis operator.",
     icon: "Ko",
-    accent: "bg-fuchsia-500/15 text-fuchsia-400",
+    accent: "bg-red-500/15 text-red-400",
     questions: KOTLIN_QUESTIONS,
   },
   {

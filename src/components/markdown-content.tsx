@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Marked } from "marked";
 import hljs from "highlight.js/lib/common";
+import { isRunnableSnippet, resolveLanguage } from "@/lib/language";
 
 /**
  * Obsidian-style markdown renderer for Learn lessons.
@@ -20,7 +21,12 @@ function renderMarkdown(md: string): { html: string; blocks: string[] } {
   instance.use({
     renderer: {
       code(src: string, lang?: string | null) {
-        const language = (lang ?? "").trim().split(/\s+/)[0] || "text";
+        const info = (lang ?? "").trim().split(/\s+/).filter(Boolean);
+        const language = info[0] || "text";
+        // ```js no-run is an explicit opt-out for a single block.
+        const noRun = info
+          .slice(1)
+          .some((flag) => /^(?:no-?run|norun|static)$/i.test(flag));
         const idx = blocks.length;
         blocks.push(src);
         let body: string;
@@ -33,7 +39,14 @@ function renderMarkdown(md: string): { html: string; blocks: string[] } {
         } else {
           body = escapeHtml(src);
         }
-        return `<pre data-language="${escapeHtml(language)}" data-md-block="${idx}"><code class="hljs">${body}</code></pre>`;
+        // Only add a Run button when the fence maps to a runtime the playground
+        // can execute *and* the snippet itself is actually runnable.
+        const runLanguage = noRun ? null : resolveLanguage(language);
+        const canRun = !!runLanguage && isRunnableSnippet(language, src);
+        const preAttr = canRun
+          ? ` data-md-block="${idx}" data-run-language="${runLanguage}" data-language="${escapeHtml(language)}"`
+          : ` data-language="${escapeHtml(language)}"`;
+        return `<pre${preAttr}><code class="hljs">${body}</code></pre>`;
       },
       codespan(text: string) {
         return `<code class="md-codespan">${text}</code>`;
@@ -51,7 +64,10 @@ function renderMarkdown(md: string): { html: string; blocks: string[] } {
 }
 
 function escapeHtml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return s
+    .replace(/&/g, "&")
+    .replace(/</g, "<")
+    .replace(/>/g, ">");
 }
 
 export function MarkdownContent({
@@ -62,7 +78,7 @@ export function MarkdownContent({
   md: string;
   className?: string;
   /** Called when the user clicks a code block's Run button */
-  onRunCode?: (code: string) => void;
+  onRunCode?: (code: string, language?: string) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { html, blocks } = useMemo(() => renderMarkdown(md), [md]);
@@ -89,7 +105,8 @@ export function MarkdownContent({
       if (!btn) return;
       const pre = btn.closest("pre[data-md-block]");
       const idx = Number(pre?.getAttribute("data-md-block") ?? -1);
-      if (idx >= 0 && blocks[idx] !== undefined) onRunRef.current?.(blocks[idx]);
+      const language = pre?.getAttribute("data-run-language") ?? undefined;
+      if (idx >= 0 && blocks[idx] !== undefined) onRunRef.current?.(blocks[idx], language);
     };
     el.addEventListener("click", onClick);
     return () => {

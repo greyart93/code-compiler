@@ -11,11 +11,11 @@ export const RB_BASICS: SectionSeed = {
       title: "Hello, Ruby",
       minutes: 6,
       md: [
-        "```ruby\n[object Object]\n```",
+        "```ruby\nputs \"Hello, Ruby!\"\n```",
         "",
         "### Everything is an object and a method can stand alone",
         "",
-        "```ruby\n[object Object]\n```",
+        "```ruby\n3.times do\n  puts \"hi\"\nend\n\n5.times { |i| puts i }\n\n2.upto(4) { |n| print n }   # 234\n```",
       ].join("\n"),
       exercises: [
         { type: "fill-blank", prompt: "Complete the method so the text goes to the console", template: "___ \"Hello, Ruby!\"", explanation: "`puts` prints with a newline; `print` does not.", blanks: [{ options: ["puts", "print", "echo"], answer: "puts" }] },
@@ -27,7 +27,7 @@ export const RB_BASICS: SectionSeed = {
       title: "Blocks, arrays & hashes",
       minutes: 8,
       md: [
-        "```ruby\n[object Object]\n```",
+        "```ruby\nxs = [1, 2, 3]\nys = xs.map { |n| n * 2 }\nxs.each_with_index { |n, i| puts \"#{i}: #{n}\" }\nxs.select { |n| n.odd? }\n\nages = { 'ada' => 36 }\nages.each { |k, v| puts \"#{k} is #{v}\" }\nages.map { |k, v| v }.sum\n\nxs.reduce(0) { |acc, n| acc + n }\n```",
         "",
         "Blocks are the core idea — almost every iterator takes one.",
       ].join("\n"),
@@ -40,7 +40,7 @@ export const RB_BASICS: SectionSeed = {
       title: "Symbols & strings",
       minutes: 7,
       md: [
-        "```ruby\n[object Object]\n```",
+        "```ruby\nname = \"ada\"     # a mutable String\nsym = :ada       # a Symbol — cheap, unique, immutable\n\nsym.to_s   # \"ada\"\n:ada.to_s  # \"ada\"\n\nh = { name: 1 }   # symbol key, no quotes needed\nh[:name]          # 1\n```",
         "",
         "Use symbols for identifiers, keys and method names; use strings for text you will edit.",
       ].join("\n"),

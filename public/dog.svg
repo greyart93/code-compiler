@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Dog avatar">
+  <defs>
+    <linearGradient id="dog-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#bfdbfe" />
+      <stop offset="1" stop-color="#60a5fa" />
+    </linearGradient>
+  </defs>
+  <rect width="100" height="100" rx="24" fill="url(#dog-bg)" />
+  <path d="M25 35c-11 5-14 24-8 36 5 10 15 12 20 6l-2-30zM75 35c11 5 14 24 8 36-5 10-15 12-20 6l2-30z" fill="#78350f" />
+  <circle cx="50" cy="58" r="28" fill="#fef3c7" />
+  <circle cx="40" cy="54" r="4.2" fill="#1c1917" />
+  <circle cx="60" cy="54" r="4.2" fill="#1c1917" />
+  <ellipse cx="50" cy="65" rx="13" ry="10" fill="#fff7ed" />
+  <path d="M45 63h10c1.5 0 2 1 1 2l-4 5h-4l-4-5c-1-1-.5-2 1-2z" fill="#1c1917" />
+  <path d="M50 70v5M50 75c-3 4-8 4-10 0M50 75c3 4 8 4 10 0" stroke="#78350f" stroke-width="2.4" fill="none" stroke-linecap="round" />
+</svg>

@@ -70,6 +70,74 @@ const btnSm: React.CSSProperties = {
   boxSizing: "border-box",
 };
 
+/**
+ * Track a card's position in the viewport and expose it as a CSS variable.
+ * The starfield layer reads `--parallax-y`, so the artwork drifts behind the
+ * content instead of scrolling at exactly the same speed.
+ */
+function useParallax<T extends HTMLElement>(speed = 0.16) {
+  const ref = useRef<T | null>(null);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (reduceMotion.matches) return;
+
+    let frame = 0;
+
+    const update = () => {
+      frame = 0;
+      const rect = node.getBoundingClientRect();
+      const viewport = window.innerHeight || 1;
+      const progress = (rect.top + rect.height / 2 - viewport / 2) / viewport;
+      const offset =
+        Math.max(-1, Math.min(1, progress)) * -speed * 100;
+      node.style.setProperty("--parallax-y", `${offset.toFixed(2)}px`);
+    };
+
+    const schedule = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(update);
+    };
+
+    update();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      node.style.removeProperty("--parallax-y");
+    };
+  }, [speed]);
+
+  return ref;
+}
+
+/** Dark starfield layer used by the inverse cards. */
+function StarfieldBackground() {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute"
+      style={{
+        inset: "-12%",
+        backgroundImage: "url('/starfield.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        opacity: 0.72,
+        transform:
+          "translate3d(0, var(--parallax-y, 0px), 0) scale(1.06)",
+        willChange: "transform",
+      }}
+    />
+  );
+}
+
 /** ── hero: dot grid, status pill, giant headline ─────────────────────── */
 
 function Hero() {
@@ -84,7 +152,7 @@ function Hero() {
         style={{ borderColor: BORDER, color: TEXT_4, fontFamily: "var(--font-mono), monospace" }}
       >
         <span className="size-[7px] shrink-0 rounded-full" style={{ background: ACCENT_SOFT }} />
-        Free · No install · 6 languages
+        Free · No install · 18 languages
       </div>
 
       <h1
@@ -480,7 +548,7 @@ const STEPS: Array<{ n: string; title: string; desc: string }> = [
   {
     n: "01",
     title: "Write",
-    desc: "Pick one of six languages and start typing in the browser editor — nothing to install, nothing to configure.",
+    desc: "Pick one of 18 languages and start typing in the browser editor — nothing to install, nothing to configure.",
   },
   {
     n: "02",
@@ -520,6 +588,8 @@ function HowItWorks() {
 /** ── community: Explore snippets + Live interview rooms ─────────────── */
 
 function Community() {
+  const liveRef = useParallax<HTMLAnchorElement>(0.3);
+
   return (
     <section className="mx-auto px-5 pb-16 sm:px-10 sm:pb-[88px]" style={{ maxWidth: 1240 }}>
       <h2 className="text-[24px] font-semibold tracking-[-0.03em]" style={{ color: INK }}>
@@ -557,28 +627,32 @@ function Community() {
 
         {/* Live rooms */}
         <Link
+          ref={liveRef}
           href="/live"
-          className="group flex flex-col justify-between rounded-2xl border p-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(10,10,11,0.16)]"
+          className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(10,10,11,0.16)]"
           style={{ borderColor: INVERSE_BORDER, background: INVERSE_BG }}
         >
-          <div>
-            <div className="flex items-center justify-between">
-              <span style={{ ...mono, fontSize: 12, letterSpacing: "0.08em", color: INVERSE_ACCENT }}>LIVE</span>
-              <span className="rounded-full px-2.5 py-1 text-[11px] font-semibold" style={{ background: INVERSE_BADGE, color: INVERSE_ACCENT }}>
-                Real-time
-              </span>
+          <StarfieldBackground />
+          <div className="relative z-10 flex flex-1 flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between">
+                <span style={{ ...mono, fontSize: 12, letterSpacing: "0.08em", color: INVERSE_ACCENT }}>LIVE</span>
+                <span className="rounded-full px-2.5 py-1 text-[11px] font-semibold" style={{ background: INVERSE_BADGE, color: INVERSE_ACCENT }}>
+                  Real-time
+                </span>
+              </div>
+              <div className="mt-3 text-[19px] font-semibold" style={{ color: INVERSE_INK }}>
+                Live interview rooms
+              </div>
+              <p className="mt-2 text-[15px]" style={{ lineHeight: 1.6, color: INVERSE_MUTED }}>
+                Practice interviews together: a shared editor, notes, voice chat and a whiteboard — join from a room code, no setup.
+              </p>
             </div>
-            <div className="mt-3 text-[19px] font-semibold" style={{ color: INVERSE_INK }}>
-              Live interview rooms
-            </div>
-            <p className="mt-2 text-[15px]" style={{ lineHeight: 1.6, color: INVERSE_MUTED }}>
-              Practice interviews together: a shared editor, notes, voice chat and a whiteboard — join from a room code, no setup.
-            </p>
+            <span className="mt-5 inline-flex items-center gap-2 text-[15px] font-medium" style={{ color: INVERSE_INK }}>
+              Try a live room
+              <ArrowIcon size={16} />
+            </span>
           </div>
-          <span className="mt-5 inline-flex items-center gap-2 text-[15px] font-medium" style={{ color: INVERSE_INK }}>
-            Try a live room
-            <ArrowIcon size={16} />
-          </span>
         </Link>
       </div>
     </section>
@@ -588,21 +662,25 @@ function Community() {
 /** ── CTA band ────────────────────────────────────────────────────────── */
 
 function Cta() {
+  const ctaRef = useParallax<HTMLDivElement>(0.24);
+
   return (
     <section className="mx-auto px-5 pb-16 sm:px-10 sm:pb-[88px]" style={{ maxWidth: 1240 }}>
       <div
-        className="flex flex-wrap items-center justify-between gap-6 rounded-[28px] border px-6 py-10 sm:gap-8 sm:px-14 sm:py-16"
+        ref={ctaRef}
+        className="relative flex flex-wrap items-center justify-between gap-6 overflow-hidden rounded-[28px] border px-6 py-10 sm:gap-8 sm:px-14 sm:py-16"
         style={{ background: INVERSE_BG, borderColor: INVERSE_BORDER, color: INVERSE_INK }}
       >
+        <StarfieldBackground />
         <h2
-          className="m-0 font-semibold"
+          className="relative z-10 m-0 font-semibold"
           style={{ maxWidth: 620, fontSize: "clamp(34px, 4.4vw, 56px)", lineHeight: 1.02, letterSpacing: "-0.045em" }}
         >
           Your next snippet is one click away.
         </h2>
         <Link
           href="/playground"
-          className="group inline-flex items-center gap-2.5 rounded-[14px] px-7 py-[18px] text-[17px] font-medium transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(96,165,250,0.40)]"
+          className="group relative z-10 inline-flex items-center gap-2.5 rounded-[14px] px-7 py-[18px] text-[17px] font-medium transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(96,165,250,0.40)]"
           style={{ background: INVERSE_BUTTON_BG, color: INVERSE_BUTTON_INK }}
         >
           Open Playground

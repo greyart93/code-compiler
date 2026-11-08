@@ -9,6 +9,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type DragEvent,
   type ReactNode,
 } from "react";
 import { useTheme } from "next-themes";
@@ -22,9 +23,11 @@ import {
   RotateCcw,
   Table2,
   Trash2,
+  Upload,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toaster";
 import {
   Select,
   SelectContent,
@@ -37,9 +40,11 @@ import {
   DEFAULT_SQL_QUERY,
   DEFAULT_SQL_SCHEMA,
   DEFAULT_SQL_TABLES,
+  MAX_CSV_BYTES,
   SQL_ENGINES,
   buildDataSample,
   cloneSqlTables,
+  csvToSqlTable,
   engineLabel,
   isDbmlBalanced,
   parseDbml,
@@ -154,10 +159,14 @@ export const SqlWorkspace = forwardRef<SqlWorkspaceHandle, SqlWorkspaceProps>(
     const [running, setRunning] = useState(false);
     const [ranOnce, setRanOnce] = useState(false);
     const [hydrated, setHydrated] = useState(false);
+    const [dragActive, setDragActive] = useState(false);
 
     const runningRef = useRef(false);
     const abortRef = useRef<AbortController | null>(null);
     const runIdRef = useRef(0);
+    const csvInputRef = useRef<HTMLInputElement | null>(null);
+    // dragenter/dragleave fire for every child element, so count nesting depth.
+    const dragDepthRef = useRef(0);
 
     const parsedTables = useMemo(() => parseDbml(schema), [schema]);
     const balanced = isDbmlBalanced(schema);
@@ -282,6 +291,103 @@ export const SqlWorkspace = forwardRef<SqlWorkspaceHandle, SqlWorkspaceProps>(
             : table
         )
       );
+    };
+
+    // Import a CSV as a new table: infer the schema, then show the rows in the
+    // data grid. Everything stays editable in the DBML and grid afterwards.
+    const importCsv = useCallback(
+      async (file: File | undefined) => {
+        if (!file) return;
+
+        if (file.size > MAX_CSV_BYTES) {
+          toast("That CSV is too large", {
+            description: "Keep the file under 5 MB so the lab stays responsive.",
+            variant: "error",
+          });
+          return;
+        }
+
+        try {
+          const imported = csvToSqlTable(
+            await file.text(),
+            file.name,
+            [...tables.map((table) => table.name), ...parsedTables.map((table) => table.name)]
+          );
+
+          if (!imported.ok) {
+            toast("Could not import CSV", { description: imported.error, variant: "error" });
+            return;
+          }
+
+          setSchema((previous) => {
+            const trimmed = previous.trim();
+            return trimmed ? `${trimmed}\n\n${imported.dbml}\n` : `${imported.dbml}\n`;
+          });
+          setTables((previous) => [
+            ...previous.filter((table) => table.name !== imported.table.name),
+            imported.table,
+          ]);
+          setActiveTable(imported.table.name);
+
+          toast(`Imported ${imported.table.name}`, {
+            description: [
+              `${imported.table.rows.length} ${imported.table.rows.length === 1 ? "row" : "rows"} · ${imported.table.columns.length} columns`,
+              imported.skippedRows
+                ? `${imported.skippedRows} extra rows skipped`
+                : "schema added — edit anything",
+            ].join(" · "),
+            variant: "success",
+          });
+        } catch {
+          toast("Could not read that file", {
+            description: "Pick a plain-text .csv file and try again.",
+            variant: "error",
+          });
+        }
+      },
+      [parsedTables, tables]
+    );
+
+    const isCsvFile = (file: File): boolean =>
+      /\.(csv|tsv|txt)$/i.test(file.name) || /csv|tab-separated|text\/plain/i.test(file.type);
+
+    const handleDragEnter = (event: DragEvent<HTMLElement>) => {
+      if (!event.dataTransfer?.types.includes("Files")) return;
+      event.preventDefault();
+      dragDepthRef.current += 1;
+      setDragActive(true);
+    };
+
+    const handleDragOver = (event: DragEvent<HTMLElement>) => {
+      if (!event.dataTransfer?.types.includes("Files")) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "copy";
+    };
+
+    const handleDragLeave = () => {
+      // Do not inspect `types` here: some browsers empty it by dragleave and a
+      // skipped decrement would leave the overlay stuck on screen.
+      dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+      if (dragDepthRef.current === 0) setDragActive(false);
+    };
+
+    const handleDrop = (event: DragEvent<HTMLElement>) => {
+      const file = event.dataTransfer?.files?.[0];
+      if (!file) return;
+
+      event.preventDefault();
+      dragDepthRef.current = 0;
+      setDragActive(false);
+
+      if (!isCsvFile(file)) {
+        toast("That is not a CSV file", {
+          description: "Drop a .csv, .tsv or .txt file instead.",
+          variant: "error",
+        });
+        return;
+      }
+
+      void importCsv(file);
     };
 
     const run = useCallback(async () => {
@@ -529,17 +635,62 @@ export const SqlWorkspace = forwardRef<SqlWorkspaceHandle, SqlWorkspaceProps>(
               </section>
 
               {/* ── 2 · data ───────────────────────────────────────── */}
-              <section className="flex min-h-[320px] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04)] lg:min-h-0">
+              <section
+                onDragEnter={handleDragEnter}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={cn(
+                  "relative flex min-h-[320px] flex-col overflow-hidden rounded-xl border bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-colors lg:min-h-0",
+                  dragActive ? "border-primary ring-1 ring-inset ring-primary/35" : "border-border"
+                )}
+              >
+                {dragActive && (
+                  <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center bg-background/85 backdrop-blur-[1px]">
+                    <div className="text-center">
+                      <span className="mx-auto grid size-10 place-items-center rounded-xl bg-primary/10 text-primary">
+                        <Upload className="size-4" />
+                      </span>
+                      <p className="mt-3 text-[12.5px] font-medium text-foreground">
+                        Drop a CSV to import
+                      </p>
+                      <p className="mt-1 text-[11.5px] text-muted-foreground">
+                        The header row becomes the schema.
+                      </p>
+                    </div>
+                  </div>
+                )}
                 <PanelHeader
                   number={2}
                   title="Define data"
                   aside={
-                    <span className="mono-label !text-[8px] text-muted-foreground">
-                      {currentTable
-                        ? `${currentTable.rows.length} rows · ${currentTable.columns.length} cols`
-                        : "no tables"}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="mono-label !text-[8px] text-muted-foreground">
+                        {currentTable
+                          ? `${currentTable.rows.length} rows · ${currentTable.columns.length} cols`
+                          : "no tables"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => csvInputRef.current?.click()}
+                        title="Import a CSV file as a new table, or drag one onto this panel"
+                        className="flex h-6 items-center gap-1 rounded-md border border-border bg-background px-1.5 text-[9.5px] text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                      >
+                        <Upload className="size-3" /> CSV
+                      </button>
+                    </div>
                   }
+                />
+                <input
+                  ref={csvInputRef}
+                  type="file"
+                  accept=".csv,text/csv,text/plain"
+                  className="hidden"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    event.target.value = "";
+                    void importCsv(file);
+                  }}
                 />
                 <div className="flex min-h-0 flex-1 flex-col">
                   <div className="flex shrink-0 items-center gap-1 overflow-x-auto border-b border-border px-2 py-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -575,7 +726,7 @@ export const SqlWorkspace = forwardRef<SqlWorkspaceHandle, SqlWorkspaceProps>(
                       <EmptyPanel
                         icon={<Table2 className="size-4" />}
                         title="No tables yet"
-                        body="Add a Table block in the schema editor and its columns will appear here."
+                        body="Add a Table block in the schema editor, or import a CSV with the button above (or drag one in) — its columns and rows will appear here."
                       />
                     ) : !currentTable.columns.length ? (
                       <EmptyPanel

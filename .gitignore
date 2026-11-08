@@ -51,6 +51,11 @@ pnpm-debug.log*
 /bundle-new/
 /screenshots/
 /seed-ui-test.sql
+freebuff*
+wrangler*
+_headers
+open-next.config.ts
+next.config.mjs
 
 # local databases
 *.db
@@ -76,3 +81,13 @@ opencode.json
 .freebuff/
 /freebuff-sites-build/
 .github/copilot-instructions.md
+
+# OpenNext
+.open-next
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+/.open-next/
+/.wrangler/

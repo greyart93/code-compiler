@@ -430,3 +430,353 @@ export function sqlRowsToCsv(rows: unknown[][]): string {
 export function engineLabel(value: string): string {
   return SQL_ENGINES.find((engine) => engine.value === value)?.label ?? value;
 }
+
+/* ────────────────────────────────────────────────────────────────────────
+ * CSV import
+ *
+ * The importer turns a plain CSV into a new SqlTable plus the matching DBML
+ * Table block, so the user only has to pick a file. Column types are inferred
+ * from the values; every inferred type stays editable in the schema editor.
+ * ──────────────────────────────────────────────────────────────────────── */
+
+export const MAX_CSV_BYTES = 5 * 1024 * 1024;
+
+/** The runsql sandbox rejects more than 2,000 sample rows per table. */
+export const MAX_IMPORTED_ROWS = 2_000;
+
+type CsvValueKind = "integer" | "numeric" | "boolean" | "timestamp" | "text";
+
+const CSV_DELIMITERS = [",", ";", "\t"] as const;
+
+const INTEGER_PATTERN = /^[+-]?\d+$/;
+const NUMERIC_PATTERN = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/;
+const TIMESTAMP_PATTERN =
+  /^\d{4}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?$/;
+const BOOLEAN_PATTERN = /^(?:true|false|yes|no)$/i;
+
+/** Words that need quoting when they appear as identifiers in a query. */
+const SQL_RESERVED = new Set([
+  "add",
+  "all",
+  "alter",
+  "and",
+  "any",
+  "as",
+  "asc",
+  "between",
+  "by",
+  "case",
+  "cast",
+  "check",
+  "column",
+  "constraint",
+  "create",
+  "cross",
+  "current",
+  "database",
+  "default",
+  "delete",
+  "desc",
+  "distinct",
+  "drop",
+  "else",
+  "end",
+  "except",
+  "exists",
+  "fetch",
+  "for",
+  "foreign",
+  "from",
+  "full",
+  "group",
+  "having",
+  "in",
+  "index",
+  "inner",
+  "insert",
+  "intersect",
+  "into",
+  "is",
+  "join",
+  "key",
+  "left",
+  "like",
+  "limit",
+  "natural",
+  "not",
+  "null",
+  "offset",
+  "on",
+  "or",
+  "order",
+  "outer",
+  "primary",
+  "references",
+  "right",
+  "row",
+  "rows",
+  "select",
+  "set",
+  "table",
+  "then",
+  "to",
+  "union",
+  "unique",
+  "update",
+  "user",
+  "using",
+  "values",
+  "when",
+  "where",
+  "with",
+]);
+
+function countDelimiter(line: string, delimiter: string): number {
+  let count = 0;
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i];
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+    if (!inQuotes && char === delimiter) count += 1;
+  }
+  return count;
+}
+
+function detectCsvDelimiter(text: string): string {
+  const headerLine = text.split(/\r?\n/).find((line) => line.trim() !== "") ?? "";
+  let best: string = ",";
+  let bestCount = 0;
+  for (const delimiter of CSV_DELIMITERS) {
+    const count = countDelimiter(headerLine, delimiter);
+    if (count > bestCount) {
+      best = delimiter;
+      bestCount = count;
+    }
+  }
+  return best;
+}
+
+/** RFC 4180-style reader: quotes, doubled quotes and embedded newlines. */
+function parseCsvRows(text: string, delimiter: string): string[][] {
+  const source = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < source.length; i += 1) {
+    const char = source[i];
+
+    if (inQuotes) {
+      if (char === '"') {
+        if (source[i + 1] === '"') {
+          field += '"';
+          i += 1;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        field += char;
+      }
+      continue;
+    }
+
+    // A quote only opens a quoted field at the start of that field.
+    if (char === '"' && field.trim() === "") {
+      field = "";
+      inQuotes = true;
+      continue;
+    }
+
+    if (char === delimiter) {
+      row.push(field);
+      field = "";
+      continue;
+    }
+
+    if (char === "\r" || char === "\n") {
+      if (char === "\r" && source[i + 1] === "\n") i += 1;
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = "";
+      continue;
+    }
+
+    field += char;
+  }
+
+  if (field.length || row.length) {
+    row.push(field);
+    rows.push(row);
+  }
+
+  return rows.filter((cells) => cells.some((cell) => cell.trim() !== ""));
+}
+
+/** Turn a CSV header or file name into a DBML-safe identifier. */
+export function sqlIdentifier(value: string, fallback = "imported_data"): string {
+  const cleaned = value
+    .normalize("NFKD")
+    .replace(/[^\w]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .toLowerCase();
+  if (!cleaned || !/[a-z]/.test(cleaned)) return fallback;
+  if (/^[0-9]/.test(cleaned)) return `t_${cleaned}`;
+  if (SQL_RESERVED.has(cleaned)) return `t_${cleaned}`;
+  return cleaned;
+}
+
+function classifyCsvColumn(values: string[]): CsvValueKind {
+  const filled = values.map((value) => value.trim()).filter(Boolean);
+  if (!filled.length) return "text";
+  if (filled.every((value) => BOOLEAN_PATTERN.test(value))) return "boolean";
+  if (
+    filled.every(
+      (value) => INTEGER_PATTERN.test(value) && Number.isSafeInteger(Number(value))
+    )
+  ) {
+    return "integer";
+  }
+  if (filled.every((value) => NUMERIC_PATTERN.test(value))) return "numeric";
+  if (filled.every((value) => TIMESTAMP_PATTERN.test(value))) return "timestamp";
+  return "text";
+}
+
+function numericType(values: string[]): string {
+  let integerDigits = 1;
+  let scale = 0;
+  for (const raw of values) {
+    const value = raw.trim();
+    if (!value) continue;
+    const [mantissa] = value.split(/[eE]/);
+    const [whole, fraction = ""] = mantissa.replace(/^[+-]/, "").split(".");
+    integerDigits = Math.max(integerDigits, whole.length || 1);
+    scale = Math.max(scale, fraction.length);
+  }
+  const roundedScale = Math.min(scale, 12);
+  const precision = Math.min(Math.max(integerDigits + roundedScale + 1, 12), 38);
+  return `numeric(${Math.max(precision, roundedScale + 1)},${roundedScale})`;
+}
+
+function dbmlTypeFor(kind: CsvValueKind, values: string[]): string {
+  switch (kind) {
+    case "integer":
+      return "integer";
+    case "numeric":
+      return numericType(values);
+    case "boolean":
+      return "boolean";
+    case "timestamp":
+      return "timestamp";
+    default: {
+      const longest = values.reduce((max, value) => Math.max(max, value.trim().length), 0);
+      return `varchar(${Math.min(Math.max(longest, 20), 4_000)})`;
+    }
+  }
+}
+
+function csvCellValue(raw: string, kind: CsvValueKind): SqlCell {
+  const text = raw.trim();
+  if (!text) return null;
+
+  switch (kind) {
+    case "integer":
+    case "numeric": {
+      const numeric = Number(text);
+      return Number.isFinite(numeric) ? numeric : text;
+    }
+    case "boolean":
+      return /^(?:true|yes)$/i.test(text);
+    default:
+      return text;
+  }
+}
+
+export type CsvImportResult =
+  | { ok: true; table: SqlTable; dbml: string; skippedRows: number }
+  | { ok: false; error: string };
+
+/**
+ * Build a SqlTable and its DBML Table block from CSV text.
+ *
+ * `existingTableNames` keeps repeat imports from overwriting an earlier table:
+ * a collision becomes `name_2`, `name_3`, and so on.
+ */
+export function csvToSqlTable(
+  csvText: string,
+  fileName: string,
+  existingTableNames: string[] = []
+): CsvImportResult {
+  const delimiter = detectCsvDelimiter(csvText);
+  const matrix = parseCsvRows(csvText, delimiter);
+
+  if (matrix.length < 2) {
+    return {
+      ok: false,
+      error: "The CSV needs a header row and at least one data row.",
+    };
+  }
+
+  const [header, ...dataRows] = matrix;
+
+  const used = new Set<string>();
+  const columnNames = header.map((cell, index) => {
+    const base = sqlIdentifier(cell, `column_${index + 1}`);
+    let candidate = base;
+    let suffix = 2;
+    while (used.has(candidate)) {
+      candidate = `${base}_${suffix}`;
+      suffix += 1;
+    }
+    used.add(candidate);
+    return candidate;
+  });
+
+  const normalizedRows = dataRows.map((row) =>
+    columnNames.map((_, index) => row[index] ?? "")
+  );
+
+  const kinds = columnNames.map((_, index) =>
+    classifyCsvColumn(normalizedRows.map((row) => row[index]))
+  );
+
+  const columns: SqlColumn[] = columnNames.map((name, index) => ({
+    name,
+    type: dbmlTypeFor(kinds[index], normalizedRows.map((row) => row[index])),
+  }));
+
+  const keptRows = normalizedRows.slice(0, MAX_IMPORTED_ROWS);
+  const rows = keptRows.map((row) =>
+    row.map((value, index) => csvCellValue(value, kinds[index]))
+  );
+
+  const baseName = sqlIdentifier(fileName.replace(/\.[^.]+$/, ""), "imported_data");
+  const taken = new Set(existingTableNames.map((name) => name.split(".").pop() ?? name));
+  let tableName = baseName;
+  let suffix = 2;
+  while (taken.has(tableName)) {
+    tableName = `${baseName}_${suffix}`;
+    suffix += 1;
+  }
+
+  const dbml = [
+    `Table ${tableName} {`,
+    ...columns.map((column) => `  ${column.name} ${column.type}`),
+    `}`,
+  ].join("\n");
+
+  return {
+    ok: true,
+    table: { name: tableName, columns, rows },
+    dbml,
+    skippedRows: Math.max(0, normalizedRows.length - keptRows.length),
+  };
+}

@@ -221,6 +221,9 @@ export type UserWhereInput = {
   streak?: Prisma.XOR<Prisma.StreakNullableScalarRelationFilter, Prisma.StreakWhereInput> | null
   liveInterviewsHosted?: Prisma.LiveInterviewRoomListRelationFilter
   liveInterviewsTaken?: Prisma.LiveInterviewRoomListRelationFilter
+  following?: Prisma.FollowListRelationFilter
+  followers?: Prisma.FollowListRelationFilter
+  collections?: Prisma.CollectionListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -247,6 +250,9 @@ export type UserOrderByWithRelationInput = {
   streak?: Prisma.StreakOrderByWithRelationInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomOrderByRelationAggregateInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomOrderByRelationAggregateInput
+  following?: Prisma.FollowOrderByRelationAggregateInput
+  followers?: Prisma.FollowOrderByRelationAggregateInput
+  collections?: Prisma.CollectionOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -276,6 +282,9 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   streak?: Prisma.XOR<Prisma.StreakNullableScalarRelationFilter, Prisma.StreakWhereInput> | null
   liveInterviewsHosted?: Prisma.LiveInterviewRoomListRelationFilter
   liveInterviewsTaken?: Prisma.LiveInterviewRoomListRelationFilter
+  following?: Prisma.FollowListRelationFilter
+  followers?: Prisma.FollowListRelationFilter
+  collections?: Prisma.CollectionListRelationFilter
 }, "id" | "email" | "username">
 
 export type UserOrderByWithAggregationInput = {
@@ -330,6 +339,9 @@ export type UserCreateInput = {
   streak?: Prisma.StreakCreateNestedOneWithoutUserInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomCreateNestedManyWithoutInterviewerInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -356,6 +368,9 @@ export type UserUncheckedCreateInput = {
   streak?: Prisma.StreakUncheckedCreateNestedOneWithoutUserInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutInterviewerInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -382,6 +397,9 @@ export type UserUpdateInput = {
   streak?: Prisma.StreakUpdateOneWithoutUserNestedInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUpdateManyWithoutInterviewerNestedInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -408,6 +426,9 @@ export type UserUncheckedUpdateInput = {
   streak?: Prisma.StreakUncheckedUpdateOneWithoutUserNestedInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutInterviewerNestedInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUncheckedUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -496,6 +517,48 @@ export type NullableStringFieldUpdateOperationsInput = {
 
 export type DateTimeFieldUpdateOperationsInput = {
   set?: Date | string
+}
+
+export type UserCreateNestedOneWithoutFollowingInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutFollowingInput, Prisma.UserUncheckedCreateWithoutFollowingInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutFollowingInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserCreateNestedOneWithoutFollowersInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutFollowersInput, Prisma.UserUncheckedCreateWithoutFollowersInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutFollowersInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutFollowingNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutFollowingInput, Prisma.UserUncheckedCreateWithoutFollowingInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutFollowingInput
+  upsert?: Prisma.UserUpsertWithoutFollowingInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutFollowingInput, Prisma.UserUpdateWithoutFollowingInput>, Prisma.UserUncheckedUpdateWithoutFollowingInput>
+}
+
+export type UserUpdateOneRequiredWithoutFollowersNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutFollowersInput, Prisma.UserUncheckedCreateWithoutFollowersInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutFollowersInput
+  upsert?: Prisma.UserUpsertWithoutFollowersInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutFollowersInput, Prisma.UserUpdateWithoutFollowersInput>, Prisma.UserUncheckedUpdateWithoutFollowersInput>
+}
+
+export type UserCreateNestedOneWithoutCollectionsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutCollectionsInput, Prisma.UserUncheckedCreateWithoutCollectionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCollectionsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutCollectionsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutCollectionsInput, Prisma.UserUncheckedCreateWithoutCollectionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCollectionsInput
+  upsert?: Prisma.UserUpsertWithoutCollectionsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutCollectionsInput, Prisma.UserUpdateWithoutCollectionsInput>, Prisma.UserUncheckedUpdateWithoutCollectionsInput>
 }
 
 export type UserCreateNestedOneWithoutActivityDaysInput = {
@@ -710,6 +773,390 @@ export type UserUpdateOneRequiredWithoutVotesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutVotesInput, Prisma.UserUpdateWithoutVotesInput>, Prisma.UserUncheckedUpdateWithoutVotesInput>
 }
 
+export type UserCreateWithoutFollowingInput = {
+  id?: string
+  email: string
+  username: string
+  name?: string | null
+  password?: string | null
+  bio?: string | null
+  image?: string | null
+  createdAt?: Date | string
+  snippets?: Prisma.SnippetCreateNestedManyWithoutUserInput
+  tutorials?: Prisma.TutorialCreateNestedManyWithoutUserInput
+  comments?: Prisma.CommentCreateNestedManyWithoutUserInput
+  likes?: Prisma.LikeCreateNestedManyWithoutUserInput
+  questions?: Prisma.QuestionCreateNestedManyWithoutUserInput
+  answers?: Prisma.AnswerCreateNestedManyWithoutUserInput
+  votes?: Prisma.VoteCreateNestedManyWithoutUserInput
+  courseProgress?: Prisma.CourseProgressCreateNestedManyWithoutUserInput
+  activityDays?: Prisma.ActivityDayCreateNestedManyWithoutUserInput
+  notes?: Prisma.NoteCreateNestedManyWithoutUserInput
+  interviewSessions?: Prisma.InterviewSessionCreateNestedManyWithoutUserInput
+  codeAttempts?: Prisma.CodeAttemptCreateNestedManyWithoutUserInput
+  streak?: Prisma.StreakCreateNestedOneWithoutUserInput
+  liveInterviewsHosted?: Prisma.LiveInterviewRoomCreateNestedManyWithoutInterviewerInput
+  liveInterviewsTaken?: Prisma.LiveInterviewRoomCreateNestedManyWithoutCandidateInput
+  followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutFollowingInput = {
+  id?: string
+  email: string
+  username: string
+  name?: string | null
+  password?: string | null
+  bio?: string | null
+  image?: string | null
+  createdAt?: Date | string
+  snippets?: Prisma.SnippetUncheckedCreateNestedManyWithoutUserInput
+  tutorials?: Prisma.TutorialUncheckedCreateNestedManyWithoutUserInput
+  comments?: Prisma.CommentUncheckedCreateNestedManyWithoutUserInput
+  likes?: Prisma.LikeUncheckedCreateNestedManyWithoutUserInput
+  questions?: Prisma.QuestionUncheckedCreateNestedManyWithoutUserInput
+  answers?: Prisma.AnswerUncheckedCreateNestedManyWithoutUserInput
+  votes?: Prisma.VoteUncheckedCreateNestedManyWithoutUserInput
+  courseProgress?: Prisma.CourseProgressUncheckedCreateNestedManyWithoutUserInput
+  activityDays?: Prisma.ActivityDayUncheckedCreateNestedManyWithoutUserInput
+  notes?: Prisma.NoteUncheckedCreateNestedManyWithoutUserInput
+  interviewSessions?: Prisma.InterviewSessionUncheckedCreateNestedManyWithoutUserInput
+  codeAttempts?: Prisma.CodeAttemptUncheckedCreateNestedManyWithoutUserInput
+  streak?: Prisma.StreakUncheckedCreateNestedOneWithoutUserInput
+  liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutInterviewerInput
+  liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutCandidateInput
+  followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutFollowingInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutFollowingInput, Prisma.UserUncheckedCreateWithoutFollowingInput>
+}
+
+export type UserCreateWithoutFollowersInput = {
+  id?: string
+  email: string
+  username: string
+  name?: string | null
+  password?: string | null
+  bio?: string | null
+  image?: string | null
+  createdAt?: Date | string
+  snippets?: Prisma.SnippetCreateNestedManyWithoutUserInput
+  tutorials?: Prisma.TutorialCreateNestedManyWithoutUserInput
+  comments?: Prisma.CommentCreateNestedManyWithoutUserInput
+  likes?: Prisma.LikeCreateNestedManyWithoutUserInput
+  questions?: Prisma.QuestionCreateNestedManyWithoutUserInput
+  answers?: Prisma.AnswerCreateNestedManyWithoutUserInput
+  votes?: Prisma.VoteCreateNestedManyWithoutUserInput
+  courseProgress?: Prisma.CourseProgressCreateNestedManyWithoutUserInput
+  activityDays?: Prisma.ActivityDayCreateNestedManyWithoutUserInput
+  notes?: Prisma.NoteCreateNestedManyWithoutUserInput
+  interviewSessions?: Prisma.InterviewSessionCreateNestedManyWithoutUserInput
+  codeAttempts?: Prisma.CodeAttemptCreateNestedManyWithoutUserInput
+  streak?: Prisma.StreakCreateNestedOneWithoutUserInput
+  liveInterviewsHosted?: Prisma.LiveInterviewRoomCreateNestedManyWithoutInterviewerInput
+  liveInterviewsTaken?: Prisma.LiveInterviewRoomCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowCreateNestedManyWithoutFollowerInput
+  collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutFollowersInput = {
+  id?: string
+  email: string
+  username: string
+  name?: string | null
+  password?: string | null
+  bio?: string | null
+  image?: string | null
+  createdAt?: Date | string
+  snippets?: Prisma.SnippetUncheckedCreateNestedManyWithoutUserInput
+  tutorials?: Prisma.TutorialUncheckedCreateNestedManyWithoutUserInput
+  comments?: Prisma.CommentUncheckedCreateNestedManyWithoutUserInput
+  likes?: Prisma.LikeUncheckedCreateNestedManyWithoutUserInput
+  questions?: Prisma.QuestionUncheckedCreateNestedManyWithoutUserInput
+  answers?: Prisma.AnswerUncheckedCreateNestedManyWithoutUserInput
+  votes?: Prisma.VoteUncheckedCreateNestedManyWithoutUserInput
+  courseProgress?: Prisma.CourseProgressUncheckedCreateNestedManyWithoutUserInput
+  activityDays?: Prisma.ActivityDayUncheckedCreateNestedManyWithoutUserInput
+  notes?: Prisma.NoteUncheckedCreateNestedManyWithoutUserInput
+  interviewSessions?: Prisma.InterviewSessionUncheckedCreateNestedManyWithoutUserInput
+  codeAttempts?: Prisma.CodeAttemptUncheckedCreateNestedManyWithoutUserInput
+  streak?: Prisma.StreakUncheckedCreateNestedOneWithoutUserInput
+  liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutInterviewerInput
+  liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowerInput
+  collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutFollowersInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutFollowersInput, Prisma.UserUncheckedCreateWithoutFollowersInput>
+}
+
+export type UserUpsertWithoutFollowingInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutFollowingInput, Prisma.UserUncheckedUpdateWithoutFollowingInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutFollowingInput, Prisma.UserUncheckedCreateWithoutFollowingInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutFollowingInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutFollowingInput, Prisma.UserUncheckedUpdateWithoutFollowingInput>
+}
+
+export type UserUpdateWithoutFollowingInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  snippets?: Prisma.SnippetUpdateManyWithoutUserNestedInput
+  tutorials?: Prisma.TutorialUpdateManyWithoutUserNestedInput
+  comments?: Prisma.CommentUpdateManyWithoutUserNestedInput
+  likes?: Prisma.LikeUpdateManyWithoutUserNestedInput
+  questions?: Prisma.QuestionUpdateManyWithoutUserNestedInput
+  answers?: Prisma.AnswerUpdateManyWithoutUserNestedInput
+  votes?: Prisma.VoteUpdateManyWithoutUserNestedInput
+  courseProgress?: Prisma.CourseProgressUpdateManyWithoutUserNestedInput
+  activityDays?: Prisma.ActivityDayUpdateManyWithoutUserNestedInput
+  notes?: Prisma.NoteUpdateManyWithoutUserNestedInput
+  interviewSessions?: Prisma.InterviewSessionUpdateManyWithoutUserNestedInput
+  codeAttempts?: Prisma.CodeAttemptUpdateManyWithoutUserNestedInput
+  streak?: Prisma.StreakUpdateOneWithoutUserNestedInput
+  liveInterviewsHosted?: Prisma.LiveInterviewRoomUpdateManyWithoutInterviewerNestedInput
+  liveInterviewsTaken?: Prisma.LiveInterviewRoomUpdateManyWithoutCandidateNestedInput
+  followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutFollowingInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  snippets?: Prisma.SnippetUncheckedUpdateManyWithoutUserNestedInput
+  tutorials?: Prisma.TutorialUncheckedUpdateManyWithoutUserNestedInput
+  comments?: Prisma.CommentUncheckedUpdateManyWithoutUserNestedInput
+  likes?: Prisma.LikeUncheckedUpdateManyWithoutUserNestedInput
+  questions?: Prisma.QuestionUncheckedUpdateManyWithoutUserNestedInput
+  answers?: Prisma.AnswerUncheckedUpdateManyWithoutUserNestedInput
+  votes?: Prisma.VoteUncheckedUpdateManyWithoutUserNestedInput
+  courseProgress?: Prisma.CourseProgressUncheckedUpdateManyWithoutUserNestedInput
+  activityDays?: Prisma.ActivityDayUncheckedUpdateManyWithoutUserNestedInput
+  notes?: Prisma.NoteUncheckedUpdateManyWithoutUserNestedInput
+  interviewSessions?: Prisma.InterviewSessionUncheckedUpdateManyWithoutUserNestedInput
+  codeAttempts?: Prisma.CodeAttemptUncheckedUpdateManyWithoutUserNestedInput
+  streak?: Prisma.StreakUncheckedUpdateOneWithoutUserNestedInput
+  liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutInterviewerNestedInput
+  liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutCandidateNestedInput
+  followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserUpsertWithoutFollowersInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutFollowersInput, Prisma.UserUncheckedUpdateWithoutFollowersInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutFollowersInput, Prisma.UserUncheckedCreateWithoutFollowersInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutFollowersInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutFollowersInput, Prisma.UserUncheckedUpdateWithoutFollowersInput>
+}
+
+export type UserUpdateWithoutFollowersInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  snippets?: Prisma.SnippetUpdateManyWithoutUserNestedInput
+  tutorials?: Prisma.TutorialUpdateManyWithoutUserNestedInput
+  comments?: Prisma.CommentUpdateManyWithoutUserNestedInput
+  likes?: Prisma.LikeUpdateManyWithoutUserNestedInput
+  questions?: Prisma.QuestionUpdateManyWithoutUserNestedInput
+  answers?: Prisma.AnswerUpdateManyWithoutUserNestedInput
+  votes?: Prisma.VoteUpdateManyWithoutUserNestedInput
+  courseProgress?: Prisma.CourseProgressUpdateManyWithoutUserNestedInput
+  activityDays?: Prisma.ActivityDayUpdateManyWithoutUserNestedInput
+  notes?: Prisma.NoteUpdateManyWithoutUserNestedInput
+  interviewSessions?: Prisma.InterviewSessionUpdateManyWithoutUserNestedInput
+  codeAttempts?: Prisma.CodeAttemptUpdateManyWithoutUserNestedInput
+  streak?: Prisma.StreakUpdateOneWithoutUserNestedInput
+  liveInterviewsHosted?: Prisma.LiveInterviewRoomUpdateManyWithoutInterviewerNestedInput
+  liveInterviewsTaken?: Prisma.LiveInterviewRoomUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUpdateManyWithoutFollowerNestedInput
+  collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutFollowersInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  snippets?: Prisma.SnippetUncheckedUpdateManyWithoutUserNestedInput
+  tutorials?: Prisma.TutorialUncheckedUpdateManyWithoutUserNestedInput
+  comments?: Prisma.CommentUncheckedUpdateManyWithoutUserNestedInput
+  likes?: Prisma.LikeUncheckedUpdateManyWithoutUserNestedInput
+  questions?: Prisma.QuestionUncheckedUpdateManyWithoutUserNestedInput
+  answers?: Prisma.AnswerUncheckedUpdateManyWithoutUserNestedInput
+  votes?: Prisma.VoteUncheckedUpdateManyWithoutUserNestedInput
+  courseProgress?: Prisma.CourseProgressUncheckedUpdateManyWithoutUserNestedInput
+  activityDays?: Prisma.ActivityDayUncheckedUpdateManyWithoutUserNestedInput
+  notes?: Prisma.NoteUncheckedUpdateManyWithoutUserNestedInput
+  interviewSessions?: Prisma.InterviewSessionUncheckedUpdateManyWithoutUserNestedInput
+  codeAttempts?: Prisma.CodeAttemptUncheckedUpdateManyWithoutUserNestedInput
+  streak?: Prisma.StreakUncheckedUpdateOneWithoutUserNestedInput
+  liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutInterviewerNestedInput
+  liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUncheckedUpdateManyWithoutFollowerNestedInput
+  collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutCollectionsInput = {
+  id?: string
+  email: string
+  username: string
+  name?: string | null
+  password?: string | null
+  bio?: string | null
+  image?: string | null
+  createdAt?: Date | string
+  snippets?: Prisma.SnippetCreateNestedManyWithoutUserInput
+  tutorials?: Prisma.TutorialCreateNestedManyWithoutUserInput
+  comments?: Prisma.CommentCreateNestedManyWithoutUserInput
+  likes?: Prisma.LikeCreateNestedManyWithoutUserInput
+  questions?: Prisma.QuestionCreateNestedManyWithoutUserInput
+  answers?: Prisma.AnswerCreateNestedManyWithoutUserInput
+  votes?: Prisma.VoteCreateNestedManyWithoutUserInput
+  courseProgress?: Prisma.CourseProgressCreateNestedManyWithoutUserInput
+  activityDays?: Prisma.ActivityDayCreateNestedManyWithoutUserInput
+  notes?: Prisma.NoteCreateNestedManyWithoutUserInput
+  interviewSessions?: Prisma.InterviewSessionCreateNestedManyWithoutUserInput
+  codeAttempts?: Prisma.CodeAttemptCreateNestedManyWithoutUserInput
+  streak?: Prisma.StreakCreateNestedOneWithoutUserInput
+  liveInterviewsHosted?: Prisma.LiveInterviewRoomCreateNestedManyWithoutInterviewerInput
+  liveInterviewsTaken?: Prisma.LiveInterviewRoomCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
+}
+
+export type UserUncheckedCreateWithoutCollectionsInput = {
+  id?: string
+  email: string
+  username: string
+  name?: string | null
+  password?: string | null
+  bio?: string | null
+  image?: string | null
+  createdAt?: Date | string
+  snippets?: Prisma.SnippetUncheckedCreateNestedManyWithoutUserInput
+  tutorials?: Prisma.TutorialUncheckedCreateNestedManyWithoutUserInput
+  comments?: Prisma.CommentUncheckedCreateNestedManyWithoutUserInput
+  likes?: Prisma.LikeUncheckedCreateNestedManyWithoutUserInput
+  questions?: Prisma.QuestionUncheckedCreateNestedManyWithoutUserInput
+  answers?: Prisma.AnswerUncheckedCreateNestedManyWithoutUserInput
+  votes?: Prisma.VoteUncheckedCreateNestedManyWithoutUserInput
+  courseProgress?: Prisma.CourseProgressUncheckedCreateNestedManyWithoutUserInput
+  activityDays?: Prisma.ActivityDayUncheckedCreateNestedManyWithoutUserInput
+  notes?: Prisma.NoteUncheckedCreateNestedManyWithoutUserInput
+  interviewSessions?: Prisma.InterviewSessionUncheckedCreateNestedManyWithoutUserInput
+  codeAttempts?: Prisma.CodeAttemptUncheckedCreateNestedManyWithoutUserInput
+  streak?: Prisma.StreakUncheckedCreateNestedOneWithoutUserInput
+  liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutInterviewerInput
+  liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
+}
+
+export type UserCreateOrConnectWithoutCollectionsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutCollectionsInput, Prisma.UserUncheckedCreateWithoutCollectionsInput>
+}
+
+export type UserUpsertWithoutCollectionsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutCollectionsInput, Prisma.UserUncheckedUpdateWithoutCollectionsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutCollectionsInput, Prisma.UserUncheckedCreateWithoutCollectionsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutCollectionsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutCollectionsInput, Prisma.UserUncheckedUpdateWithoutCollectionsInput>
+}
+
+export type UserUpdateWithoutCollectionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  snippets?: Prisma.SnippetUpdateManyWithoutUserNestedInput
+  tutorials?: Prisma.TutorialUpdateManyWithoutUserNestedInput
+  comments?: Prisma.CommentUpdateManyWithoutUserNestedInput
+  likes?: Prisma.LikeUpdateManyWithoutUserNestedInput
+  questions?: Prisma.QuestionUpdateManyWithoutUserNestedInput
+  answers?: Prisma.AnswerUpdateManyWithoutUserNestedInput
+  votes?: Prisma.VoteUpdateManyWithoutUserNestedInput
+  courseProgress?: Prisma.CourseProgressUpdateManyWithoutUserNestedInput
+  activityDays?: Prisma.ActivityDayUpdateManyWithoutUserNestedInput
+  notes?: Prisma.NoteUpdateManyWithoutUserNestedInput
+  interviewSessions?: Prisma.InterviewSessionUpdateManyWithoutUserNestedInput
+  codeAttempts?: Prisma.CodeAttemptUpdateManyWithoutUserNestedInput
+  streak?: Prisma.StreakUpdateOneWithoutUserNestedInput
+  liveInterviewsHosted?: Prisma.LiveInterviewRoomUpdateManyWithoutInterviewerNestedInput
+  liveInterviewsTaken?: Prisma.LiveInterviewRoomUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
+}
+
+export type UserUncheckedUpdateWithoutCollectionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  snippets?: Prisma.SnippetUncheckedUpdateManyWithoutUserNestedInput
+  tutorials?: Prisma.TutorialUncheckedUpdateManyWithoutUserNestedInput
+  comments?: Prisma.CommentUncheckedUpdateManyWithoutUserNestedInput
+  likes?: Prisma.LikeUncheckedUpdateManyWithoutUserNestedInput
+  questions?: Prisma.QuestionUncheckedUpdateManyWithoutUserNestedInput
+  answers?: Prisma.AnswerUncheckedUpdateManyWithoutUserNestedInput
+  votes?: Prisma.VoteUncheckedUpdateManyWithoutUserNestedInput
+  courseProgress?: Prisma.CourseProgressUncheckedUpdateManyWithoutUserNestedInput
+  activityDays?: Prisma.ActivityDayUncheckedUpdateManyWithoutUserNestedInput
+  notes?: Prisma.NoteUncheckedUpdateManyWithoutUserNestedInput
+  interviewSessions?: Prisma.InterviewSessionUncheckedUpdateManyWithoutUserNestedInput
+  codeAttempts?: Prisma.CodeAttemptUncheckedUpdateManyWithoutUserNestedInput
+  streak?: Prisma.StreakUncheckedUpdateOneWithoutUserNestedInput
+  liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutInterviewerNestedInput
+  liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUncheckedUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
+}
+
 export type UserCreateWithoutActivityDaysInput = {
   id?: string
   email: string
@@ -733,6 +1180,9 @@ export type UserCreateWithoutActivityDaysInput = {
   streak?: Prisma.StreakCreateNestedOneWithoutUserInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomCreateNestedManyWithoutInterviewerInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutActivityDaysInput = {
@@ -758,6 +1208,9 @@ export type UserUncheckedCreateWithoutActivityDaysInput = {
   streak?: Prisma.StreakUncheckedCreateNestedOneWithoutUserInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutInterviewerInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutActivityDaysInput = {
@@ -799,6 +1252,9 @@ export type UserUpdateWithoutActivityDaysInput = {
   streak?: Prisma.StreakUpdateOneWithoutUserNestedInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUpdateManyWithoutInterviewerNestedInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutActivityDaysInput = {
@@ -824,6 +1280,9 @@ export type UserUncheckedUpdateWithoutActivityDaysInput = {
   streak?: Prisma.StreakUncheckedUpdateOneWithoutUserNestedInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutInterviewerNestedInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUncheckedUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutStreakInput = {
@@ -849,6 +1308,9 @@ export type UserCreateWithoutStreakInput = {
   codeAttempts?: Prisma.CodeAttemptCreateNestedManyWithoutUserInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomCreateNestedManyWithoutInterviewerInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutStreakInput = {
@@ -874,6 +1336,9 @@ export type UserUncheckedCreateWithoutStreakInput = {
   codeAttempts?: Prisma.CodeAttemptUncheckedCreateNestedManyWithoutUserInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutInterviewerInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutStreakInput = {
@@ -915,6 +1380,9 @@ export type UserUpdateWithoutStreakInput = {
   codeAttempts?: Prisma.CodeAttemptUpdateManyWithoutUserNestedInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUpdateManyWithoutInterviewerNestedInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutStreakInput = {
@@ -940,6 +1408,9 @@ export type UserUncheckedUpdateWithoutStreakInput = {
   codeAttempts?: Prisma.CodeAttemptUncheckedUpdateManyWithoutUserNestedInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutInterviewerNestedInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUncheckedUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutNotesInput = {
@@ -965,6 +1436,9 @@ export type UserCreateWithoutNotesInput = {
   streak?: Prisma.StreakCreateNestedOneWithoutUserInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomCreateNestedManyWithoutInterviewerInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutNotesInput = {
@@ -990,6 +1464,9 @@ export type UserUncheckedCreateWithoutNotesInput = {
   streak?: Prisma.StreakUncheckedCreateNestedOneWithoutUserInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutInterviewerInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutNotesInput = {
@@ -1031,6 +1508,9 @@ export type UserUpdateWithoutNotesInput = {
   streak?: Prisma.StreakUpdateOneWithoutUserNestedInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUpdateManyWithoutInterviewerNestedInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutNotesInput = {
@@ -1056,6 +1536,9 @@ export type UserUncheckedUpdateWithoutNotesInput = {
   streak?: Prisma.StreakUncheckedUpdateOneWithoutUserNestedInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutInterviewerNestedInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUncheckedUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutInterviewSessionsInput = {
@@ -1081,6 +1564,9 @@ export type UserCreateWithoutInterviewSessionsInput = {
   streak?: Prisma.StreakCreateNestedOneWithoutUserInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomCreateNestedManyWithoutInterviewerInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutInterviewSessionsInput = {
@@ -1106,6 +1592,9 @@ export type UserUncheckedCreateWithoutInterviewSessionsInput = {
   streak?: Prisma.StreakUncheckedCreateNestedOneWithoutUserInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutInterviewerInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutInterviewSessionsInput = {
@@ -1147,6 +1636,9 @@ export type UserUpdateWithoutInterviewSessionsInput = {
   streak?: Prisma.StreakUpdateOneWithoutUserNestedInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUpdateManyWithoutInterviewerNestedInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutInterviewSessionsInput = {
@@ -1172,6 +1664,9 @@ export type UserUncheckedUpdateWithoutInterviewSessionsInput = {
   streak?: Prisma.StreakUncheckedUpdateOneWithoutUserNestedInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutInterviewerNestedInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUncheckedUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutLiveInterviewsHostedInput = {
@@ -1197,6 +1692,9 @@ export type UserCreateWithoutLiveInterviewsHostedInput = {
   codeAttempts?: Prisma.CodeAttemptCreateNestedManyWithoutUserInput
   streak?: Prisma.StreakCreateNestedOneWithoutUserInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutLiveInterviewsHostedInput = {
@@ -1222,6 +1720,9 @@ export type UserUncheckedCreateWithoutLiveInterviewsHostedInput = {
   codeAttempts?: Prisma.CodeAttemptUncheckedCreateNestedManyWithoutUserInput
   streak?: Prisma.StreakUncheckedCreateNestedOneWithoutUserInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutLiveInterviewsHostedInput = {
@@ -1252,6 +1753,9 @@ export type UserCreateWithoutLiveInterviewsTakenInput = {
   codeAttempts?: Prisma.CodeAttemptCreateNestedManyWithoutUserInput
   streak?: Prisma.StreakCreateNestedOneWithoutUserInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomCreateNestedManyWithoutInterviewerInput
+  following?: Prisma.FollowCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutLiveInterviewsTakenInput = {
@@ -1277,6 +1781,9 @@ export type UserUncheckedCreateWithoutLiveInterviewsTakenInput = {
   codeAttempts?: Prisma.CodeAttemptUncheckedCreateNestedManyWithoutUserInput
   streak?: Prisma.StreakUncheckedCreateNestedOneWithoutUserInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutInterviewerInput
+  following?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutLiveInterviewsTakenInput = {
@@ -1318,6 +1825,9 @@ export type UserUpdateWithoutLiveInterviewsHostedInput = {
   codeAttempts?: Prisma.CodeAttemptUpdateManyWithoutUserNestedInput
   streak?: Prisma.StreakUpdateOneWithoutUserNestedInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutLiveInterviewsHostedInput = {
@@ -1343,6 +1853,9 @@ export type UserUncheckedUpdateWithoutLiveInterviewsHostedInput = {
   codeAttempts?: Prisma.CodeAttemptUncheckedUpdateManyWithoutUserNestedInput
   streak?: Prisma.StreakUncheckedUpdateOneWithoutUserNestedInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUncheckedUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserUpsertWithoutLiveInterviewsTakenInput = {
@@ -1379,6 +1892,9 @@ export type UserUpdateWithoutLiveInterviewsTakenInput = {
   codeAttempts?: Prisma.CodeAttemptUpdateManyWithoutUserNestedInput
   streak?: Prisma.StreakUpdateOneWithoutUserNestedInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUpdateManyWithoutInterviewerNestedInput
+  following?: Prisma.FollowUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutLiveInterviewsTakenInput = {
@@ -1404,6 +1920,9 @@ export type UserUncheckedUpdateWithoutLiveInterviewsTakenInput = {
   codeAttempts?: Prisma.CodeAttemptUncheckedUpdateManyWithoutUserNestedInput
   streak?: Prisma.StreakUncheckedUpdateOneWithoutUserNestedInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutInterviewerNestedInput
+  following?: Prisma.FollowUncheckedUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutCodeAttemptsInput = {
@@ -1429,6 +1948,9 @@ export type UserCreateWithoutCodeAttemptsInput = {
   streak?: Prisma.StreakCreateNestedOneWithoutUserInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomCreateNestedManyWithoutInterviewerInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutCodeAttemptsInput = {
@@ -1454,6 +1976,9 @@ export type UserUncheckedCreateWithoutCodeAttemptsInput = {
   streak?: Prisma.StreakUncheckedCreateNestedOneWithoutUserInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutInterviewerInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutCodeAttemptsInput = {
@@ -1495,6 +2020,9 @@ export type UserUpdateWithoutCodeAttemptsInput = {
   streak?: Prisma.StreakUpdateOneWithoutUserNestedInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUpdateManyWithoutInterviewerNestedInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCodeAttemptsInput = {
@@ -1520,6 +2048,9 @@ export type UserUncheckedUpdateWithoutCodeAttemptsInput = {
   streak?: Prisma.StreakUncheckedUpdateOneWithoutUserNestedInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutInterviewerNestedInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUncheckedUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutCourseProgressInput = {
@@ -1545,6 +2076,9 @@ export type UserCreateWithoutCourseProgressInput = {
   streak?: Prisma.StreakCreateNestedOneWithoutUserInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomCreateNestedManyWithoutInterviewerInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutCourseProgressInput = {
@@ -1570,6 +2104,9 @@ export type UserUncheckedCreateWithoutCourseProgressInput = {
   streak?: Prisma.StreakUncheckedCreateNestedOneWithoutUserInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutInterviewerInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutCourseProgressInput = {
@@ -1611,6 +2148,9 @@ export type UserUpdateWithoutCourseProgressInput = {
   streak?: Prisma.StreakUpdateOneWithoutUserNestedInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUpdateManyWithoutInterviewerNestedInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCourseProgressInput = {
@@ -1636,6 +2176,9 @@ export type UserUncheckedUpdateWithoutCourseProgressInput = {
   streak?: Prisma.StreakUncheckedUpdateOneWithoutUserNestedInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutInterviewerNestedInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUncheckedUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutSnippetsInput = {
@@ -1661,6 +2204,9 @@ export type UserCreateWithoutSnippetsInput = {
   streak?: Prisma.StreakCreateNestedOneWithoutUserInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomCreateNestedManyWithoutInterviewerInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutSnippetsInput = {
@@ -1686,6 +2232,9 @@ export type UserUncheckedCreateWithoutSnippetsInput = {
   streak?: Prisma.StreakUncheckedCreateNestedOneWithoutUserInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutInterviewerInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutSnippetsInput = {
@@ -1727,6 +2276,9 @@ export type UserUpdateWithoutSnippetsInput = {
   streak?: Prisma.StreakUpdateOneWithoutUserNestedInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUpdateManyWithoutInterviewerNestedInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSnippetsInput = {
@@ -1752,6 +2304,9 @@ export type UserUncheckedUpdateWithoutSnippetsInput = {
   streak?: Prisma.StreakUncheckedUpdateOneWithoutUserNestedInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutInterviewerNestedInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUncheckedUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutLikesInput = {
@@ -1777,6 +2332,9 @@ export type UserCreateWithoutLikesInput = {
   streak?: Prisma.StreakCreateNestedOneWithoutUserInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomCreateNestedManyWithoutInterviewerInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutLikesInput = {
@@ -1802,6 +2360,9 @@ export type UserUncheckedCreateWithoutLikesInput = {
   streak?: Prisma.StreakUncheckedCreateNestedOneWithoutUserInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutInterviewerInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutLikesInput = {
@@ -1843,6 +2404,9 @@ export type UserUpdateWithoutLikesInput = {
   streak?: Prisma.StreakUpdateOneWithoutUserNestedInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUpdateManyWithoutInterviewerNestedInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutLikesInput = {
@@ -1868,6 +2432,9 @@ export type UserUncheckedUpdateWithoutLikesInput = {
   streak?: Prisma.StreakUncheckedUpdateOneWithoutUserNestedInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutInterviewerNestedInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUncheckedUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutCommentsInput = {
@@ -1893,6 +2460,9 @@ export type UserCreateWithoutCommentsInput = {
   streak?: Prisma.StreakCreateNestedOneWithoutUserInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomCreateNestedManyWithoutInterviewerInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutCommentsInput = {
@@ -1918,6 +2488,9 @@ export type UserUncheckedCreateWithoutCommentsInput = {
   streak?: Prisma.StreakUncheckedCreateNestedOneWithoutUserInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutInterviewerInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutCommentsInput = {
@@ -1959,6 +2532,9 @@ export type UserUpdateWithoutCommentsInput = {
   streak?: Prisma.StreakUpdateOneWithoutUserNestedInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUpdateManyWithoutInterviewerNestedInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCommentsInput = {
@@ -1984,6 +2560,9 @@ export type UserUncheckedUpdateWithoutCommentsInput = {
   streak?: Prisma.StreakUncheckedUpdateOneWithoutUserNestedInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutInterviewerNestedInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUncheckedUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutTutorialsInput = {
@@ -2009,6 +2588,9 @@ export type UserCreateWithoutTutorialsInput = {
   streak?: Prisma.StreakCreateNestedOneWithoutUserInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomCreateNestedManyWithoutInterviewerInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutTutorialsInput = {
@@ -2034,6 +2616,9 @@ export type UserUncheckedCreateWithoutTutorialsInput = {
   streak?: Prisma.StreakUncheckedCreateNestedOneWithoutUserInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutInterviewerInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutTutorialsInput = {
@@ -2075,6 +2660,9 @@ export type UserUpdateWithoutTutorialsInput = {
   streak?: Prisma.StreakUpdateOneWithoutUserNestedInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUpdateManyWithoutInterviewerNestedInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutTutorialsInput = {
@@ -2100,6 +2688,9 @@ export type UserUncheckedUpdateWithoutTutorialsInput = {
   streak?: Prisma.StreakUncheckedUpdateOneWithoutUserNestedInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutInterviewerNestedInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUncheckedUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutQuestionsInput = {
@@ -2125,6 +2716,9 @@ export type UserCreateWithoutQuestionsInput = {
   streak?: Prisma.StreakCreateNestedOneWithoutUserInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomCreateNestedManyWithoutInterviewerInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutQuestionsInput = {
@@ -2150,6 +2744,9 @@ export type UserUncheckedCreateWithoutQuestionsInput = {
   streak?: Prisma.StreakUncheckedCreateNestedOneWithoutUserInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutInterviewerInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutQuestionsInput = {
@@ -2191,6 +2788,9 @@ export type UserUpdateWithoutQuestionsInput = {
   streak?: Prisma.StreakUpdateOneWithoutUserNestedInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUpdateManyWithoutInterviewerNestedInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutQuestionsInput = {
@@ -2216,6 +2816,9 @@ export type UserUncheckedUpdateWithoutQuestionsInput = {
   streak?: Prisma.StreakUncheckedUpdateOneWithoutUserNestedInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutInterviewerNestedInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUncheckedUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutAnswersInput = {
@@ -2241,6 +2844,9 @@ export type UserCreateWithoutAnswersInput = {
   streak?: Prisma.StreakCreateNestedOneWithoutUserInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomCreateNestedManyWithoutInterviewerInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutAnswersInput = {
@@ -2266,6 +2872,9 @@ export type UserUncheckedCreateWithoutAnswersInput = {
   streak?: Prisma.StreakUncheckedCreateNestedOneWithoutUserInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutInterviewerInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutAnswersInput = {
@@ -2307,6 +2916,9 @@ export type UserUpdateWithoutAnswersInput = {
   streak?: Prisma.StreakUpdateOneWithoutUserNestedInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUpdateManyWithoutInterviewerNestedInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAnswersInput = {
@@ -2332,6 +2944,9 @@ export type UserUncheckedUpdateWithoutAnswersInput = {
   streak?: Prisma.StreakUncheckedUpdateOneWithoutUserNestedInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutInterviewerNestedInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUncheckedUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutVotesInput = {
@@ -2357,6 +2972,9 @@ export type UserCreateWithoutVotesInput = {
   streak?: Prisma.StreakCreateNestedOneWithoutUserInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomCreateNestedManyWithoutInterviewerInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutVotesInput = {
@@ -2382,6 +3000,9 @@ export type UserUncheckedCreateWithoutVotesInput = {
   streak?: Prisma.StreakUncheckedCreateNestedOneWithoutUserInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutInterviewerInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutVotesInput = {
@@ -2423,6 +3044,9 @@ export type UserUpdateWithoutVotesInput = {
   streak?: Prisma.StreakUpdateOneWithoutUserNestedInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUpdateManyWithoutInterviewerNestedInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutVotesInput = {
@@ -2448,6 +3072,9 @@ export type UserUncheckedUpdateWithoutVotesInput = {
   streak?: Prisma.StreakUncheckedUpdateOneWithoutUserNestedInput
   liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutInterviewerNestedInput
   liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUncheckedUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 
@@ -2470,6 +3097,9 @@ export type UserCountOutputType = {
   codeAttempts: number
   liveInterviewsHosted: number
   liveInterviewsTaken: number
+  following: number
+  followers: number
+  collections: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2487,6 +3117,9 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   codeAttempts?: boolean | UserCountOutputTypeCountCodeAttemptsArgs
   liveInterviewsHosted?: boolean | UserCountOutputTypeCountLiveInterviewsHostedArgs
   liveInterviewsTaken?: boolean | UserCountOutputTypeCountLiveInterviewsTakenArgs
+  following?: boolean | UserCountOutputTypeCountFollowingArgs
+  followers?: boolean | UserCountOutputTypeCountFollowersArgs
+  collections?: boolean | UserCountOutputTypeCountCollectionsArgs
 }
 
 /**
@@ -2597,6 +3230,27 @@ export type UserCountOutputTypeCountLiveInterviewsTakenArgs<ExtArgs extends runt
   where?: Prisma.LiveInterviewRoomWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountFollowingArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.FollowWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountFollowersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.FollowWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountCollectionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.CollectionWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -2622,6 +3276,9 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   streak?: boolean | Prisma.User$streakArgs<ExtArgs>
   liveInterviewsHosted?: boolean | Prisma.User$liveInterviewsHostedArgs<ExtArgs>
   liveInterviewsTaken?: boolean | Prisma.User$liveInterviewsTakenArgs<ExtArgs>
+  following?: boolean | Prisma.User$followingArgs<ExtArgs>
+  followers?: boolean | Prisma.User$followersArgs<ExtArgs>
+  collections?: boolean | Prisma.User$collectionsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -2675,6 +3332,9 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   streak?: boolean | Prisma.User$streakArgs<ExtArgs>
   liveInterviewsHosted?: boolean | Prisma.User$liveInterviewsHostedArgs<ExtArgs>
   liveInterviewsTaken?: boolean | Prisma.User$liveInterviewsTakenArgs<ExtArgs>
+  following?: boolean | Prisma.User$followingArgs<ExtArgs>
+  followers?: boolean | Prisma.User$followersArgs<ExtArgs>
+  collections?: boolean | Prisma.User$collectionsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -2698,6 +3358,9 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     streak: Prisma.$StreakPayload<ExtArgs> | null
     liveInterviewsHosted: Prisma.$LiveInterviewRoomPayload<ExtArgs>[]
     liveInterviewsTaken: Prisma.$LiveInterviewRoomPayload<ExtArgs>[]
+    following: Prisma.$FollowPayload<ExtArgs>[]
+    followers: Prisma.$FollowPayload<ExtArgs>[]
+    collections: Prisma.$CollectionPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -3117,6 +3780,9 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   streak<T extends Prisma.User$streakArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$streakArgs<ExtArgs>>): Prisma.Prisma__StreakClient<runtime.Types.Result.GetResult<Prisma.$StreakPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   liveInterviewsHosted<T extends Prisma.User$liveInterviewsHostedArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$liveInterviewsHostedArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$LiveInterviewRoomPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   liveInterviewsTaken<T extends Prisma.User$liveInterviewsTakenArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$liveInterviewsTakenArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$LiveInterviewRoomPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  following<T extends Prisma.User$followingArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$followingArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FollowPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  followers<T extends Prisma.User$followersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$followersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FollowPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  collections<T extends Prisma.User$collectionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$collectionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CollectionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3899,6 +4565,78 @@ export type User$liveInterviewsTakenArgs<ExtArgs extends runtime.Types.Extension
   take?: number
   skip?: number
   distinct?: Prisma.LiveInterviewRoomScalarFieldEnum | Prisma.LiveInterviewRoomScalarFieldEnum[]
+}
+
+/**
+ * User.following
+ */
+export type User$followingArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Follow
+   */
+  select?: Prisma.FollowSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Follow
+   */
+  omit?: Prisma.FollowOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.FollowInclude<ExtArgs> | null
+  where?: Prisma.FollowWhereInput
+  orderBy?: Prisma.FollowOrderByWithRelationInput | Prisma.FollowOrderByWithRelationInput[]
+  cursor?: Prisma.FollowWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.FollowScalarFieldEnum | Prisma.FollowScalarFieldEnum[]
+}
+
+/**
+ * User.followers
+ */
+export type User$followersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Follow
+   */
+  select?: Prisma.FollowSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Follow
+   */
+  omit?: Prisma.FollowOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.FollowInclude<ExtArgs> | null
+  where?: Prisma.FollowWhereInput
+  orderBy?: Prisma.FollowOrderByWithRelationInput | Prisma.FollowOrderByWithRelationInput[]
+  cursor?: Prisma.FollowWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.FollowScalarFieldEnum | Prisma.FollowScalarFieldEnum[]
+}
+
+/**
+ * User.collections
+ */
+export type User$collectionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Collection
+   */
+  select?: Prisma.CollectionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Collection
+   */
+  omit?: Prisma.CollectionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CollectionInclude<ExtArgs> | null
+  where?: Prisma.CollectionWhereInput
+  orderBy?: Prisma.CollectionOrderByWithRelationInput | Prisma.CollectionOrderByWithRelationInput[]
+  cursor?: Prisma.CollectionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.CollectionScalarFieldEnum | Prisma.CollectionScalarFieldEnum[]
 }
 
 /**

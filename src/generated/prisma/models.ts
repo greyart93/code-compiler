@@ -9,6 +9,9 @@
  * 🟢 You can import this file directly.
  */
 export type * from './models/User'
+export type * from './models/Follow'
+export type * from './models/Collection'
+export type * from './models/CollectionItem'
 export type * from './models/ActivityDay'
 export type * from './models/Streak'
 export type * from './models/Note'

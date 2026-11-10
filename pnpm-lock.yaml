@@ -11,6 +11,9 @@ importers:
       '@babel/parser':
         specifier: 7.29.9
         version: 7.29.9
+      '@electric-sql/pglite':
+        specifier: ^0.5.15
+        version: 0.5.15
       '@prisma/adapter-pg':
         specifier: ^7.10.0
         version: 7.10.0
@@ -537,6 +540,9 @@ packages:
 
   '@electric-sql/pglite@0.4.3':
     resolution: {integrity: sha512-ichuWTgtd4mOM1G4SpyGJa5trT03lWbMypDV0fUXUCXg5hiHqVAz/bZyV68NqmkLB7WcYmj1RMJVSp8HV/v/ZQ==}
+
+  '@electric-sql/pglite@0.5.15':
+    resolution: {integrity: sha512-ERZWgaRTxueGV4cvL1tfpAOzFCWTXoUtbCBqnf2FhHDVs/so9eAKaanvrwWF9Dntx7BYsmFQujVQ0/B4S8Mmiw==}
 
   '@emnapi/core@1.10.0':
     resolution: {integrity: sha512-yq6OkJ4p82CAfPl0u9mQebQHKPJkY7WrIuk205cTYnYe+k2Z8YBh11FrbRG/H6ihirqcacOgl2BIO8oyMQLeXw==}
@@ -5967,6 +5973,8 @@ snapshots:
       '@electric-sql/pglite': 0.4.3
 
   '@electric-sql/pglite@0.4.3': {}
+
+  '@electric-sql/pglite@0.5.15': {}
 
   '@emnapi/core@1.10.0':
     dependencies:

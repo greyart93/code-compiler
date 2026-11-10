@@ -47,6 +47,23 @@ export { Prisma }
  */
 export type User = Prisma.UserModel
 /**
+ * Model Follow
+ * * A directed follow edge: `follower` follows `following`.
+ *  *  Friends = both directions exist, so no separate friend table is needed.
+ */
+export type Follow = Prisma.FollowModel
+/**
+ * Model Collection
+ * * A user-made folder of snippets (CodePen-style collection).
+ */
+export type Collection = Prisma.CollectionModel
+/**
+ * Model CollectionItem
+ * * One snippet filed in one collection. Snippets are referenced, never copied,
+ *  *  so a snippet saved from explore still belongs to its author.
+ */
+export type CollectionItem = Prisma.CollectionItemModel
+/**
  * Model ActivityDay
  * * Daily activity log — one row per day the user does anything learning-related.
  *  *  Streak = consecutive days with an activity row, recomputed on write.

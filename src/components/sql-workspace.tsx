@@ -15,6 +15,7 @@ import {
 import { useTheme } from "next-themes";
 import {
   AlertCircle,
+  Check,
   Database,
   Download,
   Loader2,
@@ -45,19 +46,31 @@ import {
   buildDataSample,
   cloneSqlTables,
   csvToSqlTable,
+  diffSqlRowSignatures,
   engineLabel,
+  findConstraintViolations,
   isDbmlBalanced,
   parseDbml,
+  parseDbmlRefs,
   sqlCellToString,
+  sqlRowSignatures,
   sqlRowsToCsv,
   syncSqlTables,
+  type SqlConstraintViolation,
   type SqlEngine,
-  type SqlResult,
+  type SqlRunResult,
+  type SqlStatementResult,
   type SqlTable,
 } from "@/lib/sql-lab";
+import { runLocalSql, sqlCommand } from "@/lib/sql-local";
 import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "codevit-sql-lab-v1";
+
+/** Snapshot of the grid rows per table, used to report unrun changes. */
+function baselinesFrom(tables: SqlTable[]): Record<string, string[]> {
+  return Object.fromEntries(tables.map((table) => [table.name, sqlRowSignatures(table.rows)]));
+}
 
 const AceEditor = dynamic(() => import("@/app/_editor/(AceEditor)/page"), {
   ssr: false,
@@ -144,6 +157,109 @@ function EmptyPanel({
   );
 }
 
+const ROW_CHANGING_COMMANDS = new Set(["INSERT", "UPDATE", "DELETE", "MERGE", "COPY", "TRUNCATE"]);
+
+/** One statement's result: a grid for queries, a status line for writes/DDL. */
+function StatementBlock({
+  statement,
+  index,
+  showHeader,
+}: {
+  statement: SqlStatementResult;
+  index: number;
+  showHeader: boolean;
+}) {
+  if (!statement.fields.length) {
+    return (
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-3 py-2">
+        <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
+          <Check className="size-3" />
+          {statement.command}
+        </span>
+        <span className="text-[11px] text-muted-foreground">
+          {ROW_CHANGING_COMMANDS.has(statement.command) && statement.affectedRows != null
+            ? `${statement.affectedRows} ${statement.affectedRows === 1 ? "row" : "rows"} affected`
+            : "completed"}
+        </span>
+        <span className="font-mono text-[9.5px] text-muted-foreground/60">
+          {statement.elapsedMs.toFixed(2)} ms
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {showHeader && (
+        <div className="flex items-center justify-between gap-2 bg-secondary/35 px-3 py-1.5">
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="mono-label shrink-0 !text-[8px] text-muted-foreground">
+              {index + 1} · {statement.command}
+            </span>
+            <span className="truncate font-mono text-[9.5px] text-muted-foreground/60">
+              {statement.sql.replace(/\s+/g, " ")}
+            </span>
+          </span>
+          <span className="mono-label shrink-0 !text-[8px] text-muted-foreground">
+            {statement.rows.length} rows
+          </span>
+        </div>
+      )}
+      <table className="w-full min-w-max border-collapse text-left text-[11.5px]">
+        <thead className="sticky top-0 z-10 bg-secondary/90 backdrop-blur">
+          <tr className="border-b border-border">
+            {statement.fields.map((field, fieldIndex) => (
+              <th
+                key={`${field}-${fieldIndex}`}
+                className="min-w-[100px] border-l border-border/60 px-2.5 py-1.5 font-mono text-[9px] font-medium uppercase tracking-wide text-muted-foreground first:border-l-0"
+              >
+                {field}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {statement.rows.map((row, rowIndex) => (
+            <tr
+              key={`result-${rowIndex}`}
+              className="border-b border-border/60 last:border-0 hover:bg-secondary/30"
+            >
+              {statement.fields.map((_, columnIndex) => {
+                const cell = row[columnIndex];
+                const value = sqlCellToString(cell);
+                return (
+                  <td
+                    key={`result-${rowIndex}-${columnIndex}`}
+                    title={value}
+                    className={cn(
+                      "max-w-[300px] truncate whitespace-nowrap border-l border-border/40 px-2.5 py-1.5 font-mono text-[10.5px] first:border-l-0",
+                      cell === null || cell === undefined
+                        ? "italic text-muted-foreground/55"
+                        : "text-foreground/85"
+                    )}
+                  >
+                    {value}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+          {!statement.rows.length && (
+            <tr>
+              <td
+                colSpan={statement.fields.length}
+                className="px-3 py-8 text-center text-[11px] text-muted-foreground"
+              >
+                {statement.command} ran successfully — no rows returned.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export const SqlWorkspace = forwardRef<SqlWorkspaceHandle, SqlWorkspaceProps>(
   function SqlWorkspace({ query, onQueryChange, onRunningChange }, ref) {
     const { resolvedTheme } = useTheme();
@@ -153,18 +269,25 @@ export const SqlWorkspace = forwardRef<SqlWorkspaceHandle, SqlWorkspaceProps>(
     const [tables, setTables] = useState<SqlTable[]>(() => cloneSqlTables(DEFAULT_SQL_TABLES));
     const [engine, setEngine] = useState<SqlEngine>("postgres-16");
     const [activeTable, setActiveTable] = useState(DEFAULT_SQL_ACTIVE_TABLE);
-    const [result, setResult] = useState<SqlResult | null>(null);
+    const [result, setResult] = useState<SqlRunResult | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [errorStage, setErrorStage] = useState<string | null>(null);
     const [running, setRunning] = useState(false);
     const [ranOnce, setRanOnce] = useState(false);
     const [hydrated, setHydrated] = useState(false);
     const [dragActive, setDragActive] = useState(false);
+    const [keyWarning, setKeyWarning] = useState<string | null>(null);
+    const [baselines, setBaselines] = useState<Record<string, string[]>>(() =>
+      baselinesFrom(DEFAULT_SQL_TABLES)
+    );
 
     const runningRef = useRef(false);
     const abortRef = useRef<AbortController | null>(null);
     const runIdRef = useRef(0);
     const csvInputRef = useRef<HTMLInputElement | null>(null);
+    // A run blocked by key violations can be repeated to run anyway, briefly.
+    const forceRunRef = useRef(false);
+    const keyWarningTimer = useRef<number | null>(null);
     // dragenter/dragleave fire for every child element, so count nesting depth.
     const dragDepthRef = useRef(0);
 
@@ -172,6 +295,32 @@ export const SqlWorkspace = forwardRef<SqlWorkspaceHandle, SqlWorkspaceProps>(
     const balanced = isDbmlBalanced(schema);
     const currentTable =
       tables.find((table) => table.name === activeTable) ?? tables[0] ?? null;
+
+    // Rows the declared keys would reject, so the grid can flag them while editing.
+    // Changes the next run will pick up: edits, new rows and removed rows.
+    const rowDiff = useMemo(() => {
+      if (!currentTable) return null;
+      const diff = diffSqlRowSignatures(
+        baselines[currentTable.name] ?? [],
+        sqlRowSignatures(currentTable.rows)
+      );
+      return diff.added || diff.edited || diff.deleted ? diff : null;
+    }, [baselines, currentTable]);
+
+    const constraintViolations = useMemo(
+      () =>
+        currentTable
+          ? findConstraintViolations(currentTable)
+          : new Map<number, SqlConstraintViolation[]>(),
+      [currentTable]
+    );
+
+    useEffect(
+      () => () => {
+        if (keyWarningTimer.current) window.clearTimeout(keyWarningTimer.current);
+      },
+      []
+    );
 
     useEffect(() => {
       try {
@@ -188,7 +337,10 @@ export const SqlWorkspace = forwardRef<SqlWorkspaceHandle, SqlWorkspaceProps>(
                 Array.isArray((table as SqlTable).columns) &&
                 Array.isArray((table as SqlTable).rows)
             );
-            if (nextTables.length) setTables(nextTables);
+            if (nextTables.length) {
+              setTables(nextTables);
+              setBaselines(baselinesFrom(nextTables));
+            }
           }
           if (isSqlEngine(saved.engine)) setEngine(saved.engine);
           if (typeof saved.activeTable === "string") setActiveTable(saved.activeTable);
@@ -328,6 +480,10 @@ export const SqlWorkspace = forwardRef<SqlWorkspaceHandle, SqlWorkspaceProps>(
             imported.table,
           ]);
           setActiveTable(imported.table.name);
+          setBaselines((previous) => ({
+            ...previous,
+            [imported.table.name]: sqlRowSignatures(imported.table.rows),
+          }));
 
           toast(`Imported ${imported.table.name}`, {
             description: [
@@ -426,6 +582,41 @@ export const SqlWorkspace = forwardRef<SqlWorkspaceHandle, SqlWorkspaceProps>(
         }
       }
 
+      // The grid rows are seeded with their keys before the query runs, so a
+      // duplicate or empty key would fail the run before the query is reached.
+      const violationsByTable = runTables
+        .map((table) => ({ table, violations: findConstraintViolations(table) }))
+        .filter((entry) => entry.violations.size > 0);
+
+      if (violationsByTable.length && !forceRunRef.current) {
+        const [firstOffender] = violationsByTable;
+        const rows = [...firstOffender.violations.keys()]
+          .map((rowIndex) => rowIndex + 1)
+          .sort((a, b) => a - b);
+        const detail =
+          violationsByTable.length === 1
+            ? `${firstOffender.table.name}: ${rows.length === 1 ? "row" : "rows"} ${rows.join(
+                ", "
+              )} ${rows.length === 1 ? "breaks" : "break"} a key`
+            : `${violationsByTable.length} tables have rows that break a key (${violationsByTable
+                .map((entry) => entry.table.name)
+                .join(", ")})`;
+
+        setActiveTable(firstOffender.table.name);
+        setKeyWarning(`${detail} — fix them, or click Run again to run anyway`);
+        forceRunRef.current = true;
+        if (keyWarningTimer.current) window.clearTimeout(keyWarningTimer.current);
+        keyWarningTimer.current = window.setTimeout(() => {
+          forceRunRef.current = false;
+          setKeyWarning(null);
+          keyWarningTimer.current = null;
+        }, 5000);
+        return;
+      }
+
+      forceRunRef.current = false;
+      setKeyWarning(null);
+
       runningRef.current = true;
       const runId = runIdRef.current + 1;
       runIdRef.current = runId;
@@ -439,7 +630,29 @@ export const SqlWorkspace = forwardRef<SqlWorkspaceHandle, SqlWorkspaceProps>(
       const controller = new AbortController();
       abortRef.current = controller;
 
+      // The grid was just handed to the engine, so it becomes the new baseline.
+      const commitBaselines = () => {
+        if (runTables.length) setBaselines(baselinesFrom(runTables));
+      };
+
       try {
+        // Postgres runs locally in the browser, so DDL and DML are allowed.
+        // The database is rebuilt from the schema + data grid on every run.
+        if (engine === "postgres-16") {
+          const local = await runLocalSql(query, runTables, parseDbmlRefs(schema));
+          if (runIdRef.current !== runId) return;
+
+          if (!local.ok) {
+            setError(local.error);
+            setErrorStage(local.stage);
+            return;
+          }
+
+          setResult({ statements: local.statements, totalTimeInMs: local.totalTimeInMs });
+          commitBaselines();
+          return;
+        }
+
         const response = await fetch("/api/runSql", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -470,16 +683,28 @@ export const SqlWorkspace = forwardRef<SqlWorkspaceHandle, SqlWorkspaceProps>(
         const rows = Array.isArray(payload?.rows)
           ? payload.rows.filter((row): row is unknown[] => Array.isArray(row))
           : [];
-        const rowCount =
-          typeof payload?.rowCount === "number" && Number.isFinite(payload.rowCount)
-            ? Math.max(0, Math.trunc(payload.rowCount))
-            : Math.max(0, rows.length - 1);
         const totalTimeInMs =
           typeof payload?.totalTimeInMs === "number" && Number.isFinite(payload.totalTimeInMs)
             ? payload.totalTimeInMs
             : null;
+        const fields = (rows[0] ?? []).map((cell, index) =>
+          cell === null || cell === undefined ? `column_${index + 1}` : String(cell)
+        );
 
-        setResult({ rows, rowCount, totalTimeInMs });
+        setResult({
+          statements: [
+            {
+              sql: query.trim(),
+              command: sqlCommand(query),
+              fields,
+              rows: fields.length ? rows.slice(1) : [],
+              affectedRows: null,
+              elapsedMs: totalTimeInMs ?? 0,
+            },
+          ],
+          totalTimeInMs: totalTimeInMs ?? 0,
+        });
+        commitBaselines();
       } catch (runError) {
         if (runError instanceof Error && runError.name === "AbortError") return;
         setError("Could not reach the SQL lab. Check your connection and try again.");
@@ -500,6 +725,7 @@ export const SqlWorkspace = forwardRef<SqlWorkspaceHandle, SqlWorkspaceProps>(
       setRunning(false);
       setSchema(DEFAULT_SQL_SCHEMA);
       setTables(cloneSqlTables(DEFAULT_SQL_TABLES));
+      setBaselines(baselinesFrom(DEFAULT_SQL_TABLES));
       setEngine("postgres-16");
       setActiveTable(DEFAULT_SQL_ACTIVE_TABLE);
       setResult(null);
@@ -515,8 +741,10 @@ export const SqlWorkspace = forwardRef<SqlWorkspaceHandle, SqlWorkspaceProps>(
     }, [onQueryChange]);
 
     const downloadCsv = useCallback(() => {
-      if (!result?.rows.length) return;
-      const blob = new Blob([sqlRowsToCsv(result.rows)], {
+      const sets = (result?.statements ?? []).filter((statement) => statement.fields.length > 0);
+      const lastSet = sets[sets.length - 1];
+      if (!lastSet) return;
+      const blob = new Blob([sqlRowsToCsv([lastSet.fields, ...lastSet.rows])], {
         type: "text/csv;charset=utf-8;",
       });
       const url = URL.createObjectURL(blob);
@@ -544,11 +772,14 @@ export const SqlWorkspace = forwardRef<SqlWorkspaceHandle, SqlWorkspaceProps>(
       setRanOnce(false);
     };
 
-    const resultColumns =
-      result?.rows[0]?.map((cell, index) =>
-        cell === null || cell === undefined ? `column_${index + 1}` : String(cell)
-      ) ?? [];
-    const resultRows = result?.rows.slice(1) ?? [];
+    const resultSets = (result?.statements ?? []).filter((statement) => statement.fields.length > 0);
+    const statementCount = result?.statements.length ?? 0;
+    const totalRows = resultSets.reduce((sum, statement) => sum + statement.rows.length, 0);
+    const resultSummary = !result
+      ? ""
+      : resultSets.length
+        ? `${totalRows} ${totalRows === 1 ? "row" : "rows"} returned`
+        : `${statementCount} ${statementCount === 1 ? "statement" : "statements"} executed`;
 
     return (
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-[0_24px_70px_-55px_rgba(0,0,0,0.35)]">
@@ -563,7 +794,7 @@ export const SqlWorkspace = forwardRef<SqlWorkspaceHandle, SqlWorkspaceProps>(
             </div>
             <span className="hidden h-4 w-px bg-border sm:block" />
             <span className="mono-label hidden !text-[8px] text-muted-foreground sm:inline">
-              runsql engine
+              {engine === "postgres-16" ? "local postgres" : "runsql engine"}
             </span>
           </div>
 
@@ -741,67 +972,167 @@ export const SqlWorkspace = forwardRef<SqlWorkspaceHandle, SqlWorkspaceProps>(
                             <th className="w-9 px-2 py-1.5 text-left font-mono text-[8.5px] font-normal text-muted-foreground">
                               #
                             </th>
-                            {currentTable.columns.map((column) => (
-                              <th
-                                key={column.name}
-                                className="min-w-[112px] border-l border-border/60 px-2 py-1.5 font-medium"
-                              >
-                                <span className="block truncate text-[10.5px] text-foreground">
-                                  {column.name}
-                                </span>
-                                <span className="mt-0.5 block truncate font-mono text-[8px] font-normal uppercase tracking-wide text-muted-foreground/75">
-                                  {column.type}
-                                </span>
-                              </th>
-                            ))}
+                            {currentTable.columns.map((column) => {
+                              const primaryKey = currentTable.primaryKey ?? [];
+                              const isPrimary = primaryKey.includes(column.name);
+                              const uniqueKeys = (currentTable.uniqueKeys ?? []).filter((key) =>
+                                key.includes(column.name)
+                              );
+                              const primaryTitle =
+                                primaryKey.length > 1
+                                  ? `Primary key (${primaryKey.join(", ")})`
+                                  : "Primary key";
+                              const uniqueTitle = uniqueKeys.length
+                                ? `Unique (${uniqueKeys.map((key) => key.join(", ")).join("), (")})`
+                                : "";
+
+                              return (
+                                <th
+                                  key={column.name}
+                                  className="min-w-[112px] border-l border-border/60 px-2 py-1.5 font-medium"
+                                >
+                                  <span className="flex min-w-0 items-center gap-1">
+                                    <span className="truncate text-[10.5px] text-foreground">
+                                      {column.name}
+                                    </span>
+                                    {isPrimary && (
+                                      <span
+                                        title={primaryTitle}
+                                        className="shrink-0 rounded bg-primary/10 px-1 py-px font-mono text-[7.5px] font-semibold uppercase leading-[1.4] tracking-wide text-primary"
+                                      >
+                                        PK
+                                      </span>
+                                    )}
+                                    {uniqueKeys.length > 0 && (
+                                      <span
+                                        title={uniqueTitle}
+                                        className="shrink-0 rounded bg-secondary px-1 py-px font-mono text-[7.5px] font-semibold uppercase leading-[1.4] tracking-wide text-muted-foreground"
+                                      >
+                                        UQ
+                                      </span>
+                                    )}
+                                  </span>
+                                  <span className="mt-0.5 block truncate font-mono text-[8px] font-normal uppercase tracking-wide text-muted-foreground/75">
+                                    {column.type}
+                                  </span>
+                                </th>
+                              );
+                            })}
                             <th className="w-8 border-l border-border/60" />
                           </tr>
                         </thead>
                         <tbody>
-                          {currentTable.rows.map((row, rowIndex) => (
-                            <tr
-                              key={`${currentTable.name}-${rowIndex}`}
-                              className="group border-b border-border/60 last:border-0 hover:bg-secondary/30"
-                            >
-                              <td className="px-2 py-0 font-mono text-[9px] text-muted-foreground/60">
-                                {rowIndex + 1}
-                              </td>
-                              {currentTable.columns.map((column, columnIndex) => (
+                          {currentTable.rows.map((row, rowIndex) => {
+                            const issues = constraintViolations.get(rowIndex) ?? [];
+                            const rowIssueText = issues
+                              .map((violation) => violation.message)
+                              .join("\n");
+                            const change = rowDiff?.changes[rowIndex] ?? "same";
+                            const changeText =
+                              change === "added"
+                                ? "New row — inserted on the next run"
+                                : change === "edited"
+                                  ? "Edited row — sent on the next run"
+                                  : "";
+                            const rowHintText = [rowIssueText, changeText]
+                              .filter(Boolean)
+                              .join("\n");
+                            const rowLabel = [
+                              issues.length > 0
+                                ? `Row ${rowIndex + 1} breaks a key: ${issues
+                                    .map((violation) => violation.message)
+                                    .join("; ")}`
+                                : "",
+                              change === "same"
+                                ? ""
+                                : `Row ${rowIndex + 1} is ${change === "added" ? "new" : "edited"}`,
+                            ]
+                              .filter(Boolean)
+                              .join(". ");
+
+                            return (
+                              <tr
+                                key={`${currentTable.name}-${rowIndex}`}
+                                className={cn(
+                                  "group border-b border-border/60 last:border-0 hover:bg-secondary/30",
+                                  issues.length > 0 &&
+                                    "bg-destructive/[0.045] shadow-[inset_2px_0_0_var(--destructive)]"
+                                )}
+                              >
                                 <td
-                                  key={column.name}
-                                  className="border-l border-border/40 p-0"
+                                  title={rowHintText || undefined}
+                                  aria-label={rowLabel || undefined}
+                                  className={cn(
+                                    "px-2 py-0 font-mono text-[9px] text-muted-foreground/60",
+                                    issues.length > 0 && "font-semibold text-destructive"
+                                  )}
                                 >
-                                  <input
-                                    aria-label={`${currentTable.name} row ${rowIndex + 1} ${column.name}`}
-                                    value={
-                                      row[columnIndex] === null || row[columnIndex] === undefined
-                                        ? ""
-                                        : String(row[columnIndex])
-                                    }
-                                    onChange={(event) =>
-                                      updateCell(rowIndex, columnIndex, event.target.value)
-                                    }
-                                    placeholder="NULL"
-                                    className={cn(
-                                      "h-8 w-full min-w-[108px] bg-transparent px-2 font-mono text-[11px] text-foreground outline-none placeholder:text-muted-foreground/35 focus:bg-background focus:ring-1 focus:ring-inset focus:ring-primary/60",
-                                      isNumericType(column.type) && "text-right"
-                                    )}
-                                  />
+                                  <span className="flex items-center gap-1.5">
+                                    <span
+                                      aria-hidden
+                                      className={cn(
+                                        "size-1 shrink-0 rounded-full",
+                                        change === "added" && "bg-emerald-500",
+                                        change === "edited" && "bg-amber-500",
+                                        change === "same" && "bg-transparent"
+                                      )}
+                                    />
+                                    {rowIndex + 1}
+                                  </span>
                                 </td>
-                              ))}
-                              <td className="border-l border-border/40 p-0 text-center">
-                                <button
-                                  type="button"
-                                  onClick={() => deleteRow(rowIndex)}
-                                  title="Delete row"
-                                  aria-label={`Delete row ${rowIndex + 1}`}
-                                  className="mx-auto grid size-6 place-items-center rounded text-muted-foreground/40 opacity-60 transition hover:bg-destructive/10 hover:text-destructive focus:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
-                                >
-                                  <Trash2 className="size-3" />
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
+                                {currentTable.columns.map((column, columnIndex) => {
+                                  const cellIssues = issues.filter((violation) =>
+                                    violation.columnIndexes.includes(columnIndex)
+                                  );
+                                  const cellIssueText = cellIssues
+                                    .map((violation) => violation.message)
+                                    .join("\n");
+
+                                  return (
+                                    <td
+                                      key={column.name}
+                                      title={cellIssueText || undefined}
+                                      className={cn(
+                                        "border-l border-border/40 p-0",
+                                        cellIssues.length > 0 &&
+                                          "bg-destructive/[0.09] ring-1 ring-inset ring-destructive/30"
+                                      )}
+                                    >
+                                      <input
+                                        aria-label={`${currentTable.name} row ${rowIndex + 1} ${column.name}`}
+                                        aria-invalid={cellIssues.length > 0 || undefined}
+                                        value={
+                                          row[columnIndex] === null ||
+                                          row[columnIndex] === undefined
+                                            ? ""
+                                            : String(row[columnIndex])
+                                        }
+                                        onChange={(event) =>
+                                          updateCell(rowIndex, columnIndex, event.target.value)
+                                        }
+                                        placeholder="NULL"
+                                        className={cn(
+                                          "h-8 w-full min-w-[108px] bg-transparent px-2 font-mono text-[11px] text-foreground outline-none placeholder:text-muted-foreground/35 focus:bg-background focus:ring-1 focus:ring-inset focus:ring-primary/60",
+                                          isNumericType(column.type) && "text-right"
+                                        )}
+                                      />
+                                    </td>
+                                  );
+                                })}
+                                <td className="border-l border-border/40 p-0 text-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => deleteRow(rowIndex)}
+                                    title="Delete row"
+                                    aria-label={`Delete row ${rowIndex + 1}`}
+                                    className="mx-auto grid size-6 place-items-center rounded text-muted-foreground/40 opacity-60 transition hover:bg-destructive/10 hover:text-destructive focus:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                                  >
+                                    <Trash2 className="size-3" />
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
                           {!currentTable.rows.length && (
                             <tr>
                               <td
@@ -829,9 +1160,55 @@ export const SqlWorkspace = forwardRef<SqlWorkspaceHandle, SqlWorkspaceProps>(
                           blank → NULL
                         </kbd>
                       </button>
-                      <span className="mono-label !text-[8px] text-muted-foreground/70">
-                        cell edits save locally
-                      </span>
+                      <div className="flex min-w-0 items-center gap-2">
+                        {constraintViolations.size > 0 && (
+                          <span
+                            title={[
+                              ...new Set(
+                                [...constraintViolations.values()]
+                                  .flat()
+                                  .map((violation) => violation.message)
+                              ),
+                            ].join("\n")}
+                            className="flex items-center gap-1 text-[9.5px] font-medium text-destructive"
+                          >
+                            <AlertCircle className="size-3" />
+                            {constraintViolations.size}{" "}
+                            {constraintViolations.size === 1 ? "row breaks a key" : "rows break a key"}
+                          </span>
+                        )}
+                        {rowDiff ? (
+                          <span
+                            title={[
+                              `${rowDiff.added} added`,
+                              `${rowDiff.edited} edited`,
+                              `${rowDiff.deleted} deleted`,
+                              "since the data was loaded — sent on the next run",
+                            ].join(" · ")}
+                            className="flex min-w-0 items-center gap-1.5 truncate font-mono text-[9px] tabular-nums"
+                          >
+                            {rowDiff.added > 0 && (
+                              <span className="shrink-0 text-emerald-600 dark:text-emerald-400">
+                                +{rowDiff.added} added
+                              </span>
+                            )}
+                            {rowDiff.edited > 0 && (
+                              <span className="shrink-0 text-amber-600 dark:text-amber-400">
+                                ~{rowDiff.edited} edited
+                              </span>
+                            )}
+                            {rowDiff.deleted > 0 && (
+                              <span className="shrink-0 text-muted-foreground">
+                                −{rowDiff.deleted} deleted
+                              </span>
+                            )}
+                          </span>
+                        ) : (
+                          <span className="mono-label !text-[8px] text-muted-foreground/70">
+                            cell edits save locally
+                          </span>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -882,24 +1259,29 @@ export const SqlWorkspace = forwardRef<SqlWorkspaceHandle, SqlWorkspaceProps>(
                     <span
                       className={cn(
                         "truncate text-[10.5px]",
-                        error
+                        keyWarning
                           ? "text-destructive"
-                          : result
-                            ? "text-emerald-600 dark:text-emerald-400"
-                            : "text-muted-foreground"
+                          : error
+                            ? "text-destructive"
+                            : result
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : "text-muted-foreground"
                       )}
+                      title={keyWarning ?? undefined}
                     >
-                      {running
-                        ? "Executing against the SQL engine…"
-                        : error
-                          ? "Query failed"
-                          : result
-                            ? `${result.rowCount} ${result.rowCount === 1 ? "row" : "rows"} returned`
-                            : "Ready when you are"}
+                      {keyWarning
+                        ? keyWarning
+                        : running
+                          ? "Executing against the SQL engine…"
+                          : error
+                            ? "Query failed"
+                            : result
+                              ? resultSummary
+                              : "Ready when you are"}
                     </span>
                   </div>
                   <span className="mono-label hidden shrink-0 !text-[8px] text-muted-foreground sm:inline">
-                    {engineLabel(engine)} · read-only
+                    {engineLabel(engine)} · {engine === "postgres-16" ? "ddl + dml" : "read-only"}
                   </span>
                 </div>
               </section>
@@ -913,13 +1295,13 @@ export const SqlWorkspace = forwardRef<SqlWorkspaceHandle, SqlWorkspaceProps>(
                     <div className="flex items-center gap-1.5">
                       {result && (
                         <span className="mono-label !text-[8px] text-muted-foreground">
-                          {result.rowCount} rows
+                          {resultSets.length ? `${totalRows} rows` : `${statementCount} stmt`}
                         </span>
                       )}
                       <button
                         type="button"
                         onClick={downloadCsv}
-                        disabled={!result?.rows.length}
+                        disabled={!resultSets.length}
                         className="flex h-6 items-center gap-1 rounded-md border border-border bg-background px-1.5 text-[9.5px] text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         <Download className="size-3" /> CSV
@@ -956,63 +1338,22 @@ export const SqlWorkspace = forwardRef<SqlWorkspaceHandle, SqlWorkspaceProps>(
                       </div>
                     </div>
                   ) : result ? (
-                    resultColumns.length ? (
-                      <table className="w-full min-w-max border-collapse text-left text-[11.5px]">
-                        <thead className="sticky top-0 z-10 bg-secondary/90 backdrop-blur">
-                          <tr className="border-b border-border">
-                            {resultColumns.map((column, index) => (
-                              <th
-                                key={`${column}-${index}`}
-                                className="min-w-[100px] border-l border-border/60 px-2.5 py-1.5 font-mono text-[9px] font-medium uppercase tracking-wide text-muted-foreground first:border-l-0"
-                              >
-                                {column}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {resultRows.map((row, rowIndex) => (
-                            <tr
-                              key={`result-${rowIndex}`}
-                              className="border-b border-border/60 last:border-0 hover:bg-secondary/30"
-                            >
-                              {resultColumns.map((_, columnIndex) => {
-                                const cell = row[columnIndex];
-                                const value = sqlCellToString(cell);
-                                return (
-                                  <td
-                                    key={`result-${rowIndex}-${columnIndex}`}
-                                    title={value}
-                                    className={cn(
-                                      "max-w-[300px] truncate whitespace-nowrap border-l border-border/40 px-2.5 py-1.5 font-mono text-[10.5px] first:border-l-0",
-                                      cell === null || cell === undefined
-                                        ? "italic text-muted-foreground/55"
-                                        : "text-foreground/85"
-                                    )}
-                                  >
-                                    {value}
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          ))}
-                          {!resultRows.length && (
-                            <tr>
-                              <td
-                                colSpan={resultColumns.length}
-                                className="px-3 py-8 text-center text-[11px] text-muted-foreground"
-                              >
-                                Query ran successfully — no rows returned.
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
+                    statementCount ? (
+                      <div className="divide-y divide-border">
+                        {result.statements.map((statement, index) => (
+                          <StatementBlock
+                            key={`statement-${index}`}
+                            statement={statement}
+                            index={index}
+                            showHeader={statementCount > 1}
+                          />
+                        ))}
+                      </div>
                     ) : (
                       <EmptyPanel
                         icon={<Table2 className="size-4" />}
-                        title="No rows returned"
-                        body="The query completed, but the result set is empty."
+                        title="Nothing to run"
+                        body="Write a statement in the query editor and run it again."
                       />
                     )
                   ) : ranOnce ? (
@@ -1032,17 +1373,19 @@ export const SqlWorkspace = forwardRef<SqlWorkspaceHandle, SqlWorkspaceProps>(
                 <div className="flex h-8 shrink-0 items-center justify-between border-t border-border bg-card px-3">
                   <span className="mono-label !text-[8px] text-muted-foreground">
                     {result
-                      ? `${result.rowCount} ${result.rowCount === 1 ? "row" : "rows"} returned`
+                      ? resultSummary
                       : running
                         ? "executing"
                         : "query result"}
                   </span>
                   <span className="mono-label !text-[8px] text-muted-foreground/70">
-                    {result?.totalTimeInMs != null
+                    {result
                       ? `${result.totalTimeInMs.toFixed(2)} ms`
-                      : ranOnce && !running
-                        ? "no timing"
-                        : "read-only sandbox"}
+                      : running
+                        ? engineLabel(engine)
+                        : engine === "postgres-16"
+                          ? "local postgres · resets each run"
+                          : "read-only sandbox"}
                   </span>
                 </div>
               </section>

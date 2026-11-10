@@ -15,16 +15,42 @@ export type SqlTable = {
   name: string;
   columns: SqlColumn[];
   rows: SqlCell[][];
+  /** Column names from `[pk]` / `[primary key]`; composite keys have >1 entry. */
+  primaryKey?: string[];
+  /** One entry per `[unique]` / `indexes { … [unique] }` declaration. */
+  uniqueKeys?: string[][];
 };
 
-export type SqlResult = {
+/** A `Ref:` line, normalized to "from references to". */
+export type SqlRef = {
+  fromTable: string;
+  fromColumns: string[];
+  toTable: string;
+  toColumns: string[];
+};
+
+export type SqlStatementResult = {
+  /** The statement that produced this result, trimmed. */
+  sql: string;
+  /** Leading keyword, e.g. SELECT, INSERT, CREATE. */
+  command: string;
+  /** Column names; empty when the statement returns no result set. */
+  fields: string[];
   rows: unknown[][];
-  rowCount: number;
-  totalTimeInMs: number | null;
+  /** Rows changed by INSERT/UPDATE/DELETE; null for statements that return rows. */
+  affectedRows: number | null;
+  elapsedMs: number;
+};
+
+export type SqlRunResult = {
+  statements: SqlStatementResult[];
+  totalTimeInMs: number;
 };
 
 export const SQL_ENGINES = [
-  { value: "postgres-16", label: "PostgreSQL 16.6", short: "Postgres" },
+  // Postgres runs locally through PGlite (currently Postgres 18.6); the value
+  // stays `postgres-16` so saved drafts and the API route keep working.
+  { value: "postgres-16", label: "PostgreSQL 18.6", short: "Postgres" },
   { value: "mssql-2022", label: "SQL Server 2022", short: "SQL Server" },
   { value: "mysql-8.4", label: "MySQL 8.4", short: "MySQL" },
 ] as const;
@@ -194,7 +220,205 @@ export function cloneSqlTables(tables: SqlTable[]): SqlTable[] {
     name: table.name,
     columns: table.columns.map((column) => ({ ...column })),
     rows: table.rows.map((row) => [...row]),
+    primaryKey: table.primaryKey ? [...table.primaryKey] : undefined,
+    uniqueKeys: table.uniqueKeys ? table.uniqueKeys.map((key) => [...key]) : undefined,
   }));
+}
+
+/** One row that the declared keys would reject, with the cells to blame. */
+export type SqlConstraintViolation = {
+  /** Column indexes of the key that is broken. */
+  columnIndexes: number[];
+  /** Short explanation, e.g. `Duplicate primary key (id) = (1)`. */
+  message: string;
+};
+
+function isBlankCell(cell: SqlCell | undefined): boolean {
+  if (cell === null || cell === undefined) return true;
+  return typeof cell === "string" && cell.trim() === "";
+}
+
+function cellKey(values: SqlCell[]): string {
+  return values.map((cell) => (cell === null ? "\u0000" : String(cell))).join("\u0001");
+}
+
+/**
+ * Dry-run the table's `[pk]` / `[unique]` keys against the grid so the editor
+ * can flag rows that would fail on run. Mirrors Postgres: primary-key columns
+ * reject NULL, unique keys allow any number of NULLs but no duplicate
+ * non-NULL tuples. Blank cells are NULL (the grid's own convention).
+ */
+export function findConstraintViolations(
+  table: SqlTable
+): Map<number, SqlConstraintViolation[]> {
+  const violations = new Map<number, SqlConstraintViolation[]>();
+  const indexOfName = new Map(table.columns.map((column, index) => [column.name, index]));
+
+  const add = (rowIndex: number, columnIndexes: number[], message: string) => {
+    const existing = violations.get(rowIndex);
+    if (!existing) {
+      violations.set(rowIndex, [{ columnIndexes, message }]);
+      return;
+    }
+    if (!existing.some((violation) => violation.message === message)) {
+      existing.push({ columnIndexes, message });
+    }
+  };
+
+  const keys: { columns: string[]; primary: boolean }[] = [];
+  if (table.primaryKey?.length) {
+    keys.push({ columns: table.primaryKey, primary: true });
+  }
+  for (const key of table.uniqueKeys ?? []) {
+    if (key.length) keys.push({ columns: key, primary: false });
+  }
+
+  for (const key of keys) {
+    const columnIndexes = key.columns.map((name) => indexOfName.get(name));
+    if (columnIndexes.some((index) => index === undefined)) continue;
+
+    const indexes = columnIndexes as number[];
+    const label = `${key.primary ? "Primary key" : "Unique key"} (${key.columns.join(", ")})`;
+    const rowsByValue = new Map<string, { rows: number[]; values: SqlCell[] }>();
+
+    table.rows.forEach((row, rowIndex) => {
+      const values = indexes.map((index) => row[index] ?? null);
+
+      if (key.primary && values.some(isBlankCell)) {
+        add(rowIndex, indexes, `${label} cannot be empty`);
+        return;
+      }
+      if (values.some(isBlankCell)) return;
+
+      const hash = cellKey(values);
+      const bucket = rowsByValue.get(hash);
+      if (bucket) {
+        bucket.rows.push(rowIndex);
+      } else {
+        rowsByValue.set(hash, { rows: [rowIndex], values });
+      }
+    });
+
+    for (const { rows, values } of rowsByValue.values()) {
+      if (rows.length < 2) continue;
+      const message = `Duplicate ${key.primary ? "primary key" : "unique key"} (${key.columns.join(
+        ", "
+      )}) = (${values.map((cell) => String(cell)).join(", ")})`;
+      for (const rowIndex of rows) add(rowIndex, indexes, message);
+    }
+  }
+
+  return violations;
+}
+
+/** Per-row status of the grid relative to the last loaded or run data. */
+export type SqlRowChange = "same" | "edited" | "added";
+
+/** How the grid differs from the data that was last loaded or run. */
+export type SqlRowDiff = {
+  added: number;
+  edited: number;
+  deleted: number;
+  /** Status for each row of the grid, in grid order. */
+  changes: SqlRowChange[];
+};
+
+/** A row reduced to a comparable value, so a copy of the rows is cheap to keep. */
+export function sqlRowSignatures(rows: SqlCell[][]): string[] {
+  return rows.map((row) =>
+    row
+      .map((cell) => (cell === null || cell === undefined ? "\u0000" : String(cell)))
+      .join("\u0001")
+  );
+}
+
+/**
+ * Compare the grid against a baseline. Rows are aligned on their untouched
+ * matches, and each differing block is paired off as edits first, then the
+ * leftover rows count as deletions (baseline only) or additions (grid only).
+ */
+export function diffSqlRowSignatures(
+  baseline: string[],
+  current: string[]
+): SqlRowDiff {
+  const currentLength = current.length;
+  const changes: SqlRowChange[] = new Array<SqlRowChange>(currentLength).fill("same");
+  const diff: SqlRowDiff = { added: 0, edited: 0, deleted: 0, changes };
+  const baselineLength = baseline.length;
+
+  if (!baselineLength && !currentLength) return diff;
+
+  const tally = (baseRun: number, currentStart: number, currentRun: number) => {
+    const paired = Math.min(baseRun, currentRun);
+    diff.edited += paired;
+    for (let offset = 0; offset < paired; offset += 1) {
+      changes[currentStart + offset] = "edited";
+    }
+    for (let offset = paired; offset < currentRun; offset += 1) {
+      changes[currentStart + offset] = "added";
+    }
+    if (baseRun > paired) diff.deleted += baseRun - paired;
+    if (currentRun > paired) diff.added += currentRun - paired;
+  };
+
+  // Very large grids fall back to a positional comparison to stay responsive.
+  if (baselineLength * currentLength > 200_000) {
+    const shared = Math.min(baselineLength, currentLength);
+    for (let index = 0; index < shared; index += 1) {
+      if (baseline[index] !== current[index]) {
+        diff.edited += 1;
+        changes[index] = "edited";
+      }
+    }
+    for (let index = shared; index < currentLength; index += 1) changes[index] = "added";
+    diff.deleted += Math.max(0, baselineLength - shared);
+    diff.added += Math.max(0, currentLength - shared);
+    return diff;
+  }
+
+  const lcs: number[][] = Array.from({ length: baselineLength + 1 }, () =>
+    new Array<number>(currentLength + 1).fill(0)
+  );
+  for (let row = baselineLength - 1; row >= 0; row -= 1) {
+    for (let column = currentLength - 1; column >= 0; column -= 1) {
+      lcs[row][column] =
+        baseline[row] === current[column]
+          ? lcs[row + 1][column + 1] + 1
+          : Math.max(lcs[row + 1][column], lcs[row][column + 1]);
+    }
+  }
+
+  let rowIndex = 0;
+  let currentIndex = 0;
+  let previousRow = -1;
+  let previousCurrent = -1;
+
+  while (rowIndex < baselineLength && currentIndex < currentLength) {
+    if (baseline[rowIndex] === current[currentIndex]) {
+      tally(
+        rowIndex - previousRow - 1,
+        previousCurrent + 1,
+        currentIndex - previousCurrent - 1
+      );
+      previousRow = rowIndex;
+      previousCurrent = currentIndex;
+      rowIndex += 1;
+      currentIndex += 1;
+      continue;
+    }
+    if (lcs[rowIndex + 1][currentIndex] >= lcs[rowIndex][currentIndex + 1]) {
+      rowIndex += 1;
+    } else {
+      currentIndex += 1;
+    }
+  }
+
+  tally(
+    baselineLength - previousRow - 1,
+    previousCurrent + 1,
+    currentLength - previousCurrent - 1
+  );
+  return diff;
 }
 
 function stripLineComment(line: string): string {
@@ -247,12 +471,29 @@ function cleanTableName(value: string): string {
   return value.replace(/["'`]/g, "").trim();
 }
 
-function parseColumn(line: string): SqlColumn | null {
+type ParsedColumn = {
+  column: SqlColumn;
+  primaryKey: boolean;
+  unique: boolean;
+};
+
+/** Read a column's `[attributes]` into key/unique flags (notes are ignored). */
+function columnAttributes(line: string): string {
+  return [...line.matchAll(/\[([^\]]*)\]/g)]
+    .map((match) => match[1])
+    .join(",")
+    .toLowerCase()
+    .replace(/note\s*:\s*'[^']*'/g, "")
+    .replace(/note\s*:\s*"[^"]*"/g, "");
+}
+
+function parseColumn(line: string): ParsedColumn | null {
   if (!line || line.startsWith("//")) return null;
   if (/^(Note|indexes|Ref|TableGroup|Project|Enum|Table)\b/i.test(line)) return null;
   if (line === "{" || line === "}" || line.startsWith("}")) return null;
 
-  const withoutAttributes = line.replace(/\s*\[[^\]]*\]\s*$/, "").trim();
+  const attributes = columnAttributes(line);
+  const withoutAttributes = line.replace(/(\s*\[[^\]]*\])+\s*$/, "").trim();
   const match = withoutAttributes.match(/^([A-Za-z_][A-Za-z0-9_]*)\s+(.+)$/);
   if (!match) return null;
 
@@ -265,12 +506,124 @@ function parseColumn(line: string): SqlColumn | null {
   // first SQL-ish token sequence. Keep multi-word types ("timestamp with time
   // zone") intact but drop a stray trailing attribute opener.
   type = type.replace(/\s*\{$/, "").trim();
-  return { name, type };
+  return {
+    column: { name, type },
+    primaryKey: /\b(pk|primary\s+key)\b/.test(attributes),
+    unique: /\bunique\b/.test(attributes),
+  };
+}
+
+/** Read one entry of an `indexes { … }` block. */
+function parseIndexEntry(
+  line: string
+): { columns: string[]; primaryKey: boolean; unique: boolean } | null {
+  if (!line || line.startsWith("//")) return null;
+
+  const tuple = line.match(/^\(([^)]*)\)\s*(?:\[([^\]]*)\])?/);
+  const single = tuple ? null : line.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*(?:\[([^\]]*)\])?/);
+  const body = tuple?.[1] ?? single?.[1];
+  if (!body) return null;
+
+  const columns = body
+    .split(",")
+    .map((part) => part.trim().replace(/^["'`]|["'`]$/g, ""))
+    .filter(Boolean);
+  if (!columns.length) return null;
+
+  const attributes = (tuple?.[2] ?? single?.[2] ?? "").toLowerCase();
+  const primaryKey = /\b(pk|primary\s+key)\b/.test(attributes);
+  const unique = /\bunique\b/.test(attributes);
+  if (!primaryKey && !unique) return null;
+
+  return { columns, primaryKey, unique };
+}
+
+function unquoteRefName(value: string): string {
+  return value.replace(/["'`]/g, "").trim();
+}
+
+function parseRefSide(value: string): { table: string; columns: string[] } | null {
+  const side = unquoteRefName(value.replace(/[;{}\s]+$/, "").trim());
+  if (!side) return null;
+
+  const tuple = side.match(/^(.*)\.\(([^)]*)\)$/);
+  if (tuple) {
+    const columns = tuple[2]
+      .split(",")
+      .map((column) => unquoteRefName(column))
+      .filter(Boolean);
+    return columns.length ? { table: unquoteRefName(tuple[1]), columns } : null;
+  }
+
+  const dot = side.lastIndexOf(".");
+  if (dot <= 0) return null;
+  const table = unquoteRefName(side.slice(0, dot));
+  const column = unquoteRefName(side.slice(dot + 1));
+  return table && column ? { table, columns: [column] } : null;
+}
+
+function parseRefStatement(value: string): SqlRef | null {
+  const match = value.match(/^(.+?)\s*([<>-])\s*(.+)$/);
+  if (!match) return null;
+
+  const left = parseRefSide(match[1]);
+  const right = parseRefSide(match[3]);
+  if (!left || !right) return null;
+  if (left.columns.length !== right.columns.length) return null;
+
+  // `A.x > B.y` puts the FK on A; with `<` the FK is on the right side.
+  const [from, to] = match[2] === "<" ? [right, left] : [left, right];
+  return {
+    fromTable: from.table,
+    fromColumns: from.columns,
+    toTable: to.table,
+    toColumns: to.columns,
+  };
+}
+
+/** Read `Ref:` lines (inline, named, and block form) into normalized refs. */
+export function parseDbmlRefs(dbml: string): SqlRef[] {
+  const refs: SqlRef[] = [];
+  let blockDepth = 0;
+
+  for (const rawLine of dbml.split(/\r?\n/)) {
+    const line = stripLineComment(rawLine).trim();
+    if (!line) continue;
+
+    if (blockDepth > 0) {
+      blockDepth += braceDelta(line);
+      const ref = parseRefStatement(line.replace(/[{}]/g, " ").trim());
+      if (ref) refs.push(ref);
+      continue;
+    }
+
+    if (!/^Ref\b/i.test(line)) continue;
+
+    if (line.includes("{")) {
+      blockDepth = Math.max(1, braceDelta(line));
+      const inline = line.slice(line.indexOf("{") + 1).replace(/}/g, "").trim();
+      const ref = inline ? parseRefStatement(inline) : null;
+      if (ref) refs.push(ref);
+      continue;
+    }
+
+    const body = line
+      .replace(/^Ref\b/i, "")
+      .trim()
+      .replace(/^[\w]*\s*:/, "")
+      .trim();
+    const ref = parseRefStatement(body);
+    if (ref) refs.push(ref);
+  }
+
+  return refs;
 }
 
 export type ParsedTable = {
   name: string;
   columns: SqlColumn[];
+  primaryKey?: string[];
+  uniqueKeys?: string[][];
 };
 
 /** Read the Table blocks out of a DBML document. */
@@ -300,8 +653,29 @@ export function parseDbml(dbml: string): ParsedTable[] {
     }
 
     const columns: SqlColumn[] = [];
+    const columnPrimaryKey: string[] = [];
+    const indexPrimaryKeys: string[][] = [];
+    const uniqueKeys: string[][] = [];
+    const indexLines: string[] = [];
     let nested = 0;
+    let inIndexes = false;
+
     for (const bodyLine of body) {
+      if (inIndexes) {
+        nested += braceDelta(bodyLine);
+        if (nested <= 0) {
+          inIndexes = false;
+          nested = 0;
+          continue;
+        }
+        indexLines.push(bodyLine);
+        continue;
+      }
+      if (/^indexes\s*\{/i.test(bodyLine)) {
+        nested = braceDelta(bodyLine);
+        inIndexes = nested > 0;
+        continue;
+      }
       if (nested > 0) {
         nested += braceDelta(bodyLine);
         continue;
@@ -311,13 +685,48 @@ export function parseDbml(dbml: string): ParsedTable[] {
         continue;
       }
       if (braceDelta(bodyLine) < 0) continue;
-      const column = parseColumn(bodyLine);
-      if (column) columns.push(column);
+
+      const parsed = parseColumn(bodyLine);
+      if (!parsed) continue;
+      columns.push(parsed.column);
+      if (parsed.primaryKey) columnPrimaryKey.push(parsed.column.name);
+      if (parsed.unique) uniqueKeys.push([parsed.column.name]);
+    }
+
+    for (const line of indexLines) {
+      const entry = parseIndexEntry(line);
+      if (!entry) continue;
+      if (entry.primaryKey) indexPrimaryKeys.push(entry.columns);
+      else if (entry.unique) uniqueKeys.push(entry.columns);
     }
 
     if (name && columns.length && !seen.has(name)) {
       seen.add(name);
-      tables.push({ name, columns });
+      const columnNames = new Set(columns.map((column) => column.name));
+      const filterKey = (key: string[]) => key.filter((column) => columnNames.has(column));
+
+      // An `indexes { (a, b) [pk] }` declaration wins over column attributes.
+      const indexedKey = indexPrimaryKeys.map(filterKey).find((key) => key.length > 0);
+      const columnKey = [...new Set(columnPrimaryKey)].filter((column) => columnNames.has(column));
+      const primaryKey = indexedKey ?? (columnKey.length ? columnKey : undefined);
+
+      const seenKeys = new Set<string>();
+      const uniques: string[][] = [];
+      for (const key of uniqueKeys) {
+        const filtered = filterKey(key);
+        if (filtered.length !== key.length || !filtered.length) continue;
+        const signature = filtered.join("\u0000");
+        if (seenKeys.has(signature)) continue;
+        seenKeys.add(signature);
+        uniques.push(filtered);
+      }
+
+      tables.push({
+        name,
+        columns,
+        primaryKey,
+        uniqueKeys: uniques.length ? uniques : undefined,
+      });
     }
   }
 
@@ -343,6 +752,8 @@ export function syncSqlTables(previous: SqlTable[], parsed: ParsedTable[]): SqlT
       name: definition.name,
       columns: definition.columns,
       rows,
+      primaryKey: definition.primaryKey,
+      uniqueKeys: definition.uniqueKeys,
     };
   });
 }

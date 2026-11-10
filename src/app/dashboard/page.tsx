@@ -10,6 +10,7 @@ import {
   Code2,
   FileCode2,
   Flame,
+  FolderOpen,
   LayoutDashboard,
   Lock,
   Pencil,
@@ -25,6 +26,11 @@ import { SiteHeader } from "@/components/site-header";
 import { useMe } from "@/lib/use-me";
 import { fileNameFor } from "@/lib/language";
 import { toast } from "@/components/ui/toaster";
+import { SnippetDeleteButton } from "@/components/snippet-delete";
+import { InlineSnippetTitle, SnippetRenameButton } from "@/components/snippet-name";
+import { SnippetCollectButton } from "@/components/snippet-collect";
+import { CollectionCard, type CollectionSummary } from "@/components/collection-card";
+import { drop, getJson, peek, prefetch } from "@/lib/api-cache";
 import { AreaChart, Bars, Heatmap, Ring, Sparkline } from "@/components/ui/data-viz";
 import { ArrowLink, Avatar, Empty, SectionHead, Stat, Tag } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
@@ -39,6 +45,11 @@ type Snippet = {
 };
 
 type Note = { id: string; title: string; body: string; updatedAt: string };
+
+/** True when the previous dashboard payload is still in memory */
+function cachedDashboard() {
+  return peek("/api/snippets?mine=1") !== undefined;
+}
 
 type InterviewSession = {
   id: string;
@@ -103,14 +114,33 @@ function CardHead({
 export default function Dashboard() {
   const router = useRouter();
   const { me, loaded } = useMe();
-  const [snippets, setSnippets] = useState<Snippet[] | null>(null);
-  const [notes, setNotes] = useState<Note[] | null>(null);
-  const [sessions, setSessions] = useState<InterviewSession[] | null>(null);
-  const [attempts, setAttempts] = useState<Attempt[] | null>(null);
-  const [tutorials, setTutorials] = useState<Tutorial[] | null>(null);
-  const [streak, setStreak] = useState<{ streak: StreakData; days: string[] } | null>(null);
+  // The dashboard needs eight endpoints; the last payloads are kept in memory
+  // so coming back to it paints immediately instead of flashing skeletons.
+  const [snippets, setSnippets] = useState<Snippet[] | null>(
+    () => peek<{ snippets: Snippet[] }>("/api/snippets?mine=1")?.snippets ?? null
+  );
+  const [collections, setCollections] = useState<CollectionSummary[] | null>(
+    () => peek<{ collections: CollectionSummary[] }>("/api/collections")?.collections ?? null
+  );
+  const [notes, setNotes] = useState<Note[] | null>(
+    () => peek<{ notes: Note[] }>("/api/notes")?.notes ?? null
+  );
+  const [sessions, setSessions] = useState<InterviewSession[] | null>(
+    () => peek<{ sessions: InterviewSession[] }>("/api/interview-sessions")?.sessions ?? null
+  );
+  const [attempts, setAttempts] = useState<Attempt[] | null>(
+    () => peek<{ attempts: Attempt[] }>("/api/code-attempt")?.attempts ?? null
+  );
+  const [tutorials, setTutorials] = useState<Tutorial[] | null>(
+    () => peek<{ tutorials: Tutorial[] }>("/api/tutorials")?.tutorials ?? null
+  );
+  const [streak, setStreak] = useState<{ streak: StreakData; days: string[] } | null>(
+    () => peek<{ streak: StreakData; days: string[] }>("/api/streak") ?? null
+  );
   const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState(
+    () => peek("/api/snippets?mine=1") !== undefined && peek("/api/collections") !== undefined
+  );
   const [unauthed, setUnauthed] = useState(false);
   const [now, setNow] = useState<Date | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -128,21 +158,37 @@ export default function Dashboard() {
     }
 
     let alive = true;
-    setReady(false);
-    const json = (url: string) =>
-      fetch(url).then((r) => (r.ok ? r.json() : Promise.reject(new Error(url))));
+    if (!cachedDashboard()) setReady(false);
+
+    // The two lists at the top of the page decide when the shell can paint;
+    // the rest fill in as they land instead of holding the whole page hostage.
+    Promise.allSettled([
+      getJson<{ snippets: Snippet[] }>("/api/snippets?mine=1"),
+      getJson<{ collections: CollectionSummary[] }>("/api/collections"),
+    ]).then(([snips, cols]) => {
+      if (!alive) return;
+      setSnippets((prev) =>
+        snips.status === "fulfilled" ? snips.value.snippets ?? [] : prev ?? []
+      );
+      setCollections((prev) =>
+        cols.status === "fulfilled" ? cols.value.collections ?? [] : prev ?? []
+      );
+      setReady(true);
+    });
 
     Promise.allSettled([
-      json("/api/snippets?mine=1"),
-      json("/api/notes"),
-      json("/api/interview-sessions"),
-      json("/api/code-attempt"),
-      json("/api/streak"),
-      json(`/api/users/${me.username}`),
-      json("/api/tutorials"),
-    ]).then(([snips, ns, sess, atts, str, prof, tuts]) => {
+      getJson<{ snippets: Snippet[] }>("/api/snippets?mine=1"),
+      getJson<{ notes: Note[] }>("/api/notes"),
+      getJson<{ sessions: InterviewSession[] }>("/api/interview-sessions"),
+      getJson<{ attempts: Attempt[] }>("/api/code-attempt"),
+      getJson<{ streak: StreakData; days: string[] }>("/api/streak"),
+      getJson<ProfileData>(`/api/users/${me.username}`),
+      getJson<{ tutorials: Tutorial[] }>("/api/tutorials"),
+      getJson<{ collections: CollectionSummary[] }>("/api/collections"),
+    ]).then(([snips, ns, sess, atts, str, prof, tuts, cols]) => {
       if (!alive) return;
       setSnippets(snips.status === "fulfilled" ? snips.value.snippets ?? [] : []);
+      setCollections(cols.status === "fulfilled" ? cols.value.collections ?? [] : []);
       setNotes(ns.status === "fulfilled" ? ns.value.notes ?? [] : []);
       setSessions(sess.status === "fulfilled" ? sess.value.sessions ?? [] : []);
       setAttempts(atts.status === "fulfilled" ? atts.value.attempts ?? [] : []);
@@ -173,6 +219,21 @@ export default function Dashboard() {
       setSnippets((prev) => prev?.map((x) => (x.id === s.id ? { ...x, isPublic: !next } : x)) ?? prev);
       toast("Could not update visibility", { variant: "error" });
     }
+    drop("/api/snippets");
+    drop("/api/users/");
+  }, []);
+
+  const removeSnippet = useCallback((id: string) => {
+    setSnippets((prev) => (prev ? prev.filter((snippet) => snippet.id !== id) : prev));
+    drop("/api/snippets");
+    drop("/api/collections");
+  }, []);
+
+  const renameSnippet = useCallback((id: string, title: string) => {
+    setSnippets((prev) =>
+      prev ? prev.map((snippet) => (snippet.id === id ? { ...snippet, title } : snippet)) : prev
+    );
+    drop("/api/snippets");
   }, []);
 
   const copyCode = useCallback(async (s: Snippet) => {
@@ -701,7 +762,11 @@ export default function Dashboard() {
                       <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">
                         <div className="flex min-w-0 items-center gap-2">
                           <Code2 className="size-3.5 shrink-0 text-primary" />
-                          <span className="truncate text-[13px] font-medium">{s.title}</span>
+                          <InlineSnippetTitle
+                            id={s.id}
+                            title={s.title}
+                            onRenamed={(title) => renameSnippet(s.id, title)}
+                          />
                         </div>
                         <button
                           type="button"
@@ -733,9 +798,11 @@ export default function Dashboard() {
                         <div className="flex items-center gap-0.5">
                           <Link
                             href={`/playground?snippet=${s.id}`}
+                            title="Open in the editor to change the code, then hit Update"
+                            onPointerEnter={() => prefetch(`/api/snippets?id=${s.id}`)}
                             className="rounded-md px-2 py-1 text-[11.5px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                           >
-                            Run
+                            Edit
                           </Link>
                           <button
                             type="button"
@@ -751,9 +818,56 @@ export default function Dashboard() {
                           >
                             Download
                           </button>
+                          <SnippetCollectButton snippetId={s.id} compact label="Collect" />
+                          <SnippetRenameButton
+                            id={s.id}
+                            title={s.title}
+                            onRenamed={(title) => renameSnippet(s.id, title)}
+                          />
+                          <SnippetDeleteButton
+                            id={s.id}
+                            title={s.title}
+                            onDeleted={() => removeSnippet(s.id)}
+                          />
                         </div>
                       </div>
                     </article>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* ── collections ─────────────────────────────────────────── */}
+            <section className="reveal reveal-4 mt-10">
+              <SectionHead
+                index="02"
+                title="Collections"
+                count={collections?.length ?? 0}
+                action={
+                  <div className="flex items-center gap-3">
+                    <ArrowLink href="/collections">Manage folders</ArrowLink>
+                    <Link href="/collections" className="btn btn-outline h-9 px-4 text-[12.5px]">
+                      <FolderOpen className="size-3.5" /> New folder
+                    </Link>
+                  </div>
+                }
+              />
+              {(collections?.length ?? 0) === 0 ? (
+                <Empty
+                  icon={FolderOpen}
+                  title="No folders yet"
+                  body="Folders group snippets by project or idea — your own code, plus anything you collect from explore."
+                  className="mt-5"
+                  action={
+                    <Link href="/collections" className="btn btn-ink">
+                      Create your first folder
+                    </Link>
+                  }
+                />
+              ) : (
+                <div className="mt-5 grid gap-x-6 gap-y-7 sm:grid-cols-2 xl:grid-cols-4">
+                  {(collections ?? []).slice(0, 4).map((collection) => (
+                    <CollectionCard key={collection.id} collection={collection} showVisibility />
                   ))}
                 </div>
               )}
@@ -763,7 +877,7 @@ export default function Dashboard() {
             <div className="reveal reveal-4 mt-10 grid gap-8 lg:grid-cols-2">
               <section>
                 <SectionHead
-                  index="02"
+                  index="03"
                   title="Interview log"
                   count={analytics.sessionList.length}
                   action={<ArrowLink href="/interview">Start new</ArrowLink>}
@@ -812,7 +926,7 @@ export default function Dashboard() {
 
               <section>
                 <SectionHead
-                  index="03"
+                  index="04"
                   title="Notes"
                   count={notes?.length ?? 0}
                   action={<ArrowLink href="/learn">Take notes</ArrowLink>}
@@ -839,7 +953,7 @@ export default function Dashboard() {
 
             <section className="reveal reveal-5 mt-10">
               <SectionHead
-                index="04"
+                index="05"
                 title="Writing"
                 count={tutorials?.length ?? 0}
                 action={

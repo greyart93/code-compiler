@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Flame } from "lucide-react";
+import { getJson } from "@/lib/api-cache";
 
 type StreakData = { current: number; longest: number; doneToday: boolean };
 
@@ -11,8 +12,9 @@ export function StreakBadge() {
 
   useEffect(() => {
     let alive = true;
-    fetch("/api/streak")
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
+    // Shared cache: the header, the dashboard and any other badge reuse one
+    // request instead of each hitting the server on every page.
+    getJson<{ streak: StreakData }>("/api/streak")
       .then((d) => alive && setStreak(d.streak))
       .catch(() => {});
     return () => {

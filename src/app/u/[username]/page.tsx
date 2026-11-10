@@ -10,6 +10,7 @@ import {
   Check,
   Code2,
   FileCode2,
+  FolderOpen,
   Globe,
   GraduationCap,
   LayoutDashboard,
@@ -21,6 +22,7 @@ import {
   StickyNote,
   Trash2,
   Upload,
+  UserPlus,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,12 +31,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { SnippetActions } from "@/components/snippet-actions";
+import { SnippetDeleteButton } from "@/components/snippet-delete";
+import { SnippetRenameButton } from "@/components/snippet-name";
+import { CollectionCard, type CollectionSummary } from "@/components/collection-card";
+import { SnippetLink } from "@/components/snippet-link";
 import { SiteHeader } from "@/components/site-header";
 import { AllNotesList } from "@/components/lesson-notes";
 import { toast } from "@/components/ui/toaster";
 import { COURSES } from "@/data/courses";
 import { Avatar, ArrowLink, Empty, SectionHead, Stat, Tag } from "@/components/ui/primitives";
 import { Ring } from "@/components/ui/data-viz";
+import { drop, getJson, peek } from "@/lib/api-cache";
 import { cn } from "@/lib/utils";
 
 type Profile = {
@@ -53,9 +60,18 @@ type Profile = {
     notes?: number;
     interviews?: number;
     attemptedProblems?: number;
+    followers: number;
+    following: number;
+    friends: number;
+    collections: number;
   };
   completedCourses: { slug: string; completedAt: string }[];
+  viewer: { following: boolean; followsMe: boolean } | null;
   isOwner: boolean;
+  /** Everything the page renders, so one request is enough */
+  snippets: Snippet[];
+  tutorials: Tutorial[];
+  collections: CollectionSummary[];
 };
 
 type Snippet = {
@@ -64,6 +80,8 @@ type Snippet = {
   language: string;
   isPublic: boolean;
   updatedAt: string;
+  /** The listing ships the code, so cards never need a second request each */
+  code?: string;
 };
 
 type Tutorial = {
@@ -110,10 +128,20 @@ function dayMonth(value: string) {
 
 export default function ProfilePage() {
   const { username } = useParams<{ username: string }>();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [snippets, setSnippets] = useState<Snippet[] | null>(null);
-  const [tutorials, setTutorials] = useState<Tutorial[]>([]);
-  const [codeMap, setCodeMap] = useState<Record<string, string>>({});
+  const url = `/api/users/${username}`;
+  const first = peek<Profile>(url);
+
+  const [profile, setProfile] = useState<Profile | null>(first ?? null);
+  const [snippets, setSnippets] = useState<Snippet[] | null>(first?.snippets ?? null);
+  const [collections, setCollections] = useState<CollectionSummary[] | null>(
+    first?.collections ?? null
+  );
+  const [tutorials, setTutorials] = useState<Tutorial[]>(first?.tutorials ?? []);
+
+  // Follow state is optimistic; counts come back from the server on each toggle
+  const [following, setFollowing] = useState(false);
+  const [followers, setFollowers] = useState(0);
+  const [followBusy, setFollowBusy] = useState(false);
   const [notFound, setNotFound] = useState(false);
 
   // Profile editing (owner only)
@@ -126,54 +154,22 @@ export default function ProfilePage() {
   const editRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
-    const res = await fetch(`/api/users/${username}`);
-    if (res.status === 404) {
+    try {
+      const data = await getJson<Profile>(url);
+      setProfile(data);
+      setFollowing(Boolean(data.viewer?.following));
+      setFollowers(data.stats?.followers ?? 0);
+      setSnippets(data.snippets ?? []);
+      setCollections(data.collections ?? []);
+      setTutorials(data.tutorials ?? []);
+    } catch {
       setNotFound(true);
-      return;
     }
-    const data = await res.json();
-    setProfile(data);
-
-    const sRes = await fetch(`/api/snippets?user=${username}`);
-    const sData = await sRes.json();
-    setSnippets(sData.snippets ?? []);
-
-    const tRes = await fetch(`/api/tutorials`);
-    const tData = await tRes.json();
-    setTutorials(
-      (tData.tutorials ?? []).filter(
-        (t: { user: { username: string } }) => t.user.username === username
-      )
-    );
-  }, [username]);
+  }, [url]);
 
   useEffect(() => {
     load();
   }, [load]);
-
-  // Pull the first few lines of code for the showcase cards.
-  useEffect(() => {
-    if (!snippets || snippets.length === 0) return;
-    let alive = true;
-    const top = snippets.slice(0, 6);
-    Promise.all(
-      top.map((s) =>
-        fetch(`/api/snippets?id=${s.id}`)
-          .then((r) => (r.ok ? r.json() : null))
-          .catch(() => null)
-      )
-    ).then((rows) => {
-      if (!alive) return;
-      const map: Record<string, string> = {};
-      rows.forEach((row, i) => {
-        if (row?.snippet?.code) map[top[i].id] = row.snippet.code;
-      });
-      setCodeMap(map);
-    });
-    return () => {
-      alive = false;
-    };
-  }, [snippets]);
 
   useEffect(() => {
     if (profile?.isOwner) {
@@ -181,6 +177,44 @@ export default function ProfilePage() {
       setEditBio(profile.user.bio ?? "");
     }
   }, [profile?.isOwner, profile?.user]);
+
+  const toggleFollow = async () => {
+    if (!profile) return;
+    if (!profile.viewer) {
+      toast("Login to follow", {
+        description: "Sign in to follow people and see their work.",
+        variant: "error",
+        actionLabel: "Sign in",
+        actionHref: "/login",
+      });
+      return;
+    }
+    const next = !following;
+    setFollowing(next);
+    setFollowers((n) => Math.max(0, n + (next ? 1 : -1)));
+    setFollowBusy(true);
+    try {
+      const res = await fetch(`/api/users/${username}/follow`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ follow: next }),
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setFollowing(Boolean(data.following));
+      setFollowers(data.followers ?? 0);
+      drop("/api/social");
+      drop("/api/users/");
+      drop("/api/feed");
+      if (data.friends) toast(`You and @${username} are friends now`, { variant: "success" });
+    } catch {
+      setFollowing(!next);
+      setFollowers((n) => Math.max(0, n + (next ? -1 : 1)));
+      toast("Could not update follow", { variant: "error" });
+    } finally {
+      setFollowBusy(false);
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -197,6 +231,7 @@ export default function ProfilePage() {
       }
       toast("Profile updated", { variant: "success" });
       setEditing(false);
+      drop();
       load();
     } catch {
       toast("Could not save profile", { variant: "error" });
@@ -225,6 +260,7 @@ export default function ProfilePage() {
         return;
       }
       toast("Avatar updated", { variant: "success" });
+      drop();
       load();
     } catch {
       toast("Could not process image", { variant: "error" });
@@ -244,6 +280,7 @@ export default function ProfilePage() {
       });
       if (res.ok) {
         toast("Avatar removed", { variant: "success" });
+        drop();
         load();
       }
     } finally {
@@ -258,7 +295,25 @@ export default function ProfilePage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ isPublic }),
     });
+    drop("/api/snippets");
+    drop("/api/users/");
   };
+
+  const renameSnippet = useCallback((id: string, title: string) => {
+    setSnippets((s) => (s ? s.map((x) => (x.id === id ? { ...x, title } : x)) : s));
+  }, []);
+
+  const removeSnippet = useCallback(
+    (id: string) => {
+      setSnippets((s) => (s ? s.filter((x) => x.id !== id) : s));
+      drop("/api/snippets");
+      drop("/api/collections");
+      drop("/api/users/");
+      // Refresh the profile so snippet counts stay accurate.
+      void load();
+    },
+    [load]
+  );
 
   const startEditing = () => {
     setEditing(true);
@@ -385,7 +440,22 @@ export default function ProfilePage() {
                 </>
               ) : (
                 <>
-                  <a href="#work" className="btn btn-ink">
+                  <Button
+                    variant={following ? "outline" : "default"}
+                    onClick={() => void toggleFollow()}
+                    disabled={followBusy}
+                    className="gap-1.5"
+                  >
+                    {followBusy ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : following ? (
+                      <Check className="size-4" />
+                    ) : (
+                      <UserPlus className="size-4" />
+                    )}
+                    {following ? "Following" : profile.viewer?.followsMe ? "Follow back" : "Follow"}
+                  </Button>
+                  <a href="#work" className="btn btn-outline">
                     <Code2 className="size-4" /> Selected work
                   </a>
                   <a href="#writing" className="btn btn-outline">
@@ -576,26 +646,71 @@ export default function ProfilePage() {
 
         {/* ── stats ──────────────────────────────────────────────────── */}
         <section className="reveal reveal-1 mt-7 overflow-hidden rounded-2xl border border-border bg-card">
-          <div className="grid grid-cols-2 divide-x divide-y divide-border sm:grid-cols-4 sm:divide-y-0">
+          <div className="grid grid-cols-2 divide-x divide-y divide-border sm:grid-cols-3 lg:grid-cols-6 lg:divide-y-0">
             <Stat
               label={isOwner ? "Public snippets" : "Snippets"}
               value={profile.stats.publicSnippets}
               hint={isOwner ? `${Math.max(0, (profile.stats.totalSnippets ?? 0) - profile.stats.publicSnippets)} private` : "shared with the community"}
             />
+            <Stat label="Followers" value={followers} hint={profile.viewer?.followsMe ? "one follows you too" : "watching this profile"} />
+            <Stat
+              label="Following"
+              value={Math.max(0, profile.stats.following)}
+              hint={
+                profile.stats.friends
+                  ? `${profile.stats.friends} friend${profile.stats.friends === 1 ? "" : "s"}`
+                  : "no mutual follows yet"
+              }
+            />
+            <Stat label="Folders" value={profile.stats.collections} hint="snippet collections" />
             <Stat label="Courses finished" value={courses.length} hint={courses.length ? "certified progress" : "none yet"} />
             <Stat label="Tutorials" value={profile.stats.tutorials} hint="long-form writing" />
-            <Stat
-              label="Member since"
-              value={new Date(profile.user.createdAt).getFullYear()}
-              hint={joined}
-            />
           </div>
         </section>
 
+        {/* ── collections ────────────────────────────────────────────── */}
+        {(isOwner || (collections?.length ?? 0) > 0) && (
+          <section className="reveal reveal-2 mt-12">
+            <SectionHead
+              index="01"
+              title="Collections"
+              count={collections?.length ?? 0}
+              action={
+                isOwner ? (
+                  <Link href="/collections" className="btn btn-outline h-8 px-3 text-[12px]">
+                    <FolderOpen className="size-3.5" /> Manage folders
+                  </Link>
+                ) : (
+                  <span className="mono-label !text-[10px]">public folders</span>
+                )
+              }
+            />
+            {(collections?.length ?? 0) === 0 ? (
+              <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-dashed border-border p-6">
+                <div>
+                  <p className="text-sm font-medium">No folders yet.</p>
+                  <p className="mt-1 text-[12.5px] text-muted-foreground">
+                    Group snippets by project, language or idea — public folders show up here.
+                  </p>
+                </div>
+                <Link href="/collections" className="btn btn-outline h-9 px-4 text-[12.5px]">
+                  Create a folder
+                </Link>
+              </div>
+            ) : (
+              <div className="mt-6 grid gap-x-6 gap-y-7 sm:grid-cols-2 lg:grid-cols-4">
+                {(collections ?? []).slice(0, 4).map((collection) => (
+                  <CollectionCard key={collection.id} collection={collection} showVisibility={isOwner} />
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
         {/* ── selected work ──────────────────────────────────────────── */}
-        <section id="work" className="reveal reveal-2 mt-12 scroll-mt-24">
+        <section id="work" className="reveal reveal-3 mt-12 scroll-mt-24">
           <SectionHead
-            index="01"
+            index="02"
             title="Selected work"
             count={snippets?.length ?? 0}
             action={
@@ -634,7 +749,7 @@ export default function ProfilePage() {
           ) : (
             <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {snippets.slice(0, 6).map((s, i) => {
-                const code = codeMap[s.id];
+                const code = s.code;
                 return (
                   <article
                     key={s.id}
@@ -680,14 +795,30 @@ export default function ProfilePage() {
                       </div>
 
                       <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
-                        <Link
-                          href={`/playground?snippet=${s.id}`}
+                        <SnippetLink
+                          id={s.id}
                           className="group/link inline-flex items-center gap-1 text-[12.5px] font-medium text-foreground transition-colors hover:text-primary"
                         >
                           Open code
                           <ArrowUpRight className="size-3.5 transition-transform duration-300 group-hover/link:-translate-y-0.5 group-hover/link:translate-x-0.5" />
-                        </Link>
-                        <SnippetActions language={s.language} snippetId={s.id} />
+                        </SnippetLink>
+                        <div className="flex items-center gap-0.5">
+                          <SnippetActions language={s.language} snippetId={s.id} />
+                          {isOwner && (
+                            <>
+                              <SnippetRenameButton
+                                id={s.id}
+                                title={s.title}
+                                onRenamed={(title) => renameSnippet(s.id, title)}
+                              />
+                              <SnippetDeleteButton
+                                id={s.id}
+                                title={s.title}
+                                onDeleted={() => removeSnippet(s.id)}
+                              />
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </article>
@@ -701,7 +832,7 @@ export default function ProfilePage() {
         {(courses.length > 0 || isOwner) && (
           <section className="reveal reveal-3 mt-12">
             <SectionHead
-              index="02"
+              index="03"
               title="Courses finished"
               count={courses.length}
               action={<ArrowLink href="/learn">Course library</ArrowLink>}
@@ -754,7 +885,7 @@ export default function ProfilePage() {
         {(tutorials.length > 0 || isOwner) && (
           <section id="writing" className="reveal reveal-4 mt-12 scroll-mt-24">
             <SectionHead
-              index="03"
+              index="04"
               title="Writing"
               count={tutorials.length}
               action={
@@ -808,7 +939,7 @@ export default function ProfilePage() {
         {isOwner && (
           <section className="reveal reveal-5 mt-12">
             <SectionHead
-              index="04"
+              index="05"
               title="Notebook"
               action={<span className="mono-label !text-[10px]">private</span>}
             />

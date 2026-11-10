@@ -17,6 +17,9 @@ import {
 import { SiteHeader } from "@/components/site-header";
 import { Switch } from "@/components/ui/switch";
 import { SnippetActions } from "@/components/snippet-actions";
+import { SnippetLink } from "@/components/snippet-link";
+import { SnippetDeleteButton } from "@/components/snippet-delete";
+import { SnippetRenameButton } from "@/components/snippet-name";
 import { Avatar, Empty } from "@/components/ui/primitives";
 import { languageLabel } from "@/lib/language";
 import { cn } from "@/lib/utils";
@@ -89,6 +92,22 @@ export default function CodesPage() {
       body: JSON.stringify({ isPublic }),
     });
   };
+
+  const renameSnippet = useCallback((id: string, title: string) => {
+    setSnippets((list) =>
+      list ? list.map((item) => (item.id === id ? { ...item, title } : item)) : list
+    );
+  }, []);
+
+  const removeSnippet = useCallback((id: string) => {
+    setSnippets((list) => (list ? list.filter((item) => item.id !== id) : list));
+    setCodes((map) => {
+      if (!(id in map)) return map;
+      const next = { ...map };
+      delete next[id];
+      return next;
+    });
+  }, []);
 
   const publicCount = snippets?.filter((s) => s.isPublic).length ?? 0;
   const languages = useMemo(
@@ -331,14 +350,30 @@ export default function CodesPage() {
                   </div>
 
                   <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
-                    <Link
-                      href={`/playground?snippet=${s.id}`}
+                    <SnippetLink
+                      id={s.id}
                       className="group/link inline-flex items-center gap-1 text-[12.5px] font-medium text-foreground transition-colors hover:text-primary"
                     >
                       Open code
                       <ArrowUpRight className="size-3.5 transition-transform duration-300 group-hover/link:-translate-y-0.5 group-hover/link:translate-x-0.5" />
-                    </Link>
-                    <SnippetActions language={s.language} snippetId={s.id} />
+                    </SnippetLink>
+                    <div className="flex items-center gap-0.5">
+                      <SnippetActions language={s.language} snippetId={s.id} />
+                      {isOwner && (
+                        <>
+                          <SnippetRenameButton
+                            id={s.id}
+                            title={s.title}
+                            onRenamed={(title) => renameSnippet(s.id, title)}
+                          />
+                          <SnippetDeleteButton
+                            id={s.id}
+                            title={s.title}
+                            onDeleted={() => removeSnippet(s.id)}
+                          />
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               </article>

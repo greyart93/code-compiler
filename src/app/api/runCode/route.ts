@@ -122,7 +122,9 @@ export async function POST(request: Request) {
                 case "lua":
                     return "lua main.lua";
                 case "kotlin":
-                    return "java -jar main.jar";
+                    // The kotlin image ships its own JDK behind /bin/kotlin; a bare
+                    // `java` is not on PATH there, so launch the jar through it.
+                    return "kotlin -classpath main.jar MainKt";
                 case "dart":
                     return "dart main.dart";
                 case "swift":

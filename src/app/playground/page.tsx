@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Suspense, useEffect, useRef, useState, type CSSProperties } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Play,
   Loader2,
@@ -35,7 +35,11 @@ import { compileReactPreview } from "@/lib/react-preview";
 import { useRunShortcut } from "@/lib/use-run-shortcut";
 import codeSnippets from "../_editor/code-snippets";
 import { toast } from "@/components/ui/toaster";
+import { getJson, peek } from "@/lib/api-cache";
 import { cn } from "@/lib/utils";
+
+// Marks the duplicate history entry used to guard Back where the Navigation API is missing
+const HISTORY_GUARD_KEY = "codevitSnippetGuard";
 
 // Ace mode names differ from our language keys (go→golang, bash→sh, assembly→assembly_x86…)
 const aceMode = (language: string) => aceModeFor(language);
@@ -76,6 +80,25 @@ function PlaygroundInner() {
   const langParam = searchParams.get("lang");
   const fromParam = searchParams.get("from");
   const [snippetTitle, setSnippetTitle] = useState<string | null>(null);
+  // Set only when the open snippet belongs to the viewer, so Save becomes Update
+  const [ownedSnippet, setOwnedSnippet] = useState<{ id: string; title: string } | null>(null);
+  // What was last saved for that snippet — compared against the live editor
+  const [savedVersion, setSavedVersion] = useState<{
+    code: string;
+    input: string;
+    language: string;
+    title: string;
+  } | null>(null);
+  const [justSaved, setJustSaved] = useState(false);
+  // While a shared snippet is still on its way, the editor must not show the
+  // default Python starter first — that swap is what confused people.
+  const [snippetLoading, setSnippetLoading] = useState(
+    () => Boolean(snippetId) && peek(`/api/snippets?id=${snippetId}`) === undefined
+  );
+  // Where the user tried to go while dirty: another page, or the Back button
+  const [pendingNav, setPendingNav] = useState<{ href: string } | { back: true } | null>(null);
+  const allowBackRef = useRef(false);
+  const router = useRouter();
   const loadedSnippetRef = useRef<string | null>(null);
   const loadedCodeRef = useRef<string | null>(null);
 
@@ -97,25 +120,26 @@ function PlaygroundInner() {
   }, []);
 
   useEffect(() => {
-    if (!snippetId || loadedSnippetRef.current === snippetId) return;
+    if (!snippetId) {
+      setSnippetLoading(false);
+      return;
+    }
+    if (loadedSnippetRef.current === snippetId) return;
     loadedSnippetRef.current = snippetId;
     const fallbackToStarter = () => {
       if (!useCodeStore.getState().code) {
         updateCode(codeSnippets[useCodeStore.getState().language as keyof typeof codeSnippets] ?? "");
       }
     };
+    // Already fetched this session (hover prefetch or a previous visit): no spinner
+    if (peek(`/api/snippets?id=${snippetId}`) === undefined) setSnippetLoading(true);
     (async () => {
       try {
-        const res = await fetch(`/api/snippets?id=${snippetId}`);
-        if (!res.ok) {
-          toast("Snippet not found", {
-            description: "It may be private or deleted.",
-            variant: "error",
-          });
-          fallbackToStarter();
-          return;
-        }
-        const s = (await res.json())?.snippet;
+        const data = await getJson<{
+          snippet?: { id: string; title: string; language: string; code: string; input?: string };
+          mine?: boolean;
+        }>(`/api/snippets?id=${snippetId}`);
+        const s = data?.snippet;
         if (!s) {
           fallbackToStarter();
           return;
@@ -126,12 +150,39 @@ function PlaygroundInner() {
         updateCode(s.code ?? "");
         if (typeof s.input === "string") updateInput(s.input);
         setSnippetTitle(s.title ?? null);
+        setOwnedSnippet(
+          data?.mine ? { id: s.id ?? snippetId, title: s.title ?? "Untitled snippet" } : null
+        );
+        setSavedVersion(
+          data?.mine
+            ? {
+                code: s.code ?? "",
+                input: typeof s.input === "string" ? s.input : "",
+                language: resolveLanguage(s.language) ?? s.language ?? "",
+                title: s.title ?? "Untitled snippet",
+              }
+            : null
+        );
+        setJustSaved(false);
       } catch {
-        toast("Could not load snippet", { variant: "error" });
+        toast("Snippet not found", {
+          description: "It may be private or deleted.",
+          variant: "error",
+        });
         fallbackToStarter();
+      } finally {
+        setSnippetLoading(false);
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [snippetId]);
+
+  // Leaving the snippet URL (a plain /playground visit) must not keep updating it
+  useEffect(() => {
+    if (!snippetId) {
+      setOwnedSnippet(null);
+      setSavedVersion(null);
+    }
   }, [snippetId]);
 
   // 👇 ?code=<text>&lang=<value> — load lesson code into the editor (once per param)
@@ -144,6 +195,8 @@ function PlaygroundInner() {
     }
     updateCode(codeParam);
     setSnippetTitle(null);
+    setOwnedSnippet(null);
+    setSavedVersion(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [codeParam, langParam]);
 
@@ -284,6 +337,130 @@ function PlaygroundInner() {
   const lineCount = (code ?? "").split("\n").length;
   const langLabel = LANGUAGES.find((l) => l.value === language)?.label ?? language;
 
+  // Only meaningful for a snippet the viewer owns: has the editor drifted from what's saved?
+  const currentInput = typeof input === "string" ? input : "";
+  const snippetDirty = Boolean(
+    savedVersion &&
+      ((code ?? "") !== savedVersion.code ||
+        currentInput !== savedVersion.input ||
+        language !== savedVersion.language)
+  );
+  // Reset the “Saved” flash whenever the editor starts changing again
+  useEffect(() => {
+    if (snippetDirty) setJustSaved(false);
+  }, [snippetDirty]);
+
+  // ── leave guard: don't walk away from unsaved edits to a snippet ─────────
+  useEffect(() => {
+    if (!snippetDirty) return;
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [snippetDirty]);
+
+  // Catch in-app links in the capture phase so they beat Next's own handler
+  useEffect(() => {
+    if (!snippetDirty) return;
+    const onClick = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const anchor = (event.target as HTMLElement | null)?.closest?.(
+        "a[href]"
+      ) as HTMLAnchorElement | null;
+      if (!anchor || anchor.target === "_blank" || anchor.hasAttribute("download")) return;
+      const url = new URL(anchor.href, window.location.href);
+      if (url.origin !== window.location.origin) return;
+      if (url.pathname === window.location.pathname && url.search === window.location.search) {
+        return;
+      }
+      event.preventDefault();
+      setPendingNav({ href: `${url.pathname}${url.search}${url.hash}` });
+    };
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, [snippetDirty]);
+
+  // Back/Forward: cancel the traversal and ask instead. Only the Navigation API can
+  // stop an App Router traversal; browsers without it use the sentinel entry below.
+  useEffect(() => {
+    if (!snippetDirty) return;
+    type NavigateEvent = Event & { navigationType?: string };
+    type NavigationLike = {
+      addEventListener: (type: "navigate", listener: (event: NavigateEvent) => void) => void;
+      removeEventListener: (type: "navigate", listener: (event: NavigateEvent) => void) => void;
+    };
+    const nav = (window as unknown as { navigation?: NavigationLike }).navigation;
+    if (!nav) return;
+    const onNavigate = (event: NavigateEvent) => {
+      if (allowBackRef.current) return;
+      if (event.navigationType !== "traverse") return;
+      if (!event.cancelable) return;
+      event.preventDefault();
+      setPendingNav({ back: true });
+    };
+    nav.addEventListener("navigate", onNavigate);
+    return () => nav.removeEventListener("navigate", onNavigate);
+  }, [snippetDirty]);
+
+  // Fallback for browsers without the Navigation API (e.g. Firefox today): park a
+  // duplicate history entry on top so Back lands back on this same URL, where a
+  // popstate listener can intercept it.
+  useEffect(() => {
+    if (!snippetDirty) return;
+    if ((window as unknown as { navigation?: unknown }).navigation) return;
+
+    const pushSentinel = () => {
+      const state = { ...(window.history.state ?? {}), [HISTORY_GUARD_KEY]: true };
+      window.history.pushState(state, "", window.location.href);
+    };
+    pushSentinel();
+
+    const onPopState = () => {
+      if (allowBackRef.current) return;
+      // Back landed on the sentinel's twin — hold the entry and ask instead
+      pushSentinel();
+      setPendingNav({ back: true });
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [snippetDirty]);
+
+  // Once the edits are saved or reverted the sentinel is no longer needed. Step back
+  // onto its twin — same URL and same router state, so nothing visibly moves — so the
+  // duplicate entry doesn't swallow the next Back press.
+  useEffect(() => {
+    if (snippetDirty) return;
+    if ((window as unknown as { navigation?: unknown }).navigation) return;
+    const state = window.history.state as Record<string, unknown> | null;
+    if (state && state[HISTORY_GUARD_KEY]) {
+      window.history.back();
+    }
+  }, [snippetDirty]);
+
+  useEffect(() => {
+    if (!pendingNav) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setPendingNav(null);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [pendingNav]);
+
+  if (snippetId && snippetLoading) {
+    return (
+      <div className="app-shell">
+        <SiteHeader />
+        <main className="mx-auto flex h-[calc(100svh-84px)] min-h-[560px] w-full flex-col items-center justify-center gap-3 px-3 pb-3 pt-2 sm:px-5">
+          <Loader2 className="size-5 animate-spin text-muted-foreground" />
+          <p className="text-[13px] text-muted-foreground">Opening snippet…</p>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="app-shell">
       <SiteHeader hidden={editorFullscreen} />
@@ -326,11 +503,57 @@ function PlaygroundInner() {
                 {snippetTitle}
               </span>
             )}
+            {ownedSnippet && (snippetDirty || justSaved) && (
+              <span
+                className={cn(
+                  "flex shrink-0 items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.08em]",
+                  snippetDirty
+                    ? "border-amber-500/35 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                    : "border-emerald-500/35 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                )}
+                title={
+                  snippetDirty
+                    ? "Edited since the last save — hit Update to keep these changes"
+                    : "All changes are saved"
+                }
+                aria-live="polite"
+              >
+                <span
+                  className={cn(
+                    "size-1.5 rounded-full",
+                    snippetDirty ? "bg-amber-500" : "bg-emerald-500"
+                  )}
+                />
+                {snippetDirty ? "Unsaved" : "Saved"}
+              </span>
+            )}
           </div>
 
           <div className="ml-auto flex shrink-0 items-center gap-1.5">
             <SnippetActions language={language} code={code ?? ""} />
-            <SaveButton />
+            <SaveButton
+              snippet={ownedSnippet}
+              onSaved={(title, id) => {
+                setSnippetTitle(title);
+                setOwnedSnippet({ id, title });
+                setSavedVersion({
+                  code: code ?? "",
+                  input: currentInput,
+                  language,
+                  title,
+                });
+                setJustSaved(true);
+                window.setTimeout(() => setJustSaved(false), 2500);
+                // Adopt the snippet in the URL so later saves update it instead of
+                // creating another copy. Mark it loaded so the code isn't re-fetched.
+                if (snippetId !== id) {
+                  loadedSnippetRef.current = id;
+                  router.replace(`/playground?snippet=${encodeURIComponent(id)}`, {
+                    scroll: false,
+                  });
+                }
+              }}
+            />
             <Button
               onClick={runCurrent}
               disabled={running || sqlRunning}
@@ -610,6 +833,61 @@ function PlaygroundInner() {
           </span>
         </div>
       </main>
+
+      {pendingNav && (
+        <div
+          className="fixed inset-0 z-[90] flex items-end justify-center bg-foreground/25 p-4 backdrop-blur-[2px] sm:items-center"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setPendingNav(null);
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="leave-guard-heading"
+            className="w-full max-w-sm rounded-2xl border border-border bg-card p-5 shadow-[0_24px_60px_rgba(10,10,11,0.18)]"
+          >
+            <h2 id="leave-guard-heading" className="text-[15px] font-semibold tracking-[-0.01em]">
+              Discard unsaved changes?
+            </h2>
+            <p className="mt-1 text-[12.5px] leading-relaxed text-muted-foreground">
+              “{snippetTitle ?? "This snippet"}” has edits you haven&apos;t saved yet. Leaving
+              now drops them.
+            </p>
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setPendingNav(null)}>
+                Stay here
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => {
+                  const target = pendingNav;
+                  setPendingNav(null);
+                  if ("href" in target) {
+                    router.push(target.href);
+                  } else {
+                    allowBackRef.current = true;
+                    // Without the Navigation API the dialog was opened from a
+                    // duplicated entry, so step over both copies.
+                    if ((window as unknown as { navigation?: unknown }).navigation) {
+                      window.history.back();
+                    } else {
+                      window.history.go(-2);
+                    }
+                    // Re-arm if the traversal never happens
+                    window.setTimeout(() => {
+                      allowBackRef.current = false;
+                    }, 1500);
+                  }
+                }}
+              >
+                Discard and leave
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

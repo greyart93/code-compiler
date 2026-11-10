@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { forgetSessionUser, getCurrentUser } from "@/lib/auth";
+import { invalidate } from "@/lib/server-cache";
 
 const MAX_IMAGE_BYTES = 300 * 1024; // ~300KB data URL ceiling
 
@@ -40,6 +41,9 @@ export async function PATCH(request: Request) {
       select: { id: true, username: true, email: true, name: true, image: true, bio: true },
     });
 
+    // The session row and cached profile payloads now hold the old name/avatar
+    forgetSessionUser(user.id);
+    invalidate("profile:");
     return NextResponse.json({ user: updated });
   } catch (error) {
     console.error("me PATCH error:", error);

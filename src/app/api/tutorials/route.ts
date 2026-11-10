@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
+import { cached, invalidate } from "@/lib/server-cache";
 
 // GET /api/tutorials            → latest published tutorials
+// GET /api/tutorials?user=alice → just alice's published tutorials
 // GET /api/tutorials?id=<id>    → single tutorial (full content)
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
+    const username = searchParams.get("user");
 
     if (id) {
       const tutorial = await prisma.tutorial.findUnique({
@@ -22,18 +25,20 @@ export async function GET(request: Request) {
       return NextResponse.json({ tutorial });
     }
 
-    const tutorials = await prisma.tutorial.findMany({
-      where: { published: true },
-      orderBy: { createdAt: "desc" },
-      take: 50,
-      select: {
-        id: true,
-        title: true,
-        language: true,
-        createdAt: true,
-        user: { select: { username: true, name: true } },
-      },
-    });
+    const tutorials = await cached(`tutorials:${username ?? "all"}`, 30_000, () =>
+      prisma.tutorial.findMany({
+        where: { published: true, ...(username ? { user: { username } } : {}) },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+        select: {
+          id: true,
+          title: true,
+          language: true,
+          createdAt: true,
+          user: { select: { username: true, name: true } },
+        },
+      })
+    );
     return NextResponse.json({ tutorials });
   } catch (error) {
     console.error("tutorials GET error:", error);
@@ -70,6 +75,7 @@ export async function POST(request: Request) {
       },
       select: { id: true, title: true },
     });
+    invalidate("tutorials:");
     return NextResponse.json({ tutorial }, { status: 201 });
   } catch (error) {
     console.error("tutorials POST error:", error);

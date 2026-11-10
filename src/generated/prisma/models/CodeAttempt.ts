@@ -425,10 +425,6 @@ export type CodeAttemptUncheckedUpdateManyWithoutUserNestedInput = {
   deleteMany?: Prisma.CodeAttemptScalarWhereInput | Prisma.CodeAttemptScalarWhereInput[]
 }
 
-export type BoolFieldUpdateOperationsInput = {
-  set?: boolean
-}
-
 export type CodeAttemptCreateWithoutUserInput = {
   id?: string
   problemId: string

@@ -217,6 +217,7 @@ export type SnippetWhereInput = {
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   likes?: Prisma.LikeListRelationFilter
   comments?: Prisma.CommentListRelationFilter
+  collections?: Prisma.CollectionItemListRelationFilter
 }
 
 export type SnippetOrderByWithRelationInput = {
@@ -232,6 +233,7 @@ export type SnippetOrderByWithRelationInput = {
   user?: Prisma.UserOrderByWithRelationInput
   likes?: Prisma.LikeOrderByRelationAggregateInput
   comments?: Prisma.CommentOrderByRelationAggregateInput
+  collections?: Prisma.CollectionItemOrderByRelationAggregateInput
 }
 
 export type SnippetWhereUniqueInput = Prisma.AtLeast<{
@@ -250,6 +252,7 @@ export type SnippetWhereUniqueInput = Prisma.AtLeast<{
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   likes?: Prisma.LikeListRelationFilter
   comments?: Prisma.CommentListRelationFilter
+  collections?: Prisma.CollectionItemListRelationFilter
 }, "id">
 
 export type SnippetOrderByWithAggregationInput = {
@@ -294,6 +297,7 @@ export type SnippetCreateInput = {
   user: Prisma.UserCreateNestedOneWithoutSnippetsInput
   likes?: Prisma.LikeCreateNestedManyWithoutSnippetInput
   comments?: Prisma.CommentCreateNestedManyWithoutSnippetInput
+  collections?: Prisma.CollectionItemCreateNestedManyWithoutSnippetInput
 }
 
 export type SnippetUncheckedCreateInput = {
@@ -308,6 +312,7 @@ export type SnippetUncheckedCreateInput = {
   userId: string
   likes?: Prisma.LikeUncheckedCreateNestedManyWithoutSnippetInput
   comments?: Prisma.CommentUncheckedCreateNestedManyWithoutSnippetInput
+  collections?: Prisma.CollectionItemUncheckedCreateNestedManyWithoutSnippetInput
 }
 
 export type SnippetUpdateInput = {
@@ -322,6 +327,7 @@ export type SnippetUpdateInput = {
   user?: Prisma.UserUpdateOneRequiredWithoutSnippetsNestedInput
   likes?: Prisma.LikeUpdateManyWithoutSnippetNestedInput
   comments?: Prisma.CommentUpdateManyWithoutSnippetNestedInput
+  collections?: Prisma.CollectionItemUpdateManyWithoutSnippetNestedInput
 }
 
 export type SnippetUncheckedUpdateInput = {
@@ -336,6 +342,7 @@ export type SnippetUncheckedUpdateInput = {
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   likes?: Prisma.LikeUncheckedUpdateManyWithoutSnippetNestedInput
   comments?: Prisma.CommentUncheckedUpdateManyWithoutSnippetNestedInput
+  collections?: Prisma.CollectionItemUncheckedUpdateManyWithoutSnippetNestedInput
 }
 
 export type SnippetCreateManyInput = {
@@ -383,6 +390,11 @@ export type SnippetOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
+export type SnippetScalarRelationFilter = {
+  is?: Prisma.SnippetWhereInput
+  isNot?: Prisma.SnippetWhereInput
+}
+
 export type SnippetCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   title?: Prisma.SortOrder
@@ -417,11 +429,6 @@ export type SnippetMinOrderByAggregateInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   userId?: Prisma.SortOrder
-}
-
-export type SnippetScalarRelationFilter = {
-  is?: Prisma.SnippetWhereInput
-  isNot?: Prisma.SnippetWhereInput
 }
 
 export type SnippetCreateNestedManyWithoutUserInput = {
@@ -466,6 +473,20 @@ export type SnippetUncheckedUpdateManyWithoutUserNestedInput = {
   deleteMany?: Prisma.SnippetScalarWhereInput | Prisma.SnippetScalarWhereInput[]
 }
 
+export type SnippetCreateNestedOneWithoutCollectionsInput = {
+  create?: Prisma.XOR<Prisma.SnippetCreateWithoutCollectionsInput, Prisma.SnippetUncheckedCreateWithoutCollectionsInput>
+  connectOrCreate?: Prisma.SnippetCreateOrConnectWithoutCollectionsInput
+  connect?: Prisma.SnippetWhereUniqueInput
+}
+
+export type SnippetUpdateOneRequiredWithoutCollectionsNestedInput = {
+  create?: Prisma.XOR<Prisma.SnippetCreateWithoutCollectionsInput, Prisma.SnippetUncheckedCreateWithoutCollectionsInput>
+  connectOrCreate?: Prisma.SnippetCreateOrConnectWithoutCollectionsInput
+  upsert?: Prisma.SnippetUpsertWithoutCollectionsInput
+  connect?: Prisma.SnippetWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.SnippetUpdateToOneWithWhereWithoutCollectionsInput, Prisma.SnippetUpdateWithoutCollectionsInput>, Prisma.SnippetUncheckedUpdateWithoutCollectionsInput>
+}
+
 export type SnippetCreateNestedOneWithoutLikesInput = {
   create?: Prisma.XOR<Prisma.SnippetCreateWithoutLikesInput, Prisma.SnippetUncheckedCreateWithoutLikesInput>
   connectOrCreate?: Prisma.SnippetCreateOrConnectWithoutLikesInput
@@ -505,6 +526,7 @@ export type SnippetCreateWithoutUserInput = {
   updatedAt?: Date | string
   likes?: Prisma.LikeCreateNestedManyWithoutSnippetInput
   comments?: Prisma.CommentCreateNestedManyWithoutSnippetInput
+  collections?: Prisma.CollectionItemCreateNestedManyWithoutSnippetInput
 }
 
 export type SnippetUncheckedCreateWithoutUserInput = {
@@ -518,6 +540,7 @@ export type SnippetUncheckedCreateWithoutUserInput = {
   updatedAt?: Date | string
   likes?: Prisma.LikeUncheckedCreateNestedManyWithoutSnippetInput
   comments?: Prisma.CommentUncheckedCreateNestedManyWithoutSnippetInput
+  collections?: Prisma.CollectionItemUncheckedCreateNestedManyWithoutSnippetInput
 }
 
 export type SnippetCreateOrConnectWithoutUserInput = {
@@ -561,6 +584,78 @@ export type SnippetScalarWhereInput = {
   userId?: Prisma.StringFilter<"Snippet"> | string
 }
 
+export type SnippetCreateWithoutCollectionsInput = {
+  id?: string
+  title: string
+  language: string
+  code: string
+  input?: string | null
+  isPublic?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  user: Prisma.UserCreateNestedOneWithoutSnippetsInput
+  likes?: Prisma.LikeCreateNestedManyWithoutSnippetInput
+  comments?: Prisma.CommentCreateNestedManyWithoutSnippetInput
+}
+
+export type SnippetUncheckedCreateWithoutCollectionsInput = {
+  id?: string
+  title: string
+  language: string
+  code: string
+  input?: string | null
+  isPublic?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  userId: string
+  likes?: Prisma.LikeUncheckedCreateNestedManyWithoutSnippetInput
+  comments?: Prisma.CommentUncheckedCreateNestedManyWithoutSnippetInput
+}
+
+export type SnippetCreateOrConnectWithoutCollectionsInput = {
+  where: Prisma.SnippetWhereUniqueInput
+  create: Prisma.XOR<Prisma.SnippetCreateWithoutCollectionsInput, Prisma.SnippetUncheckedCreateWithoutCollectionsInput>
+}
+
+export type SnippetUpsertWithoutCollectionsInput = {
+  update: Prisma.XOR<Prisma.SnippetUpdateWithoutCollectionsInput, Prisma.SnippetUncheckedUpdateWithoutCollectionsInput>
+  create: Prisma.XOR<Prisma.SnippetCreateWithoutCollectionsInput, Prisma.SnippetUncheckedCreateWithoutCollectionsInput>
+  where?: Prisma.SnippetWhereInput
+}
+
+export type SnippetUpdateToOneWithWhereWithoutCollectionsInput = {
+  where?: Prisma.SnippetWhereInput
+  data: Prisma.XOR<Prisma.SnippetUpdateWithoutCollectionsInput, Prisma.SnippetUncheckedUpdateWithoutCollectionsInput>
+}
+
+export type SnippetUpdateWithoutCollectionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  language?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  input?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneRequiredWithoutSnippetsNestedInput
+  likes?: Prisma.LikeUpdateManyWithoutSnippetNestedInput
+  comments?: Prisma.CommentUpdateManyWithoutSnippetNestedInput
+}
+
+export type SnippetUncheckedUpdateWithoutCollectionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  language?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  input?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  likes?: Prisma.LikeUncheckedUpdateManyWithoutSnippetNestedInput
+  comments?: Prisma.CommentUncheckedUpdateManyWithoutSnippetNestedInput
+}
+
 export type SnippetCreateWithoutLikesInput = {
   id?: string
   title: string
@@ -572,6 +667,7 @@ export type SnippetCreateWithoutLikesInput = {
   updatedAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutSnippetsInput
   comments?: Prisma.CommentCreateNestedManyWithoutSnippetInput
+  collections?: Prisma.CollectionItemCreateNestedManyWithoutSnippetInput
 }
 
 export type SnippetUncheckedCreateWithoutLikesInput = {
@@ -585,6 +681,7 @@ export type SnippetUncheckedCreateWithoutLikesInput = {
   updatedAt?: Date | string
   userId: string
   comments?: Prisma.CommentUncheckedCreateNestedManyWithoutSnippetInput
+  collections?: Prisma.CollectionItemUncheckedCreateNestedManyWithoutSnippetInput
 }
 
 export type SnippetCreateOrConnectWithoutLikesInput = {
@@ -614,6 +711,7 @@ export type SnippetUpdateWithoutLikesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutSnippetsNestedInput
   comments?: Prisma.CommentUpdateManyWithoutSnippetNestedInput
+  collections?: Prisma.CollectionItemUpdateManyWithoutSnippetNestedInput
 }
 
 export type SnippetUncheckedUpdateWithoutLikesInput = {
@@ -627,6 +725,7 @@ export type SnippetUncheckedUpdateWithoutLikesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   comments?: Prisma.CommentUncheckedUpdateManyWithoutSnippetNestedInput
+  collections?: Prisma.CollectionItemUncheckedUpdateManyWithoutSnippetNestedInput
 }
 
 export type SnippetCreateWithoutCommentsInput = {
@@ -640,6 +739,7 @@ export type SnippetCreateWithoutCommentsInput = {
   updatedAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutSnippetsInput
   likes?: Prisma.LikeCreateNestedManyWithoutSnippetInput
+  collections?: Prisma.CollectionItemCreateNestedManyWithoutSnippetInput
 }
 
 export type SnippetUncheckedCreateWithoutCommentsInput = {
@@ -653,6 +753,7 @@ export type SnippetUncheckedCreateWithoutCommentsInput = {
   updatedAt?: Date | string
   userId: string
   likes?: Prisma.LikeUncheckedCreateNestedManyWithoutSnippetInput
+  collections?: Prisma.CollectionItemUncheckedCreateNestedManyWithoutSnippetInput
 }
 
 export type SnippetCreateOrConnectWithoutCommentsInput = {
@@ -682,6 +783,7 @@ export type SnippetUpdateWithoutCommentsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutSnippetsNestedInput
   likes?: Prisma.LikeUpdateManyWithoutSnippetNestedInput
+  collections?: Prisma.CollectionItemUpdateManyWithoutSnippetNestedInput
 }
 
 export type SnippetUncheckedUpdateWithoutCommentsInput = {
@@ -695,6 +797,7 @@ export type SnippetUncheckedUpdateWithoutCommentsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   likes?: Prisma.LikeUncheckedUpdateManyWithoutSnippetNestedInput
+  collections?: Prisma.CollectionItemUncheckedUpdateManyWithoutSnippetNestedInput
 }
 
 export type SnippetCreateManyUserInput = {
@@ -719,6 +822,7 @@ export type SnippetUpdateWithoutUserInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   likes?: Prisma.LikeUpdateManyWithoutSnippetNestedInput
   comments?: Prisma.CommentUpdateManyWithoutSnippetNestedInput
+  collections?: Prisma.CollectionItemUpdateManyWithoutSnippetNestedInput
 }
 
 export type SnippetUncheckedUpdateWithoutUserInput = {
@@ -732,6 +836,7 @@ export type SnippetUncheckedUpdateWithoutUserInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   likes?: Prisma.LikeUncheckedUpdateManyWithoutSnippetNestedInput
   comments?: Prisma.CommentUncheckedUpdateManyWithoutSnippetNestedInput
+  collections?: Prisma.CollectionItemUncheckedUpdateManyWithoutSnippetNestedInput
 }
 
 export type SnippetUncheckedUpdateManyWithoutUserInput = {
@@ -753,11 +858,13 @@ export type SnippetUncheckedUpdateManyWithoutUserInput = {
 export type SnippetCountOutputType = {
   likes: number
   comments: number
+  collections: number
 }
 
 export type SnippetCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   likes?: boolean | SnippetCountOutputTypeCountLikesArgs
   comments?: boolean | SnippetCountOutputTypeCountCommentsArgs
+  collections?: boolean | SnippetCountOutputTypeCountCollectionsArgs
 }
 
 /**
@@ -784,6 +891,13 @@ export type SnippetCountOutputTypeCountCommentsArgs<ExtArgs extends runtime.Type
   where?: Prisma.CommentWhereInput
 }
 
+/**
+ * SnippetCountOutputType without action
+ */
+export type SnippetCountOutputTypeCountCollectionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.CollectionItemWhereInput
+}
+
 
 export type SnippetSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -798,6 +912,7 @@ export type SnippetSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   likes?: boolean | Prisma.Snippet$likesArgs<ExtArgs>
   comments?: boolean | Prisma.Snippet$commentsArgs<ExtArgs>
+  collections?: boolean | Prisma.Snippet$collectionsArgs<ExtArgs>
   _count?: boolean | Prisma.SnippetCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["snippet"]>
 
@@ -844,6 +959,7 @@ export type SnippetInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   likes?: boolean | Prisma.Snippet$likesArgs<ExtArgs>
   comments?: boolean | Prisma.Snippet$commentsArgs<ExtArgs>
+  collections?: boolean | Prisma.Snippet$collectionsArgs<ExtArgs>
   _count?: boolean | Prisma.SnippetCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type SnippetIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -859,6 +975,7 @@ export type $SnippetPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     user: Prisma.$UserPayload<ExtArgs>
     likes: Prisma.$LikePayload<ExtArgs>[]
     comments: Prisma.$CommentPayload<ExtArgs>[]
+    collections: Prisma.$CollectionItemPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1267,6 +1384,7 @@ export interface Prisma__SnippetClient<T, Null = never, ExtArgs extends runtime.
   user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   likes<T extends Prisma.Snippet$likesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Snippet$likesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$LikePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   comments<T extends Prisma.Snippet$commentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Snippet$commentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  collections<T extends Prisma.Snippet$collectionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Snippet$collectionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CollectionItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1751,6 +1869,30 @@ export type Snippet$commentsArgs<ExtArgs extends runtime.Types.Extensions.Intern
   take?: number
   skip?: number
   distinct?: Prisma.CommentScalarFieldEnum | Prisma.CommentScalarFieldEnum[]
+}
+
+/**
+ * Snippet.collections
+ */
+export type Snippet$collectionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the CollectionItem
+   */
+  select?: Prisma.CollectionItemSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the CollectionItem
+   */
+  omit?: Prisma.CollectionItemOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CollectionItemInclude<ExtArgs> | null
+  where?: Prisma.CollectionItemWhereInput
+  orderBy?: Prisma.CollectionItemOrderByWithRelationInput | Prisma.CollectionItemOrderByWithRelationInput[]
+  cursor?: Prisma.CollectionItemWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.CollectionItemScalarFieldEnum | Prisma.CollectionItemScalarFieldEnum[]
 }
 
 /**

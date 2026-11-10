@@ -9,6 +9,7 @@ import {
   Code2,
   Compass,
   FileText,
+  FolderOpen,
   GraduationCap,
   HelpCircle,
   LayoutDashboard,
@@ -19,9 +20,11 @@ import {
   Mic,
   Moon,
   Radio,
+  Rss,
   Sun,
   Terminal,
   User,
+  Users,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -53,10 +56,13 @@ const primaryNav: NavItem[] = [
 
 const indexNav: NavItem[] = [
   ...primaryNav,
+  { href: "/feed", label: "Feed", icon: Rss, blurb: "Newest snippets from the people you follow" },
   { href: "/interview", label: "Interview", icon: Mic, blurb: "Mock interviews with scored feedback" },
   { href: "/live", label: "Live rooms", icon: Radio, blurb: "Pair on code in a shared room" },
-  { href: "/code-test", label: "Code test", icon: ListChecks, blurb: "LeetCode-style practice problems" },
+  { href: "/code-test", label: "Code test", icon: ListChecks, blurb: "Practice problems and timed mock tests" },
   { href: "/quiz", label: "Quiz", icon: HelpCircle, blurb: "Fast checks for every language" },
+  { href: "/collections", label: "Collections", icon: FolderOpen, blurb: "Folders of snippets, yours and saved from explore" },
+  { href: "/friends", label: "Friends", icon: Users, blurb: "People you follow, and who follows you" },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, blurb: "Your activity, streaks and progress" },
 ];
 
@@ -261,6 +267,21 @@ export function SiteHeader({
                     <DropdownMenuItem asChild>
                       <Link href={`/u/${me.username}`}>
                         <User /> Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/feed">
+                        <Rss /> Feed
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/collections">
+                        <FolderOpen /> Collections
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/friends">
+                        <Users /> Friends
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />

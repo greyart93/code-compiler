@@ -2,17 +2,13 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { createSession } from "@/lib/auth";
-import { oauthConfig } from "../route";
-
-const STATE_COOKIE = "codevit_oauth_state";
+import { STATE_COOKIE, oauthConfig, type OAuthConfig } from "@/lib/oauth";
 
 type ProviderUser = {
   email: string;
   name: string | null;
   username: string;
 };
-
-type OAuthConfig = NonNullable<ReturnType<typeof oauthConfig>>;
 
 async function exchangeGithub(config: OAuthConfig, code: string): Promise<ProviderUser | null> {
   const tokenRes = await fetch(config.tokenUrl, {
@@ -86,7 +82,7 @@ export async function GET(
   { params }: { params: Promise<{ provider: string }> }
 ) {
   const { provider } = await params;
-  const config = oauthConfig(provider);
+  const config = oauthConfig(provider, new URL(request.url).origin);
   if (!config) {
     return NextResponse.redirect(new URL("/login?oauth=setup", request.url));
   }

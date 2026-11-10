@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ArrowUpRight,
-  Bookmark,
   Check,
   Code2,
   Copy,
@@ -23,6 +22,9 @@ import { languageLabel } from "@/lib/language";
 import hljs from "highlight.js/lib/common";
 import { toast } from "@/components/ui/toaster";
 import { Avatar, Empty, Tag } from "@/components/ui/primitives";
+import { SnippetCollectButton } from "@/components/snippet-collect";
+import { SnippetLink } from "@/components/snippet-link";
+import { drop, getJson, peek } from "@/lib/api-cache";
 import { cn } from "@/lib/utils";
 
 type ExploreSnippet = {
@@ -90,15 +92,20 @@ export default function ExplorePage() {
   const [commentDraft, setCommentDraft] = useState<Record<string, string>>({});
   const [posting, setPosting] = useState<string | null>(null);
 
-  const load = useCallback(() => {
-    setSnippets(null);
+  const url = useMemo(() => {
     const params = new URLSearchParams({ explore: "1", sort });
     if (lang !== "all") params.set("lang", lang);
-    fetch(`/api/snippets?${params}`)
-      .then((r) => r.json())
-      .then((d) => setSnippets(d.snippets ?? []))
-      .catch(() => setSnippets([]));
+    return `/api/snippets?${params}`;
   }, [lang, sort]);
+
+  const load = useCallback(() => {
+    // A list we already have paints immediately; only a cold URL shows skeletons
+    const cached = peek<{ snippets: ExploreSnippet[] }>(url);
+    setSnippets(cached ? cached.snippets ?? [] : null);
+    getJson<{ snippets: ExploreSnippet[] }>(url)
+      .then((d) => setSnippets(d.snippets ?? []))
+      .catch(() => setSnippets((prev) => prev ?? []));
+  }, [url]);
 
   useEffect(load, [load]);
 
@@ -133,6 +140,7 @@ export default function ExplorePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ snippetId: s.id }),
       });
+      drop("/api/snippets");
       if (!res.ok) throw new Error();
       const d = await res.json();
       setSnippets(
@@ -154,31 +162,6 @@ export default function ExplorePage() {
       toast("Copied to clipboard", { variant: "success" });
     } catch {
       toast("Copy failed", { variant: "error" });
-    }
-  };
-
-  const handleFork = async (s: ExploreSnippet) => {
-    if (requireLogin("save")) return;
-    try {
-      const res = await fetch("/api/snippets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: s.title,
-          language: s.language,
-          code: s.code,
-          isPublic: false,
-        }),
-      });
-      if (!res.ok) throw new Error();
-      toast("Saved to your dashboard", {
-        description: "A private copy was created — open it from your dashboard.",
-        variant: "success",
-        actionLabel: "Dashboard",
-        actionHref: "/dashboard",
-      });
-    } catch {
-      toast("Could not save snippet", { variant: "error" });
     }
   };
 
@@ -275,8 +258,8 @@ export default function ExplorePage() {
               </p>
               <h1 className="display mt-3 text-[clamp(44px,8vw,92px)]">The commons.</h1>
               <p className="mt-4 max-w-[60ch] text-[15px] leading-relaxed text-muted-foreground sm:text-base">
-                Code people are proud enough to share. Read it, run it, fork it into your own
-                workspace — or leave a note for the author.
+                Code people are proud enough to share. Read it, run it, save it into one of your
+                folders — or leave a note for the author.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -380,11 +363,11 @@ export default function ExplorePage() {
                       <span className="mono-label !text-[10px]">{languageLabel(featured.language)}</span>
                     </div>
 
-                    <Link href={`/playground?snippet=${featured.id}`} className="group mt-5 block">
+                    <SnippetLink id={featured.id} className="group mt-5 block">
                       <h2 className="display text-[clamp(30px,4vw,44px)] leading-[1.02] transition-colors group-hover:text-primary">
                         {featured.title}
                       </h2>
-                    </Link>
+                    </SnippetLink>
 
                     <div className="mt-4 flex items-center gap-2.5">
                       <Avatar
@@ -425,13 +408,12 @@ export default function ExplorePage() {
                       >
                         <MessageSquare className="size-3.5" /> {featured._count.comments}
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => handleFork(featured)}
-                        className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border px-3.5 text-[12.5px] font-medium text-muted-foreground transition-colors hover:text-foreground"
-                      >
-                        <Bookmark className="size-3.5" /> Save
-                      </button>
+                      <SnippetCollectButton
+                        snippetId={featured.id}
+                        compact
+                        label="Save"
+                        className="h-9 border border-border px-3.5 text-[12.5px]"
+                      />
                       <Link
                         href={`/playground?snippet=${featured.id}`}
                         className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-full bg-[var(--ink)] px-4 text-[12.5px] font-medium text-[var(--paper)] transition-transform hover:-translate-y-0.5"
@@ -509,11 +491,11 @@ export default function ExplorePage() {
                     </div>
 
                     <div className="flex flex-1 flex-col p-4">
-                      <Link href={`/playground?snippet=${s.id}`} className="group block">
+                      <SnippetLink id={s.id} className="group block">
                         <h3 className="line-clamp-2 min-h-[44px] text-[16px] font-semibold leading-snug tracking-[-0.01em] transition-colors group-hover:text-primary">
                           {s.title}
                         </h3>
-                      </Link>
+                      </SnippetLink>
 
                       <div className="code-pane relative mt-3 h-[150px] overflow-hidden">
                         <pre className="!p-3.5 text-[11px] leading-[1.65]">
@@ -565,15 +547,7 @@ export default function ExplorePage() {
                             )}
                             <span className="hidden sm:inline">{copiedId === s.id ? "Copied" : "Copy"}</span>
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => handleFork(s)}
-                            aria-label="Save a copy"
-                            className="inline-flex h-8 items-center gap-1 rounded-full px-2 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                          >
-                            <Bookmark className="size-3.5" />
-                            <span className="hidden sm:inline">Save</span>
-                          </button>
+                          <SnippetCollectButton snippetId={s.id} compact label="Save" />
                         </div>
                       </div>
                     </div>

@@ -35,6 +35,55 @@ model User {
 
   liveInterviewsHosted LiveInterviewRoom[] @relation("LiveInterviewInterviewer")
   liveInterviewsTaken  LiveInterviewRoom[] @relation("LiveInterviewCandidate")
+
+  following   Follow[]     @relation("Following")
+  followers   Follow[]     @relation("Followers")
+  collections Collection[]
+}
+
+/** A directed follow edge: `follower` follows `following`.
+ *  Friends = both directions exist, so no separate friend table is needed. */
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  follower    User     @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   User     @relation("Followers", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([followingId])
+}
+
+/** A user-made folder of snippets (CodePen-style collection). */
+model Collection {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  isPublic    Boolean  @default(true)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items CollectionItem[]
+
+  @@unique([userId, name])
+  @@index([userId, updatedAt])
+}
+
+/** One snippet filed in one collection. Snippets are referenced, never copied,
+ *  so a snippet saved from explore still belongs to its author. */
+model CollectionItem {
+  id           String     @id @default(cuid())
+  collectionId String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  snippetId    String
+  snippet      Snippet    @relation(fields: [snippetId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([collectionId, snippetId])
+  @@index([snippetId])
 }
 
 /** Daily activity log — one row per day the user does anything learning-related.
@@ -161,8 +210,9 @@ model Snippet {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  likes    Like[]
-  comments Comment[]
+  likes       Like[]
+  comments    Comment[]
+  collections CollectionItem[]
 
   @@index([userId])
   @@index([isPublic, createdAt])

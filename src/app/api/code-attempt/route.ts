@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { recordActivity } from "@/lib/streak";
-import { PROBLEMS } from "@/data/code-tests";
+import { PROBLEMS, difficultyFor } from "@/data/code-tests";
 
 // POST /api/code-attempt  { problemId, passed, score } → attempt saved
 export async function POST(request: Request) {
@@ -46,7 +46,7 @@ export async function GET() {
     return {
       ...a,
       title: p?.title ?? a.problemId,
-      difficulty: p?.difficulty ?? "easy",
+      difficulty: p ? difficultyFor(p.level) : "easy",
     };
   });
   return NextResponse.json({ attempts: enriched });

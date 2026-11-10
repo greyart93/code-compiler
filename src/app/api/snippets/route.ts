@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, getSessionClaims } from "@/lib/auth";
+import { cached } from "@/lib/server-cache";
 
 // GET /api/snippets?user=username  → public profile showcase
 // GET /api/snippets?mine=1         → current user's snippets (incl. private)
@@ -15,112 +16,122 @@ export async function GET(request: Request) {
     const id = searchParams.get("id");
 
     if (id) {
-      const snippet = await prisma.snippet.findUnique({
-        where: { id },
-        include: { user: { select: { username: true, name: true } } },
-      });
+      const [viewer, snippet] = await Promise.all([
+        getSessionClaims(),
+        cached(`snippet:${id}`, 5_000, () =>
+          prisma.snippet.findUnique({
+            where: { id },
+            include: { user: { select: { username: true, name: true } } },
+          })
+        ),
+      ]);
       if (!snippet) {
         return NextResponse.json({ error: "Snippet not found" }, { status: 404 });
       }
-      const viewer = await getCurrentUser();
       if (!snippet.isPublic && viewer?.id !== snippet.userId) {
         // Don't leak private snippets to non-owners
         return NextResponse.json({ error: "Snippet not found" }, { status: 404 });
       }
-      return NextResponse.json({ snippet });
+      return NextResponse.json({ snippet, mine: viewer?.id === snippet.userId });
     }
 
     if (username) {
-      const target = await prisma.user.findUnique({
-        where: { username },
-        select: { id: true },
-      });
-      if (!target) {
-        return NextResponse.json({ error: "User not found" }, { status: 404 });
-      }
-      const viewer = await getCurrentUser();
+      const viewer = await getSessionClaims();
       const isOwner = viewer?.username === username;
-      const snippets = await prisma.snippet.findMany({
-        where: { userId: target.id, ...(isOwner ? {} : { isPublic: true }) },
-        orderBy: { updatedAt: "desc" },
-        select: {
-          id: true,
-          title: true,
-          language: true,
-          isPublic: true,
-          createdAt: true,
-          updatedAt: true,
-          user: { select: { username: true, name: true } },
-        },
-      });
+      // One statement: the author filter rides along in the relation
+      const snippets = await cached(
+        `snips:user:${username}:${isOwner ? viewer?.id : "anon"}`,
+        5_000,
+        () =>
+          prisma.snippet.findMany({
+            where: { user: { username }, ...(isOwner ? {} : { isPublic: true }) },
+            orderBy: { updatedAt: "desc" },
+            select: {
+              id: true,
+              title: true,
+              language: true,
+              // Profile cards show the opening lines, so they ship with the list
+              code: true,
+              isPublic: true,
+              createdAt: true,
+              updatedAt: true,
+              user: { select: { username: true, name: true } },
+            },
+          })
+      );
       return NextResponse.json({ snippets, isOwner });
     }
 
     if (mine) {
-      const user = await getCurrentUser();
+      const user = await getSessionClaims();
       if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      const snippets = await prisma.snippet.findMany({
-        where: { userId: user.id },
-        orderBy: { updatedAt: "desc" },
-        include: { user: { select: { username: true, name: true } } },
-      });
+      const snippets = await cached(`snips:mine:${user.id}`, 3_000, () =>
+        prisma.snippet.findMany({
+          where: { userId: user.id },
+          orderBy: { updatedAt: "desc" },
+          include: { user: { select: { username: true, name: true } } },
+        })
+      );
       return NextResponse.json({ snippets });
     }
 
     if (searchParams.get("explore")) {
-      const viewer = await getCurrentUser();
+      const viewer = await getSessionClaims();
       const lang = searchParams.get("lang");
       const sort = searchParams.get("sort");
 
       // Fetch ids+counts first, then map likedByMe — keeps the query simple
-      const base = await prisma.snippet.findMany({
-        where: {
-          isPublic: true,
-          ...(lang ? { language: lang } : {}),
-        },
-        orderBy:
-          sort === "top"
-            ? [{ likes: { _count: "desc" as const } }]
-            : [{ createdAt: "desc" as const }],
+      const rows = await cached(
+        `explore:${lang ?? "all"}:${sort ?? "new"}:${viewer?.id ?? "anon"}`,
+        5_000,
+        () =>
+          prisma.snippet.findMany({
+            where: {
+              isPublic: true,
+              ...(lang ? { language: lang } : {}),
+            },
+            orderBy:
+              sort === "top"
+                ? [{ likes: { _count: "desc" as const } }]
+                : [{ createdAt: "desc" as const }],
+            take: 50,
+            select: {
+              id: true,
+              title: true,
+              language: true,
+              code: true,
+              createdAt: true,
+              updatedAt: true,
+              user: { select: { username: true, name: true } },
+              _count: { select: { likes: true, comments: true } },
+              // The viewer's own like rides along in the same statement
+              likes: {
+                where: { userId: viewer?.id ?? "" },
+                select: { id: true },
+                take: 1,
+              },
+            },
+          })
+      );
+      const snippets = rows.map(({ likes, ...s }) => ({ ...s, likedByMe: likes.length > 0 }));
+      return NextResponse.json({ snippets });
+    }
+
+    const snippets = await cached("snips:latest", 5_000, () =>
+      prisma.snippet.findMany({
+        where: { isPublic: true },
+        orderBy: { updatedAt: "desc" },
         take: 50,
         select: {
           id: true,
           title: true,
           language: true,
-          code: true,
           createdAt: true,
           updatedAt: true,
           user: { select: { username: true, name: true } },
-          _count: { select: { likes: true, comments: true } },
         },
-      });
-      const likedIds = viewer
-        ? new Set(
-            (
-              await prisma.like.findMany({
-                where: { userId: viewer.id, snippetId: { in: base.map((s) => s.id) } },
-                select: { snippetId: true },
-              })
-            ).map((l) => l.snippetId)
-          )
-        : new Set<string>();
-      const snippets = base.map((s) => ({ ...s, likedByMe: likedIds.has(s.id) }));
-      return NextResponse.json({ snippets });
-    }
-
-    const snippets = await prisma.snippet.findMany({
-      where: { isPublic: true },
-      orderBy: { updatedAt: "desc" },
-      take: 50,
-      select: {
-        id: true,
-        title: true,
-        language: true,
-        createdAt: true,
-        updatedAt: true,
-        user: { select: { username: true, name: true } },
-      },
-    });
+      })
+    );
     return NextResponse.json({ snippets });
   } catch (error) {
     console.error("snippets GET error:", error);

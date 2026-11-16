@@ -7,7 +7,9 @@ import {
   ArrowLeft,
   ArrowUpRight,
   Check,
+  ChevronDown,
   Clock,
+  CornerDownRight,
   Loader2,
   MessageSquare,
   Send,
@@ -16,9 +18,9 @@ import {
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { SiteHeader } from "@/components/site-header";
 import { PostBody } from "@/components/post-body";
+import { DiscussComposer } from "@/components/discuss-composer";
 import { toast } from "@/components/ui/toaster";
 import { useMe } from "@/lib/use-me";
 import { Avatar, Empty, SectionHead, Tag } from "@/components/ui/primitives";
@@ -36,6 +38,14 @@ type Question = {
   votedByMe: boolean;
 };
 
+type Reply = {
+  id: string;
+  body: string;
+  createdAt: string;
+  userId: string;
+  user: { username: string; name: string | null };
+};
+
 type Answer = {
   id: string;
   body: string;
@@ -44,6 +54,7 @@ type Answer = {
   user: { username: string; name: string | null };
   _count: { votes: number };
   votedByMe: boolean;
+  replies: Reply[];
 };
 
 function longDate(value: string) {
@@ -70,6 +81,10 @@ export default function QuestionPage() {
   const [notFound, setNotFound] = useState(false);
   const [draft, setDraft] = useState("");
   const [posting, setPosting] = useState(false);
+  const [expandedReplies, setExpandedReplies] = useState<Record<string, boolean>>({});
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyDraft, setReplyDraft] = useState("");
+  const [postingReply, setPostingReply] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -82,7 +97,12 @@ export default function QuestionPage() {
       })
       .then((d) => {
         setQuestion(d.question);
-        setAnswers(d.answers ?? []);
+        setAnswers(
+          (d.answers ?? []).map((answer: Answer) => ({
+            ...answer,
+            replies: answer.replies ?? [],
+          }))
+        );
       })
       .catch(() => setNotFound(true));
   }, [id]);
@@ -144,13 +164,72 @@ export default function QuestionPage() {
         return;
       }
       if (!res.ok) throw new Error();
-      setAnswers((prev) => [...prev, d.answer]);
+      setAnswers((prev) => [...prev, { ...d.answer, replies: [] }]);
       setDraft("");
       toast("Answer posted", { variant: "success" });
     } catch {
       toast("Could not post answer", { variant: "error" });
     } finally {
       setPosting(false);
+    }
+  };
+
+  const toggleReplies = (answerId: string) => {
+    setExpandedReplies((prev) => ({ ...prev, [answerId]: !prev[answerId] }));
+  };
+
+  const toggleReplyComposer = (answerId: string) => {
+    if (!me) {
+      toast("Login to reply", { variant: "error", actionLabel: "Sign in", actionHref: "/login" });
+      return;
+    }
+    setReplyingTo((current) => (current === answerId ? null : answerId));
+    setReplyDraft("");
+  };
+
+  const handleReply = async (answerId: string) => {
+    const body = replyDraft.trim();
+    if (!me) {
+      toast("Login to reply", { variant: "error", actionLabel: "Sign in", actionHref: "/login" });
+      return;
+    }
+    if (!body) return;
+
+    setPostingReply(answerId);
+    try {
+      const res = await fetch("/api/replies", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answerId, body }),
+      });
+      const d = await res.json();
+      if (res.status === 401) {
+        toast("Login to reply", { variant: "error", actionLabel: "Sign in", actionHref: "/login" });
+        return;
+      }
+      if (!res.ok) throw new Error();
+      setAnswers((prev) =>
+        prev.map((a) => (a.id === answerId ? { ...a, replies: [...a.replies, d.reply] } : a))
+      );
+      setExpandedReplies((prev) => ({ ...prev, [answerId]: true }));
+      setReplyingTo(null);
+      setReplyDraft("");
+      toast("Reply posted", { variant: "success" });
+    } catch {
+      toast("Could not post reply", { variant: "error" });
+    } finally {
+      setPostingReply(null);
+    }
+  };
+
+  const handleDeleteReply = async (answerId: string, replyId: string) => {
+    const res = await fetch(`/api/replies?id=${replyId}`, { method: "DELETE" });
+    if (res.ok) {
+      setAnswers((prev) =>
+        prev.map((a) =>
+          a.id === answerId ? { ...a, replies: a.replies.filter((r) => r.id !== replyId) } : a
+        )
+      );
     }
   };
 
@@ -352,6 +431,117 @@ export default function QuestionPage() {
                         <div className="mt-3">
                           <PostBody body={a.body} />
                         </div>
+
+                        <div className="mt-3 flex flex-wrap items-center gap-4 border-t border-border/70 pt-3">
+                          <button
+                            type="button"
+                            onClick={() => toggleReplyComposer(a.id)}
+                            className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-muted-foreground transition-colors hover:text-primary"
+                          >
+                            <CornerDownRight className="size-3.5" /> Reply
+                          </button>
+                          {a.replies.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => toggleReplies(a.id)}
+                              aria-expanded={!!expandedReplies[a.id]}
+                              className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+                            >
+                              <ChevronDown
+                                className={cn(
+                                  "size-3.5 transition-transform",
+                                  expandedReplies[a.id] && "rotate-180"
+                                )}
+                              />
+                              {expandedReplies[a.id]
+                                ? "Hide replies"
+                                : `View ${a.replies.length} ${a.replies.length === 1 ? "reply" : "replies"}`}
+                            </button>
+                          )}
+                        </div>
+
+                        {replyingTo === a.id && (
+                          <div className="mt-3 rounded-xl border border-border bg-muted/30 p-3">
+                            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                              <CornerDownRight className="size-3" />
+                              Replying to {a.user.name ?? a.user.username}
+                            </div>
+                            <div className="mt-2">
+                              <DiscussComposer
+                                autoFocus
+                                compact
+                                value={replyDraft}
+                                onChange={setReplyDraft}
+                                minHeight={80}
+                                placeholder="Add a follow-up — did it work, or is there a better approach?"
+                              />
+                            </div>
+                            <div className="mt-2 flex justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setReplyingTo(null);
+                                  setReplyDraft("");
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => handleReply(a.id)}
+                                disabled={postingReply === a.id || !replyDraft.trim()}
+                                className="gap-1.5"
+                              >
+                                {postingReply === a.id ? (
+                                  <Loader2 className="size-3.5 animate-spin" />
+                                ) : (
+                                  <Send className="size-3.5" />
+                                )}
+                                Post reply
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {expandedReplies[a.id] && a.replies.length > 0 && (
+                          <div className="mt-4 space-y-4 border-l-2 border-border pl-4">
+                            {a.replies.map((r) => (
+                              <div key={r.id} className="reveal flex gap-2.5">
+                                <Avatar name={r.user.name ?? r.user.username} size={24} />
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <Link
+                                      href={`/u/${r.user.username}`}
+                                      className="text-[12px] font-semibold hover:text-primary"
+                                    >
+                                      {r.user.name ?? r.user.username}
+                                    </Link>
+                                    {r.userId === question.userId && (
+                                      <span className="chip !px-1.5 !py-0 !text-[9px]">asker</span>
+                                    )}
+                                    <span className="size-1 rounded-full bg-border" />
+                                    <span className="mono-label !text-[9px]">
+                                      {longDate(r.createdAt)}
+                                    </span>
+                                    {me?.id === r.userId && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteReply(a.id, r.id)}
+                                        className="ml-auto inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground transition-colors hover:text-destructive"
+                                      >
+                                        <Trash2 className="size-3" /> Delete
+                                      </button>
+                                    )}
+                                  </div>
+                                  <div className="mt-1.5 text-[13px]">
+                                    <PostBody body={r.body} />
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </article>
                   ))}
@@ -368,12 +558,14 @@ export default function QuestionPage() {
                     <Clock className="size-3" /> takes a minute
                   </span>
                 </div>
-                <Textarea
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  placeholder="Share what you know. Wrap code in triple backticks (```js … ```)."
-                  className="mt-3 min-h-[140px]"
-                />
+                <div className="mt-3">
+                  <DiscussComposer
+                    value={draft}
+                    onChange={setDraft}
+                    minHeight={140}
+                    placeholder="Share what you know. Type / for an image, code block, link or video."
+                  />
+                </div>
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
                   <p className="text-[11.5px] text-muted-foreground">
                     Specific beats clever. Show the fix, then explain why it works.

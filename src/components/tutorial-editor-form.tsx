@@ -1,15 +1,21 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useEditor, EditorContent } from "@tiptap/react";
+import { Check, X } from "lucide-react";
 import StarterKit from "@tiptap/starter-kit";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
+import Image from "@tiptap/extension-image";
+import { TableKit } from "@tiptap/extension-table";
 import { common, createLowlight } from "lowlight";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { RichContent } from "@/components/rich-content";
 import { SlashCommandMenu } from "@/components/editor-slash";
-import { BlogEditorToolbar } from "@/components/blog-editor-toolbar";
+import { BlogEditorToolbar, CODE_LANGS } from "@/components/blog-editor-toolbar";
+import { ImageDialog } from "@/components/editor-image";
+import { CodeLangTag, codeLangLabel } from "@/lib/code-lang-tag";
 
 const lowlight = createLowlight(common);
 
@@ -20,12 +26,14 @@ export interface TutorialFormData {
   title: string;
   content: string;
   language: string;
+  coverImage: string | null;
 }
 
 interface TutorialFormProps {
   initialTitle: string;
   initialLanguage: string;
   initialContent: string;
+  initialCoverImage?: string | null;
   submitLabel: string;
   busy: boolean;
   error: string | null;
@@ -45,6 +53,7 @@ export function TutorialForm({
   initialTitle,
   initialLanguage,
   initialContent,
+  initialCoverImage,
   submitLabel,
   busy,
   error,
@@ -58,6 +67,15 @@ export function TutorialForm({
   const [mode, setMode] = useState<"write" | "preview">("write");
   // focus mode: clicking the writing surface grows it to fill the window
   const [expanded, setExpanded] = useState(false);
+  const [imageOpen, setImageOpen] = useState(false);
+  const [coverOpen, setCoverOpen] = useState(false);
+  const [coverImage, setCoverImage] = useState<string | null>(initialCoverImage ?? null);
+  const [langMenu, setLangMenu] = useState<{
+    pos: number;
+    top: number;
+    left: number;
+    current: string;
+  } | null>(null);
 
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -161,6 +179,11 @@ export function TutorialForm({
     extensions: [
       StarterKit.configure({ codeBlock: false }),
       CodeBlockLowlight.configure({ lowlight, defaultLanguage: "plaintext" }),
+      // URL/path images in essays; discuss posts use the separate media upload
+      Image.configure({ inline: false, allowBase64: true }),
+      TableKit.configure({ table: { resizable: false } }),
+      // clickable language tag in the corner of every code block
+      CodeLangTag,
     ],
     content: initialContent || STARTER_HTML,
     editorProps: {
@@ -180,6 +203,73 @@ export function TutorialForm({
       e.view.dom.setAttribute("data-empty", String(e.isEmpty));
     },
   });
+
+  // Clicking a code block's language tag opens the language menu. Capture +
+  // preventDefault keeps ProseMirror from moving the caret to the widget.
+  useEffect(() => {
+    if (!editor) return;
+    const dom = editor.view.dom;
+    const onDown = (e: MouseEvent) => {
+      const btn = (e.target as HTMLElement).closest?.(".code-lang-tag") as HTMLElement | null;
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+
+      const pos = Number(btn.dataset.codeLangPos);
+      if (!Number.isFinite(pos)) return;
+
+      const rect = btn.getBoundingClientRect();
+      const width = 184;
+      const height = Math.min(300, CODE_LANGS.length * 30 + 44);
+      const below = window.innerHeight - rect.bottom;
+      const top = below < height + 16 ? Math.max(8, rect.top - height - 6) : rect.bottom + 6;
+      const left = Math.min(Math.max(8, rect.right - width), window.innerWidth - width - 8);
+
+      setLangMenu({
+        pos,
+        top,
+        left,
+        current: codeLangLabel(editor.state.doc.nodeAt(pos)?.attrs.language as string | undefined),
+      });
+    };
+
+    dom.addEventListener("mousedown", onDown, true);
+    return () => dom.removeEventListener("mousedown", onDown, true);
+  }, [editor]);
+
+  // dismiss the language menu on an outside click, Escape or any scroll
+  useEffect(() => {
+    if (!langMenu) return;
+    const onDown = (e: MouseEvent) => {
+      if ((e.target as HTMLElement).closest?.(".code-lang-menu")) return;
+      setLangMenu(null);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLangMenu(null);
+    };
+    const dismiss = () => setLangMenu(null);
+    window.addEventListener("mousedown", onDown);
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("scroll", dismiss, true);
+    window.addEventListener("resize", dismiss);
+    return () => {
+      window.removeEventListener("mousedown", onDown);
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", dismiss, true);
+      window.removeEventListener("resize", dismiss);
+    };
+  }, [langMenu]);
+
+  const applyCodeLang = (language: string) => {
+    if (!langMenu) return;
+    editor
+      ?.chain()
+      .focus()
+      .setNodeSelection(langMenu.pos)
+      .updateAttributes("codeBlock", { language })
+      .run();
+    setLangMenu(null);
+  };
 
   // Escape leaves focus mode — unless the slash menu is open, which owns it.
   const leaveRef = useRef(leaveFocusMode);
@@ -213,6 +303,7 @@ export function TutorialForm({
       title,
       content: editor.getHTML(),
       language,
+      coverImage,
     });
   };
 
@@ -243,6 +334,16 @@ export function TutorialForm({
           onLanguageChange={setLanguage}
           expanded={expanded}
           onToggleFocus={() => (expanded ? leaveFocusMode() : enterFocusMode())}
+          onInsertImage={() => setImageOpen(true)}
+          onEditCover={() => setCoverOpen(true)}
+          hasCover={!!coverImage}
+          onInsertTable={() =>
+            editor
+              .chain()
+              .focus()
+              .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+              .run()
+          }
         />
       ) : (
         <div
@@ -252,6 +353,35 @@ export function TutorialForm({
             expanded ? "mb-3 shrink-0" : "-mx-2 mb-6",
           )}
         />
+      )}
+
+      {coverImage && (
+        <div className="mb-3 flex items-center gap-3 rounded-2xl border border-border bg-card/80 p-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={coverImage}
+            alt="Cover preview"
+            className="h-12 w-20 shrink-0 rounded-lg border border-border object-cover"
+          />
+          <div className="min-w-0">
+            <p className="text-[12px] font-medium">Cover image</p>
+            <p className="truncate text-[11px] text-muted-foreground">{coverImage}</p>
+          </div>
+          <div className="ml-auto flex shrink-0 items-center gap-1">
+            <Button type="button" variant="outline" size="sm" onClick={() => setCoverOpen(true)}>
+              Change
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="Remove cover image"
+              onClick={() => setCoverImage(null)}
+            >
+              <X className="size-4" />
+            </Button>
+          </div>
+        </div>
       )}
 
       {/* ── the writing surface: title first, then the body ───────────── */}
@@ -304,9 +434,11 @@ export function TutorialForm({
       >
         Tip: type <span className="font-mono text-foreground">/</span> on a new line to insert a
         heading, list, quote, code block or divider — then keep typing to filter and press Enter. Type{" "}
-        <span className="font-mono">```</span> for a code block and pick its language on the right.
-        Switch to <span className="font-medium text-foreground">Preview</span> to read the post exactly
-        as your readers will.
+        <span className="font-mono">```</span> for a code block and pick its language on the right,
+        or <span className="font-mono">/image</span> and <span className="font-mono">/table</span> for
+        media. Readers can click any image to open it with a zoom animation. Switch to{" "}
+        <span className="font-medium text-foreground">Preview</span> to read the post exactly as your
+        readers will.
       </p>
 
       {editor && (
@@ -315,8 +447,74 @@ export function TutorialForm({
           enabled={mode === "write"}
           keyHandlerRef={slashKeyRef}
           openRef={slashOpenRef}
+          onInsertImage={() => setImageOpen(true)}
         />
       )}
+
+      {editor && (
+        <ImageDialog
+          open={coverOpen}
+          heading="Add a cover image"
+          onClose={() => setCoverOpen(false)}
+          onInsert={({ src }) => {
+            setCoverImage(src);
+            setCoverOpen(false);
+          }}
+        />
+      )}
+
+      {editor && (
+        <ImageDialog
+          open={imageOpen}
+          onClose={() => setImageOpen(false)}
+          onInsert={({ src, alt }) => {
+            editor.chain().focus().setImage({ src, alt }).run();
+            setImageOpen(false);
+          }}
+        />
+      )}
+
+      {langMenu &&
+        createPortal(
+          <div
+            role="listbox"
+            aria-label="Code language"
+            className="code-lang-menu fixed z-[110] w-[184px] overflow-hidden rounded-xl border border-border bg-popover p-1.5 shadow-xl"
+            style={{ top: langMenu.top, left: langMenu.left }}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <p className="px-1.5 pb-1 pt-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+              Code language
+            </p>
+            <div className="max-h-[266px] overflow-y-auto">
+              {CODE_LANGS.map((l) => {
+                const active = codeLangLabel(l) === langMenu.current;
+                return (
+                  <button
+                    key={l}
+                    type="button"
+                    role="option"
+                    aria-selected={active}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      applyCodeLang(l);
+                    }}
+                    className={
+                      "flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-[6px] text-left text-[12.5px] transition-colors " +
+                      (active
+                        ? "bg-accent text-accent-foreground"
+                        : "text-foreground hover:bg-muted")
+                    }
+                  >
+                    <span>{l === "c_cpp" ? "cpp" : l}</span>
+                    {active && <Check className="size-3.5 shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>,
+          document.body
+        )}
 
       {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
 

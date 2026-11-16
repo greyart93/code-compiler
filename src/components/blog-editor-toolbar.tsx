@@ -4,9 +4,12 @@ import { useEditorState, type Editor } from "@tiptap/react";
 import {
   Bold,
   Code,
+  Columns3,
   Eye,
   Heading2,
   Heading3,
+  Image as ImageIcon,
+  ImagePlus,
   Italic,
   List,
   ListOrdered,
@@ -14,7 +17,10 @@ import {
   Minimize2,
   Quote,
   Redo2,
+  Rows3,
+  Table,
   Terminal,
+  Trash2,
   Undo2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,7 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const CODE_LANGS = [
+export const CODE_LANGS = [
   "plaintext",
   "javascript",
   "typescript",
@@ -134,6 +140,10 @@ interface BlogEditorToolbarProps {
   onLanguageChange: (language: string) => void;
   expanded: boolean;
   onToggleFocus: () => void;
+  onInsertImage: () => void;
+  onInsertTable: () => void;
+  onEditCover: () => void;
+  hasCover: boolean;
 }
 
 export function BlogEditorToolbar({
@@ -144,6 +154,10 @@ export function BlogEditorToolbar({
   onLanguageChange,
   expanded,
   onToggleFocus,
+  onInsertImage,
+  onInsertTable,
+  onEditCover,
+  hasCover,
 }: BlogEditorToolbarProps) {
   const ui = useEditorState({
     editor,
@@ -158,6 +172,7 @@ export function BlogEditorToolbar({
       inlineCode: e.isActive("code"),
       codeBlock: e.isActive("codeBlock"),
       codeLang: (e.getAttributes("codeBlock")?.language as string | undefined) ?? "plaintext",
+      inTable: e.isActive("table"),
     }),
   });
 
@@ -257,6 +272,42 @@ export function BlogEditorToolbar({
       >
         <Terminal className="size-4" />
       </Btn>
+      <Btn label="Insert image" id="editor-insert-image" onClick={onInsertImage}>
+        <ImageIcon className="size-4" />
+      </Btn>
+      <Btn
+        label={hasCover ? "Change cover image" : "Add cover image"}
+        id="editor-cover-image"
+        active={hasCover}
+        onClick={onEditCover}
+      >
+        <ImagePlus className="size-4" />
+      </Btn>
+      <Btn label="Insert table" id="editor-insert-table" onClick={onInsertTable}>
+        <Table className="size-4" />
+      </Btn>
+      {ui.inTable && (
+        <>
+          <Btn
+            label="Add row below"
+            onClick={() => editor.chain().focus().addRowAfter().run()}
+          >
+            <Rows3 className="size-4" />
+          </Btn>
+          <Btn
+            label="Add column right"
+            onClick={() => editor.chain().focus().addColumnAfter().run()}
+          >
+            <Columns3 className="size-4" />
+          </Btn>
+          <Btn
+            label="Delete table"
+            onClick={() => editor.chain().focus().deleteTable().run()}
+          >
+            <Trash2 className="size-4" />
+          </Btn>
+        </>
+      )}
 
       <span className="mx-1 h-5 w-px bg-border" />
       {/* Write / Preview — see the post exactly as readers will */}

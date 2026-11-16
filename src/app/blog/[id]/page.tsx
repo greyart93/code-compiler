@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, ViewTransition } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -11,6 +11,8 @@ import {
   Clock,
   FileText,
   Loader2,
+  PanelLeftClose,
+  PanelLeftOpen,
   Pencil,
   Share2,
   Trash2,
@@ -21,12 +23,17 @@ import { RichContent } from "@/components/rich-content";
 import { Avatar, Tag } from "@/components/ui/primitives";
 import { toast } from "@/components/ui/toaster";
 import { useMe } from "@/lib/use-me";
+import { getCachedTutorial } from "@/lib/blog-cache";
+import { loadImage } from "@/lib/blog-navigation";
+import { finishRouteProgress } from "@/lib/route-progress";
+import { cn } from "@/lib/utils";
 
 type Tutorial = {
   id: string;
   title: string;
   content: string;
   language: string | null;
+  coverImage: string | null;
   createdAt: string;
   user: { id: string; username: string; name: string | null; image?: string | null };
 };
@@ -58,12 +65,18 @@ export default function TutorialPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { me } = useMe();
-  const [tutorial, setTutorial] = useState<Tutorial | null>(null);
+  // the index caches the posts it already fetched, so a navigation can paint
+  // the same cover in the same commit and the shared element can morph
+  const [tutorial, setTutorial] = useState<Tutorial | null>(() =>
+    getCachedTutorial(id) ?? null
+  );
   const [notFound, setNotFound] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [copied, setCopied] = useState(false);
+  // immersive reading by default: the metadata rail is hidden until asked for
+  const [showSidebar, setShowSidebar] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -75,6 +88,28 @@ export default function TutorialPage() {
       .then((d) => setTutorial(d.tutorial))
       .catch(() => setNotFound(true));
   }, [id]);
+
+  // The card click preloads the cover, but the page-opening bar should only
+  // finish once that cover is decoded and painted on the article.
+  useEffect(() => {
+    if (!tutorial) return;
+    let cancelled = false;
+    const done = () => {
+      if (!cancelled) finishRouteProgress();
+    };
+    if (tutorial.coverImage) {
+      void loadImage(tutorial.coverImage).then(done);
+    } else {
+      done();
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [tutorial]);
+
+  useEffect(() => {
+    if (notFound) finishRouteProgress();
+  }, [notFound]);
 
   useEffect(() => {
     const onScroll = () => {
@@ -140,7 +175,11 @@ export default function TutorialPage() {
               The essay may have been unpublished or the link is wrong.
             </p>
             <div className="mt-6 flex justify-center gap-2">
-              <Link href="/blog" className="btn btn-ink">
+              <Link
+                href="/blog"
+                transitionTypes={["blog-back"]}
+                className="btn btn-ink"
+              >
                 <ArrowLeft className="size-4" /> The blog
               </Link>
               <Link href="/explore" className="btn btn-outline">
@@ -184,6 +223,7 @@ export default function TutorialPage() {
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
           <Link
             href="/blog"
+            transitionTypes={["blog-back"]}
             className="group inline-flex items-center gap-2 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             <span className="grid size-7 place-items-center rounded-full border border-border transition-colors group-hover:border-foreground/30">
@@ -193,6 +233,23 @@ export default function TutorialPage() {
           </Link>
 
           <div className="flex items-center gap-1.5">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowSidebar((v) => !v)}
+              aria-pressed={showSidebar}
+              title={showSidebar ? "Hide essay details" : "Show essay details"}
+              className="gap-1.5"
+            >
+              {showSidebar ? (
+                <PanelLeftClose className="size-3.5" />
+              ) : (
+                <PanelLeftOpen className="size-3.5" />
+              )}
+              <span className="hidden sm:inline">
+                {showSidebar ? "Hide details" : "Show details"}
+              </span>
+            </Button>
             <Button variant="ghost" size="sm" onClick={handleShare} className="gap-1.5">
               {copied ? <Check className="size-3.5 text-emerald-500" /> : <Share2 className="size-3.5" />}
               {copied ? "Copied" : "Share"}
@@ -223,9 +280,25 @@ export default function TutorialPage() {
           </div>
         </div>
 
-        <div className="mx-auto mt-8 grid max-w-[1120px] items-start gap-10 lg:mt-12 lg:grid-cols-[220px_minmax(0,720px)] lg:justify-center lg:gap-14">
-          {/* ── sidebar ─────────────────────────────────────────────── */}
-          <aside className="grid gap-6 lg:sticky lg:top-24">
+        <div
+          className={cn(
+            "mx-auto mt-8 grid max-w-[720px] items-start transition-[grid-template-columns,gap] duration-300 ease-out lg:mt-12 lg:max-w-[1120px] lg:justify-center",
+            showSidebar
+              ? "gap-10 lg:grid-cols-[220px_minmax(0,720px)] lg:gap-14"
+              : "gap-0 lg:grid-cols-[0px_minmax(0,720px)] lg:gap-0"
+          )}
+        >
+          {/* ── sidebar (hidden by default, immersive reading) ───────── */}
+          <aside
+            aria-hidden={!showSidebar}
+            inert={!showSidebar}
+            className={cn(
+              "grid transition-[grid-template-rows,opacity] duration-300 ease-out lg:sticky lg:top-24",
+              showSidebar ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+            )}
+          >
+            <div className="min-h-0 overflow-hidden">
+            <div className="grid gap-6">
             <div>
               <p className="mono-label">Essay</p>
               <div className="mt-4 space-y-2.5">
@@ -276,6 +349,8 @@ export default function TutorialPage() {
                 <Share2 className="size-3.5" /> Copy link
               </button>
             </div>
+            </div>
+            </div>
           </aside>
 
           {/* ── article ─────────────────────────────────────────────── */}
@@ -306,6 +381,23 @@ export default function TutorialPage() {
               </div>
             </header>
 
+            {tutorial.coverImage && (
+              <div className="mt-8 overflow-hidden rounded-2xl border border-border bg-muted">
+                <ViewTransition
+                  name={`blog-cover-${tutorial.id}`}
+                  share="morph"
+                  default="none"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={tutorial.coverImage}
+                    alt=""
+                    className="aspect-[16/9] w-full object-cover"
+                  />
+                </ViewTransition>
+              </div>
+            )}
+
             <RichContent className="medium-article mt-8" html={tutorial.content} />
 
             <footer className="mt-12 border-t border-border pt-7">
@@ -327,7 +419,11 @@ export default function TutorialPage() {
                   <button type="button" onClick={handleShare} className="btn btn-outline h-9 px-4 text-[12.5px]">
                     <Share2 className="size-3.5" /> Share
                   </button>
-                  <Link href="/blog" className="btn btn-ink h-9 px-4 text-[12.5px]">
+                  <Link
+                    href="/blog"
+                    transitionTypes={["blog-back"]}
+                    className="btn btn-ink h-9 px-4 text-[12.5px]"
+                  >
                     More essays <ArrowUpRight className="size-3.5" />
                   </Link>
                 </div>

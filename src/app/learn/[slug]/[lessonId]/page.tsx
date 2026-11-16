@@ -17,6 +17,7 @@ import { SiteHeader } from "@/components/site-header";
 import { MarkdownContent } from "@/components/markdown-content";
 import { LessonExercises } from "@/components/lesson-exercise";
 import { LessonNotes } from "@/components/lesson-notes";
+import { VideoPlayer } from "@/components/video-player";
 import { COURSES, type Exercise } from "@/data/courses";
 import { isRunnableSnippet, resolveLanguage } from "@/lib/language";
 import { toast } from "@/components/ui/toaster";
@@ -59,6 +60,7 @@ export default function LessonPage() {
   const [solvedExercises, setSolvedExercises] = useState<Set<number>>(new Set());
   const [lessonTitle, setLessonTitle] = useState("");
   const [minutes, setMinutes] = useState(0);
+  const [lessonVideo, setLessonVideo] = useState<string | null>(null);
   const [isDone, setIsDone] = useState(false);
   const [scrollPct, setScrollPct] = useState(0);
 
@@ -83,6 +85,7 @@ export default function LessonPage() {
       }
       setLessonTitle(l.title);
       setMinutes(l.minutes);
+      setLessonVideo(l.videoUrl ?? null);
       setLessonMd(l.md);
       setExercises(l.exercises?.length ? l.exercises : l.exercise ? [l.exercise] : []);
       const restored = readSolvedExercises(slug, lessonId as string);
@@ -297,6 +300,14 @@ export default function LessonPage() {
               animate={{ opacity: 1, y: 0 }}
               className="min-w-0"
             >
+              {lessonVideo && (
+                <VideoPlayer
+                  src={lessonVideo}
+                  title={lessonTitle}
+                  className="mb-8"
+                />
+              )}
+
               <MarkdownContent
                 md={lessonMd}
                 onRunCode={canRunCourse ? openInPlayground : undefined}

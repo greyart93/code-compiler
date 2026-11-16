@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ArrowUpRight,
@@ -62,6 +62,21 @@ function highlight(code: string, language: string) {
   }
   return escapeHtml(code);
 }
+
+/**
+ * highlight.js is synchronous and expensive. Memoizing each card means liking
+ * or commenting does not re-highlight every visible snippet on every render.
+ */
+const CodePreview = memo(function CodePreview({
+  code,
+  language,
+}: {
+  code: string;
+  language: string;
+}) {
+  const html = useMemo(() => highlight(code, language), [code, language]);
+  return <code className="hljs !bg-transparent" dangerouslySetInnerHTML={{ __html: html }} />;
+});
 
 function shortDate(value: string) {
   return new Date(value).toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
@@ -431,10 +446,7 @@ export default function ExplorePage() {
                       {featured.language.toUpperCase()}
                     </span>
                     <pre className="relative !p-5 text-[12px] leading-[1.7]">
-                      <code
-                        className="hljs !bg-transparent"
-                        dangerouslySetInnerHTML={{ __html: highlight(featured.code, featured.language) }}
-                      />
+                      <CodePreview code={featured.code} language={featured.language} />
                     </pre>
                     <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[var(--code-bg)] to-transparent" />
                     <button
@@ -499,10 +511,7 @@ export default function ExplorePage() {
 
                       <div className="code-pane relative mt-3 h-[150px] overflow-hidden">
                         <pre className="!p-3.5 text-[11px] leading-[1.65]">
-                          <code
-                            className="hljs !bg-transparent"
-                            dangerouslySetInnerHTML={{ __html: highlight(s.code, s.language) }}
-                          />
+                          <CodePreview code={s.code} language={s.language} />
                         </pre>
                         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[var(--code-bg)] to-transparent" />
                       </div>

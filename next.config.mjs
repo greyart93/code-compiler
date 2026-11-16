@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Opening the dev server on 127.0.0.1 made Next block its HMR websocket, so
+  // React never hydrated and async pages stayed on their loading state.
+  allowedDevOrigins: ["127.0.0.1"],
   // nextstepjs ships ESM only
   transpilePackages: ["nextstepjs"],
   images: {

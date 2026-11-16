@@ -23,6 +23,7 @@ model User {
   likes     Like[]
   questions Question[]
   answers   Answer[]
+  replies   Reply[]
   votes     Vote[]
 
   courseProgress CourseProgress[]
@@ -39,6 +40,7 @@ model User {
   following   Follow[]     @relation("Following")
   followers   Follow[]     @relation("Followers")
   collections Collection[]
+  videos      Video[]
 }
 
 /** A directed follow edge: `follower` follows `following`.
@@ -242,12 +244,53 @@ model Comment {
   @@index([snippetId])
 }
 
-model Tutorial {
+/** Small uploaded images for discuss posts. Bytes live in Postgres so they work
+ *  on the same deploy as the rest of the app without a separate file host. */
+model Media {
   id        String   @id @default(cuid())
-  title     String
-  content   String
-  language  String?
-  published Boolean  @default(true)
+  userId    String?
+  mimeType  String
+  data      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+enum VideoStatus {
+  WAITING
+  UPLOADING
+  PROCESSING
+  READY
+  ERRORED
+}
+
+/** A Mux-hosted video. Bytes live at Mux; this row owns the upload/asset ids
+ *  and the public playback id used by posts and lessons. */
+model Video {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  muxUploadId String?     @unique
+  muxAssetId  String?     @unique
+  playbackId  String?     @unique
+  status      VideoStatus @default(WAITING)
+  title       String?
+  duration    Float?
+  aspectRatio String?
+  error       String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([userId, createdAt])
+}
+
+model Tutorial {
+  id         String   @id @default(cuid())
+  title      String
+  content    String
+  language   String?
+  coverImage String?
+  published  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   userId    String
@@ -281,9 +324,23 @@ model Answer {
   questionId String
   question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
-  votes Vote[]
+  votes   Vote[]
+  replies Reply[]
 
   @@index([questionId])
+}
+
+/** A follow-up under an answer; one level deep, shown collapsed by default. */
+model Reply {
+  id        String   @id @default(cuid())
+  body      String
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answerId  String
+  answer    Answer   @relation(fields: [answerId], references: [id], onDelete: Cascade)
+
+  @@index([answerId])
 }
 
 model Vote {

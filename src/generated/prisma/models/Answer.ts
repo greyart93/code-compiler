@@ -185,6 +185,7 @@ export type AnswerWhereInput = {
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   question?: Prisma.XOR<Prisma.QuestionScalarRelationFilter, Prisma.QuestionWhereInput>
   votes?: Prisma.VoteListRelationFilter
+  replies?: Prisma.ReplyListRelationFilter
 }
 
 export type AnswerOrderByWithRelationInput = {
@@ -196,6 +197,7 @@ export type AnswerOrderByWithRelationInput = {
   user?: Prisma.UserOrderByWithRelationInput
   question?: Prisma.QuestionOrderByWithRelationInput
   votes?: Prisma.VoteOrderByRelationAggregateInput
+  replies?: Prisma.ReplyOrderByRelationAggregateInput
 }
 
 export type AnswerWhereUniqueInput = Prisma.AtLeast<{
@@ -210,6 +212,7 @@ export type AnswerWhereUniqueInput = Prisma.AtLeast<{
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   question?: Prisma.XOR<Prisma.QuestionScalarRelationFilter, Prisma.QuestionWhereInput>
   votes?: Prisma.VoteListRelationFilter
+  replies?: Prisma.ReplyListRelationFilter
 }, "id">
 
 export type AnswerOrderByWithAggregationInput = {
@@ -241,6 +244,7 @@ export type AnswerCreateInput = {
   user: Prisma.UserCreateNestedOneWithoutAnswersInput
   question: Prisma.QuestionCreateNestedOneWithoutAnswersInput
   votes?: Prisma.VoteCreateNestedManyWithoutAnswerInput
+  replies?: Prisma.ReplyCreateNestedManyWithoutAnswerInput
 }
 
 export type AnswerUncheckedCreateInput = {
@@ -250,6 +254,7 @@ export type AnswerUncheckedCreateInput = {
   userId: string
   questionId: string
   votes?: Prisma.VoteUncheckedCreateNestedManyWithoutAnswerInput
+  replies?: Prisma.ReplyUncheckedCreateNestedManyWithoutAnswerInput
 }
 
 export type AnswerUpdateInput = {
@@ -259,6 +264,7 @@ export type AnswerUpdateInput = {
   user?: Prisma.UserUpdateOneRequiredWithoutAnswersNestedInput
   question?: Prisma.QuestionUpdateOneRequiredWithoutAnswersNestedInput
   votes?: Prisma.VoteUpdateManyWithoutAnswerNestedInput
+  replies?: Prisma.ReplyUpdateManyWithoutAnswerNestedInput
 }
 
 export type AnswerUncheckedUpdateInput = {
@@ -268,6 +274,7 @@ export type AnswerUncheckedUpdateInput = {
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   questionId?: Prisma.StringFieldUpdateOperationsInput | string
   votes?: Prisma.VoteUncheckedUpdateManyWithoutAnswerNestedInput
+  replies?: Prisma.ReplyUncheckedUpdateManyWithoutAnswerNestedInput
 }
 
 export type AnswerCreateManyInput = {
@@ -324,6 +331,11 @@ export type AnswerMinOrderByAggregateInput = {
   createdAt?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   questionId?: Prisma.SortOrder
+}
+
+export type AnswerScalarRelationFilter = {
+  is?: Prisma.AnswerWhereInput
+  isNot?: Prisma.AnswerWhereInput
 }
 
 export type AnswerNullableScalarRelationFilter = {
@@ -415,6 +427,20 @@ export type AnswerUncheckedUpdateManyWithoutQuestionNestedInput = {
   deleteMany?: Prisma.AnswerScalarWhereInput | Prisma.AnswerScalarWhereInput[]
 }
 
+export type AnswerCreateNestedOneWithoutRepliesInput = {
+  create?: Prisma.XOR<Prisma.AnswerCreateWithoutRepliesInput, Prisma.AnswerUncheckedCreateWithoutRepliesInput>
+  connectOrCreate?: Prisma.AnswerCreateOrConnectWithoutRepliesInput
+  connect?: Prisma.AnswerWhereUniqueInput
+}
+
+export type AnswerUpdateOneRequiredWithoutRepliesNestedInput = {
+  create?: Prisma.XOR<Prisma.AnswerCreateWithoutRepliesInput, Prisma.AnswerUncheckedCreateWithoutRepliesInput>
+  connectOrCreate?: Prisma.AnswerCreateOrConnectWithoutRepliesInput
+  upsert?: Prisma.AnswerUpsertWithoutRepliesInput
+  connect?: Prisma.AnswerWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.AnswerUpdateToOneWithWhereWithoutRepliesInput, Prisma.AnswerUpdateWithoutRepliesInput>, Prisma.AnswerUncheckedUpdateWithoutRepliesInput>
+}
+
 export type AnswerCreateNestedOneWithoutVotesInput = {
   create?: Prisma.XOR<Prisma.AnswerCreateWithoutVotesInput, Prisma.AnswerUncheckedCreateWithoutVotesInput>
   connectOrCreate?: Prisma.AnswerCreateOrConnectWithoutVotesInput
@@ -437,6 +463,7 @@ export type AnswerCreateWithoutUserInput = {
   createdAt?: Date | string
   question: Prisma.QuestionCreateNestedOneWithoutAnswersInput
   votes?: Prisma.VoteCreateNestedManyWithoutAnswerInput
+  replies?: Prisma.ReplyCreateNestedManyWithoutAnswerInput
 }
 
 export type AnswerUncheckedCreateWithoutUserInput = {
@@ -445,6 +472,7 @@ export type AnswerUncheckedCreateWithoutUserInput = {
   createdAt?: Date | string
   questionId: string
   votes?: Prisma.VoteUncheckedCreateNestedManyWithoutAnswerInput
+  replies?: Prisma.ReplyUncheckedCreateNestedManyWithoutAnswerInput
 }
 
 export type AnswerCreateOrConnectWithoutUserInput = {
@@ -490,6 +518,7 @@ export type AnswerCreateWithoutQuestionInput = {
   createdAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutAnswersInput
   votes?: Prisma.VoteCreateNestedManyWithoutAnswerInput
+  replies?: Prisma.ReplyCreateNestedManyWithoutAnswerInput
 }
 
 export type AnswerUncheckedCreateWithoutQuestionInput = {
@@ -498,6 +527,7 @@ export type AnswerUncheckedCreateWithoutQuestionInput = {
   createdAt?: Date | string
   userId: string
   votes?: Prisma.VoteUncheckedCreateNestedManyWithoutAnswerInput
+  replies?: Prisma.ReplyUncheckedCreateNestedManyWithoutAnswerInput
 }
 
 export type AnswerCreateOrConnectWithoutQuestionInput = {
@@ -526,12 +556,65 @@ export type AnswerUpdateManyWithWhereWithoutQuestionInput = {
   data: Prisma.XOR<Prisma.AnswerUpdateManyMutationInput, Prisma.AnswerUncheckedUpdateManyWithoutQuestionInput>
 }
 
+export type AnswerCreateWithoutRepliesInput = {
+  id?: string
+  body: string
+  createdAt?: Date | string
+  user: Prisma.UserCreateNestedOneWithoutAnswersInput
+  question: Prisma.QuestionCreateNestedOneWithoutAnswersInput
+  votes?: Prisma.VoteCreateNestedManyWithoutAnswerInput
+}
+
+export type AnswerUncheckedCreateWithoutRepliesInput = {
+  id?: string
+  body: string
+  createdAt?: Date | string
+  userId: string
+  questionId: string
+  votes?: Prisma.VoteUncheckedCreateNestedManyWithoutAnswerInput
+}
+
+export type AnswerCreateOrConnectWithoutRepliesInput = {
+  where: Prisma.AnswerWhereUniqueInput
+  create: Prisma.XOR<Prisma.AnswerCreateWithoutRepliesInput, Prisma.AnswerUncheckedCreateWithoutRepliesInput>
+}
+
+export type AnswerUpsertWithoutRepliesInput = {
+  update: Prisma.XOR<Prisma.AnswerUpdateWithoutRepliesInput, Prisma.AnswerUncheckedUpdateWithoutRepliesInput>
+  create: Prisma.XOR<Prisma.AnswerCreateWithoutRepliesInput, Prisma.AnswerUncheckedCreateWithoutRepliesInput>
+  where?: Prisma.AnswerWhereInput
+}
+
+export type AnswerUpdateToOneWithWhereWithoutRepliesInput = {
+  where?: Prisma.AnswerWhereInput
+  data: Prisma.XOR<Prisma.AnswerUpdateWithoutRepliesInput, Prisma.AnswerUncheckedUpdateWithoutRepliesInput>
+}
+
+export type AnswerUpdateWithoutRepliesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  body?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneRequiredWithoutAnswersNestedInput
+  question?: Prisma.QuestionUpdateOneRequiredWithoutAnswersNestedInput
+  votes?: Prisma.VoteUpdateManyWithoutAnswerNestedInput
+}
+
+export type AnswerUncheckedUpdateWithoutRepliesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  body?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  questionId?: Prisma.StringFieldUpdateOperationsInput | string
+  votes?: Prisma.VoteUncheckedUpdateManyWithoutAnswerNestedInput
+}
+
 export type AnswerCreateWithoutVotesInput = {
   id?: string
   body: string
   createdAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutAnswersInput
   question: Prisma.QuestionCreateNestedOneWithoutAnswersInput
+  replies?: Prisma.ReplyCreateNestedManyWithoutAnswerInput
 }
 
 export type AnswerUncheckedCreateWithoutVotesInput = {
@@ -540,6 +623,7 @@ export type AnswerUncheckedCreateWithoutVotesInput = {
   createdAt?: Date | string
   userId: string
   questionId: string
+  replies?: Prisma.ReplyUncheckedCreateNestedManyWithoutAnswerInput
 }
 
 export type AnswerCreateOrConnectWithoutVotesInput = {
@@ -564,6 +648,7 @@ export type AnswerUpdateWithoutVotesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutAnswersNestedInput
   question?: Prisma.QuestionUpdateOneRequiredWithoutAnswersNestedInput
+  replies?: Prisma.ReplyUpdateManyWithoutAnswerNestedInput
 }
 
 export type AnswerUncheckedUpdateWithoutVotesInput = {
@@ -572,6 +657,7 @@ export type AnswerUncheckedUpdateWithoutVotesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   questionId?: Prisma.StringFieldUpdateOperationsInput | string
+  replies?: Prisma.ReplyUncheckedUpdateManyWithoutAnswerNestedInput
 }
 
 export type AnswerCreateManyUserInput = {
@@ -587,6 +673,7 @@ export type AnswerUpdateWithoutUserInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   question?: Prisma.QuestionUpdateOneRequiredWithoutAnswersNestedInput
   votes?: Prisma.VoteUpdateManyWithoutAnswerNestedInput
+  replies?: Prisma.ReplyUpdateManyWithoutAnswerNestedInput
 }
 
 export type AnswerUncheckedUpdateWithoutUserInput = {
@@ -595,6 +682,7 @@ export type AnswerUncheckedUpdateWithoutUserInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   questionId?: Prisma.StringFieldUpdateOperationsInput | string
   votes?: Prisma.VoteUncheckedUpdateManyWithoutAnswerNestedInput
+  replies?: Prisma.ReplyUncheckedUpdateManyWithoutAnswerNestedInput
 }
 
 export type AnswerUncheckedUpdateManyWithoutUserInput = {
@@ -617,6 +705,7 @@ export type AnswerUpdateWithoutQuestionInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutAnswersNestedInput
   votes?: Prisma.VoteUpdateManyWithoutAnswerNestedInput
+  replies?: Prisma.ReplyUpdateManyWithoutAnswerNestedInput
 }
 
 export type AnswerUncheckedUpdateWithoutQuestionInput = {
@@ -625,6 +714,7 @@ export type AnswerUncheckedUpdateWithoutQuestionInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   votes?: Prisma.VoteUncheckedUpdateManyWithoutAnswerNestedInput
+  replies?: Prisma.ReplyUncheckedUpdateManyWithoutAnswerNestedInput
 }
 
 export type AnswerUncheckedUpdateManyWithoutQuestionInput = {
@@ -641,10 +731,12 @@ export type AnswerUncheckedUpdateManyWithoutQuestionInput = {
 
 export type AnswerCountOutputType = {
   votes: number
+  replies: number
 }
 
 export type AnswerCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   votes?: boolean | AnswerCountOutputTypeCountVotesArgs
+  replies?: boolean | AnswerCountOutputTypeCountRepliesArgs
 }
 
 /**
@@ -664,6 +756,13 @@ export type AnswerCountOutputTypeCountVotesArgs<ExtArgs extends runtime.Types.Ex
   where?: Prisma.VoteWhereInput
 }
 
+/**
+ * AnswerCountOutputType without action
+ */
+export type AnswerCountOutputTypeCountRepliesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ReplyWhereInput
+}
+
 
 export type AnswerSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -674,6 +773,7 @@ export type AnswerSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   question?: boolean | Prisma.QuestionDefaultArgs<ExtArgs>
   votes?: boolean | Prisma.Answer$votesArgs<ExtArgs>
+  replies?: boolean | Prisma.Answer$repliesArgs<ExtArgs>
   _count?: boolean | Prisma.AnswerCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["answer"]>
 
@@ -710,6 +810,7 @@ export type AnswerInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   question?: boolean | Prisma.QuestionDefaultArgs<ExtArgs>
   votes?: boolean | Prisma.Answer$votesArgs<ExtArgs>
+  replies?: boolean | Prisma.Answer$repliesArgs<ExtArgs>
   _count?: boolean | Prisma.AnswerCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type AnswerIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -727,6 +828,7 @@ export type $AnswerPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     user: Prisma.$UserPayload<ExtArgs>
     question: Prisma.$QuestionPayload<ExtArgs>
     votes: Prisma.$VotePayload<ExtArgs>[]
+    replies: Prisma.$ReplyPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1131,6 +1233,7 @@ export interface Prisma__AnswerClient<T, Null = never, ExtArgs extends runtime.T
   user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   question<T extends Prisma.QuestionDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.QuestionDefaultArgs<ExtArgs>>): Prisma.Prisma__QuestionClient<runtime.Types.Result.GetResult<Prisma.$QuestionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   votes<T extends Prisma.Answer$votesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Answer$votesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$VotePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  replies<T extends Prisma.Answer$repliesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Answer$repliesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ReplyPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1587,6 +1690,30 @@ export type Answer$votesArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
   take?: number
   skip?: number
   distinct?: Prisma.VoteScalarFieldEnum | Prisma.VoteScalarFieldEnum[]
+}
+
+/**
+ * Answer.replies
+ */
+export type Answer$repliesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Reply
+   */
+  select?: Prisma.ReplySelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Reply
+   */
+  omit?: Prisma.ReplyOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ReplyInclude<ExtArgs> | null
+  where?: Prisma.ReplyWhereInput
+  orderBy?: Prisma.ReplyOrderByWithRelationInput | Prisma.ReplyOrderByWithRelationInput[]
+  cursor?: Prisma.ReplyWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ReplyScalarFieldEnum | Prisma.ReplyScalarFieldEnum[]
 }
 
 /**

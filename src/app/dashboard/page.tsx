@@ -131,9 +131,7 @@ export default function Dashboard() {
   const [attempts, setAttempts] = useState<Attempt[] | null>(
     () => peek<{ attempts: Attempt[] }>("/api/code-attempt")?.attempts ?? null
   );
-  const [tutorials, setTutorials] = useState<Tutorial[] | null>(
-    () => peek<{ tutorials: Tutorial[] }>("/api/tutorials")?.tutorials ?? null
-  );
+  const [tutorials, setTutorials] = useState<Tutorial[] | null>(null);
   const [streak, setStreak] = useState<{ streak: StreakData; days: string[] } | null>(
     () => peek<{ streak: StreakData; days: string[] }>("/api/streak") ?? null
   );
@@ -150,18 +148,11 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    if (!loaded) return;
-    if (!me) {
-      setUnauthed(true);
-      router.replace(`/login?next=${encodeURIComponent("/dashboard")}`);
-      return;
-    }
-
     let alive = true;
     if (!cachedDashboard()) setReady(false);
 
-    // The two lists at the top of the page decide when the shell can paint;
-    // the rest fill in as they land instead of holding the whole page hostage.
+    // These endpoints authenticate on the server themselves, so they can start
+    // immediately instead of waiting for /api/auth/me to resolve first.
     Promise.allSettled([
       getJson<{ snippets: Snippet[] }>("/api/snippets?mine=1"),
       getJson<{ collections: CollectionSummary[] }>("/api/collections"),
@@ -177,29 +168,40 @@ export default function Dashboard() {
     });
 
     Promise.allSettled([
-      getJson<{ snippets: Snippet[] }>("/api/snippets?mine=1"),
       getJson<{ notes: Note[] }>("/api/notes"),
       getJson<{ sessions: InterviewSession[] }>("/api/interview-sessions"),
       getJson<{ attempts: Attempt[] }>("/api/code-attempt"),
       getJson<{ streak: StreakData; days: string[] }>("/api/streak"),
-      getJson<ProfileData>(`/api/users/${me.username}`),
-      getJson<{ tutorials: Tutorial[] }>("/api/tutorials"),
-      getJson<{ collections: CollectionSummary[] }>("/api/collections"),
-    ]).then(([snips, ns, sess, atts, str, prof, tuts, cols]) => {
+    ]).then(([ns, sess, atts, str]) => {
       if (!alive) return;
-      setSnippets(snips.status === "fulfilled" ? snips.value.snippets ?? [] : []);
-      setCollections(cols.status === "fulfilled" ? cols.value.collections ?? [] : []);
       setNotes(ns.status === "fulfilled" ? ns.value.notes ?? [] : []);
       setSessions(sess.status === "fulfilled" ? sess.value.sessions ?? [] : []);
       setAttempts(atts.status === "fulfilled" ? atts.value.attempts ?? [] : []);
       setStreak(str.status === "fulfilled" ? str.value : null);
+    });
+
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!loaded) return;
+    if (!me) {
+      setUnauthed(true);
+      router.replace(`/login?next=${encodeURIComponent("/dashboard")}`);
+      return;
+    }
+
+    let alive = true;
+    // The username is only needed for these two; the rest already started.
+    Promise.allSettled([
+      getJson<ProfileData>(`/api/users/${me.username}`),
+      getJson<{ tutorials: Tutorial[] }>(`/api/tutorials?user=${encodeURIComponent(me.username)}`),
+    ]).then(([prof, tuts]) => {
+      if (!alive) return;
       setProfile(prof.status === "fulfilled" ? prof.value : null);
-      setTutorials(
-        tuts.status === "fulfilled"
-          ? (tuts.value.tutorials ?? []).filter((t: Tutorial) => t.user.username === me.username)
-          : []
-      );
-      setReady(true);
+      setTutorials(tuts.status === "fulfilled" ? tuts.value.tutorials ?? [] : []);
     });
 
     return () => {
@@ -444,6 +446,9 @@ export default function Dashboard() {
             <div className="flex flex-wrap items-center gap-2">
               <Link href="/playground" className="btn btn-ink">
                 <Plus className="size-4" /> New snippet
+              </Link>
+              <Link href="/dashboard/videos" className="btn btn-outline">
+                <Video className="size-4" /> Video library
               </Link>
               {me && (
                 <Link href={`/u/${me.username}`} className="btn btn-outline">
@@ -775,14 +780,13 @@ export default function Dashboard() {
                           aria-label={`Toggle ${s.title} visibility`}
                           onClick={() => togglePublic(s)}
                           className={cn(
-                            "relative h-4.5 w-8 shrink-0 rounded-full border border-transparent transition-colors",
+                            "relative h-[18px] w-8 shrink-0 rounded-full border border-transparent transition-colors",
                             s.isPublic ? "bg-primary" : "bg-input"
                           )}
-                          style={{ height: 18, width: 32 }}
                         >
                           <span
-                            className="absolute top-[2px] size-3.5 rounded-full bg-card shadow-sm transition-transform"
-                            style={{ transform: `translateX(${s.isPublic ? 15 : 2}px)` }}
+                            className="absolute left-[2px] top-[2px] size-3.5 rounded-full bg-card shadow-sm transition-transform"
+                            style={{ transform: `translateX(${s.isPublic ? 14 : 0}px)` }}
                           />
                         </button>
                       </div>

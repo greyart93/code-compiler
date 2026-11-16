@@ -3,6 +3,8 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
+import { RouteProgress } from "@/components/route-progress";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
 
 /* Portfolio typography: Inter for body text, Bricolage Grotesque for   display/headings, JetBrains Mono for code — all variable, latin subset. */
 const inter = localFont({
@@ -37,13 +39,24 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.APP_URL ?? "http://localhost:3000"),
+  metadataBase: SITE_URL,
+  applicationName: SITE_NAME,
   title: {
     default: "CodeVit — Online Compiler & Playground",
     template: "%s | CodeVit",
   },
   description:
     "Write, run and share code in JavaScript, Python, C++, Java, Go, Rust, TypeScript, PHP, Lua, Kotlin, C#, Dart, Swift, Ruby, Bash and Assembly — with structured courses, quizzes, blog, explore and Q&A discussions.",
+  authors: [{ name: SITE_NAME, url: SITE_URL.toString() }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  formatDetection: { email: false, address: false, telephone: false },
+  robots: { index: true, follow: true },
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    locale: "en_US",
+  },
 };
 
 export default function RootLayout({
@@ -53,10 +66,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="stylesheet" href="/vendor/videojs-skin.css" />
+      </head>
       <body
         className={`${inter.variable} ${bricolage.variable} ${jetbrainsMono.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
+          <RouteProgress />
           {children}
           <Toaster />
         </ThemeProvider>

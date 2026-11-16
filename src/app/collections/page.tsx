@@ -59,7 +59,10 @@ export default function CollectionsPage() {
         toast(data.error ?? "Could not create the folder", { variant: "error" });
         return;
       }
-      toast(`“${trimmed}” is ready`, { description: "Add snippets from explore.", variant: "success" });
+      toast(`“${trimmed}” is ready`, {
+        description: "Add your own snippets or ones from explore.",
+        variant: "success",
+      });
       setName("");
       setDescription("");
       setIsPublic(true);
@@ -168,7 +171,7 @@ export default function CollectionsPage() {
           <Empty
             icon={FolderOpen}
             title="No folders yet"
-            body="Create a folder, then hit Collect on any snippet in explore or on your dashboard to file it away."
+            body="Create a folder, then add your own snippets or collect ones from explore to file them away."
             className="mt-10"
             action={
               <Link href="/explore" className="btn btn-ink">

@@ -57,6 +57,8 @@ _headers
 open-next.config.ts
 next.config.mjs
 *.png
+!public/og-blog.png
+!src/app/icon.png
 
 # local databases
 *.db

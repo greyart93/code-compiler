@@ -66,9 +66,12 @@ export const ModelName = {
   Snippet: 'Snippet',
   Like: 'Like',
   Comment: 'Comment',
+  Media: 'Media',
+  Video: 'Video',
   Tutorial: 'Tutorial',
   Question: 'Question',
   Answer: 'Answer',
+  Reply: 'Reply',
   Vote: 'Vote',
   PasswordResetToken: 'PasswordResetToken'
 } as const
@@ -271,11 +274,41 @@ export const CommentScalarFieldEnum = {
 export type CommentScalarFieldEnum = (typeof CommentScalarFieldEnum)[keyof typeof CommentScalarFieldEnum]
 
 
+export const MediaScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  mimeType: 'mimeType',
+  data: 'data',
+  createdAt: 'createdAt'
+} as const
+
+export type MediaScalarFieldEnum = (typeof MediaScalarFieldEnum)[keyof typeof MediaScalarFieldEnum]
+
+
+export const VideoScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  muxUploadId: 'muxUploadId',
+  muxAssetId: 'muxAssetId',
+  playbackId: 'playbackId',
+  status: 'status',
+  title: 'title',
+  duration: 'duration',
+  aspectRatio: 'aspectRatio',
+  error: 'error',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type VideoScalarFieldEnum = (typeof VideoScalarFieldEnum)[keyof typeof VideoScalarFieldEnum]
+
+
 export const TutorialScalarFieldEnum = {
   id: 'id',
   title: 'title',
   content: 'content',
   language: 'language',
+  coverImage: 'coverImage',
   published: 'published',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
@@ -307,6 +340,17 @@ export const AnswerScalarFieldEnum = {
 } as const
 
 export type AnswerScalarFieldEnum = (typeof AnswerScalarFieldEnum)[keyof typeof AnswerScalarFieldEnum]
+
+
+export const ReplyScalarFieldEnum = {
+  id: 'id',
+  body: 'body',
+  createdAt: 'createdAt',
+  userId: 'userId',
+  answerId: 'answerId'
+} as const
+
+export type ReplyScalarFieldEnum = (typeof ReplyScalarFieldEnum)[keyof typeof ReplyScalarFieldEnum]
 
 
 export const VoteScalarFieldEnum = {

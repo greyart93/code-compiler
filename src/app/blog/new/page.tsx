@@ -12,7 +12,12 @@ export default function NewTutorialPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handlePublish = async (data: { title: string; content: string; language: string }) => {
+  const handlePublish = async (data: {
+    title: string;
+    content: string;
+    language: string;
+    coverImage: string | null;
+  }) => {
     setError(null);
     setBusy(true);
     try {
@@ -61,6 +66,7 @@ export default function NewTutorialPage() {
             initialTitle=""
             initialLanguage="general"
             initialContent="<p></p>"
+            initialCoverImage={null}
             submitLabel={busy ? "Publishing…" : "Publish essay"}
             busy={busy}
             error={error}

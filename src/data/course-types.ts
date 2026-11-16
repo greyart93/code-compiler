@@ -49,6 +49,8 @@ export type LessonSeed = {
   title: string;
   minutes: number;
   md: string;
+  /** Optional lesson video: Mux (`mux:{playbackId}` or HLS URL), YouTube/Vimeo, or a direct MP4/WebM URL. */
+  videoUrl?: string;
   exercise?: Exercise;
   /** every exercise on the lesson; the lesson completes when all are solved */
   exercises?: Exercise[];

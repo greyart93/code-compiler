@@ -11,6 +11,8 @@ import {
   Loader2,
   Lock,
   Pencil,
+  Plus,
+  Search,
   Trash2,
   Globe,
   X,
@@ -54,6 +56,13 @@ type Collection = {
   items: Item[];
 };
 
+type MySnippet = {
+  id: string;
+  title: string;
+  language: string;
+  isPublic: boolean;
+};
+
 function shortDate(value: string) {
   return new Date(value).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 }
@@ -73,6 +82,11 @@ export default function CollectionPage() {
   const [savingName, setSavingName] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [mine, setMine] = useState<MySnippet[] | null>(null);
+  const [mineError, setMineError] = useState(false);
+  const [addQuery, setAddQuery] = useState("");
+  const [addingId, setAddingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -90,6 +104,62 @@ export default function CollectionPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (!addOpen || mine !== null) return;
+    let alive = true;
+    fetch("/api/snippets?mine=1")
+      .then(async (r) => {
+        if (!r.ok) throw new Error();
+        return r.json();
+      })
+      .then((d) => {
+        if (alive) setMine((d.snippets ?? []) as MySnippet[]);
+      })
+      .catch(() => {
+        if (!alive) return;
+        setMine([]);
+        setMineError(true);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [addOpen, mine]);
+
+  useEffect(() => {
+    if (!addOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setAddOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [addOpen]);
+
+  const addSnippet = async (snippet: MySnippet) => {
+    if (!collection || addingId) return;
+    setAddingId(snippet.id);
+    try {
+      const res = await fetch(`/api/collections/${collection.id}/items`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ snippetId: snippet.id }),
+      });
+      if (!res.ok) throw new Error();
+      drop(`/api/collections/${collection.id}`);
+      drop("/api/collections");
+      await load();
+      toast(`Added “${snippet.title}”`, {
+        description: snippet.isPublic
+          ? "Filed in this folder."
+          : "Private snippet — only you can see it here.",
+        variant: "success",
+      });
+    } catch {
+      toast("Could not add the snippet", { variant: "error" });
+    } finally {
+      setAddingId(null);
+    }
+  };
 
   const rename = async () => {
     const trimmed = name.trim().slice(0, 48);
@@ -212,6 +282,15 @@ export default function CollectionPage() {
     );
   }
 
+  const addedSnippetIds = new Set(collection.items.map((item) => item.snippet.id));
+  const normalizedQuery = addQuery.trim().toLowerCase();
+  const filteredMine = (mine ?? []).filter(
+    (snippet) =>
+      !normalizedQuery ||
+      snippet.title.toLowerCase().includes(normalizedQuery) ||
+      snippet.language.toLowerCase().includes(normalizedQuery)
+  );
+
   return (
     <div className="app-shell">
       <SiteHeader />
@@ -281,9 +360,13 @@ export default function CollectionPage() {
             <div className="flex flex-wrap items-center gap-2">
               {isOwner ? (
                 <>
-                  <Link href="/explore" className="btn btn-ink">
-                    <Compass className="size-4" /> Add snippets
-                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setAddOpen(true)}
+                    className="btn btn-ink"
+                  >
+                    <Plus className="size-4" /> Add snippets
+                  </button>
                   <Button variant="outline" onClick={() => setRenaming(true)} className="gap-1.5">
                     <Pencil className="size-4" /> Rename
                   </Button>
@@ -327,15 +410,19 @@ export default function CollectionPage() {
             title="This folder is empty"
             body={
               isOwner
-                ? "Open explore, hit Collect on a snippet, and pick this folder. Anything you save lands here."
+                ? "Add your own snippets or collect ones from explore. Private snippets stay visible only to you."
                 : "Its owner has not filed anything into it yet."
             }
             className="mt-10"
             action={
               isOwner ? (
-                <Link href="/explore" className="btn btn-ink">
-                  Find snippets
-                </Link>
+                <button
+                  type="button"
+                  onClick={() => setAddOpen(true)}
+                  className="btn btn-ink"
+                >
+                  <Plus className="size-4" /> Add snippets
+                </button>
               ) : undefined
             }
           />
@@ -423,6 +510,125 @@ export default function CollectionPage() {
             </Link>
             .
           </p>
+        )}
+
+        {isOwner && addOpen && (
+          <div
+            className="fixed inset-0 z-[90] flex items-end justify-center bg-foreground/25 p-4 backdrop-blur-[2px] sm:items-center"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) setAddOpen(false);
+            }}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="add-snippets-heading"
+              className="flex max-h-[85vh] w-full max-w-lg flex-col rounded-2xl border border-border bg-card p-5 shadow-[0_24px_60px_rgba(10,10,11,0.18)]"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2
+                    id="add-snippets-heading"
+                    className="text-[15px] font-semibold tracking-[-0.01em]"
+                  >
+                    Add snippets
+                  </h2>
+                  <p className="mt-1 text-[12.5px] leading-relaxed text-muted-foreground">
+                    Your own snippets, public or private. Private ones show only to you, even
+                    in a public folder.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAddOpen(false)}
+                  aria-label="Close"
+                  className="grid size-7 shrink-0 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <X className="size-3.5" />
+                </button>
+              </div>
+
+              <div className="relative mt-4">
+                <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={addQuery}
+                  onChange={(e) => setAddQuery(e.target.value)}
+                  placeholder="Search your snippets"
+                  className="h-9 rounded-lg pl-9 text-[13px]"
+                />
+              </div>
+
+              <div className="mt-2 min-h-0 flex-1 overflow-y-auto">
+                {mine === null ? (
+                  <p className="flex items-center gap-2 py-6 text-[12.5px] text-muted-foreground">
+                    <Loader2 className="size-3.5 animate-spin" /> Loading your snippets…
+                  </p>
+                ) : mineError ? (
+                  <p className="py-6 text-[12.5px] text-muted-foreground">
+                    Could not load your snippets. Close and try again.
+                  </p>
+                ) : filteredMine.length === 0 ? (
+                  <p className="py-6 text-[12.5px] text-muted-foreground">
+                    {mine.length === 0
+                      ? "No snippets yet — save one from the playground first."
+                      : "No snippets match that search."}
+                  </p>
+                ) : (
+                  <ul className="divide-y divide-border">
+                    {filteredMine.map((snippet) => {
+                      const added = addedSnippetIds.has(snippet.id);
+                      return (
+                        <li
+                          key={snippet.id}
+                          className="flex items-center gap-3 py-3"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-[13px] font-medium">
+                              {snippet.title}
+                            </p>
+                            <p className="mono-label mt-0.5 flex items-center gap-1.5 !text-[9px]">
+                              {snippet.language} · {snippet.isPublic ? "public" : "private"}
+                              {!snippet.isPublic && <Lock className="size-2.5" />}
+                            </p>
+                          </div>
+                          {added ? (
+                            <span className="mono-label shrink-0 !text-[9px]">Added</span>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => void addSnippet(snippet)}
+                              disabled={Boolean(addingId)}
+                              className="h-8 shrink-0 px-3 text-[12px]"
+                            >
+                              {addingId === snippet.id ? (
+                                <Loader2 className="size-3.5 animate-spin" />
+                              ) : (
+                                "Add"
+                              )}
+                            </Button>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+
+              <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-4">
+                <Link
+                  href="/explore"
+                  onClick={() => setAddOpen(false)}
+                  className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <Compass className="size-3.5" /> Explore public snippets
+                </Link>
+                <span className="mono-label !text-[9px]">
+                  {collection.items.length} in folder
+                </span>
+              </div>
+            </div>
+          </div>
         )}
       </main>
     </div>

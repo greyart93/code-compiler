@@ -10,11 +10,13 @@ import {
   Heading2,
   Heading3,
   Heading4,
+  Image as ImageIcon,
   List,
   ListOrdered,
   Minus,
   Quote,
   SquareCode,
+  Table,
   Type,
 } from "lucide-react";
 
@@ -40,6 +42,8 @@ type SlashCommandId =
   | "ordered"
   | "quote"
   | "code"
+  | "image"
+  | "table"
   | "divider";
 
 interface SlashCommand {
@@ -69,6 +73,18 @@ const SLASH_COMMANDS: SlashCommand[] = [
     label: "Code block",
     keywords: ["code", "snippet", "pre"],
     icon: SquareCode,
+  },
+  {
+    id: "image",
+    label: "Image",
+    keywords: ["image", "img", "picture", "photo", "figure"],
+    icon: ImageIcon,
+  },
+  {
+    id: "table",
+    label: "Table",
+    keywords: ["table", "grid", "rows", "columns", "data"],
+    icon: Table,
   },
   { id: "divider", label: "Divider", keywords: ["hr", "rule", "separator", "line"], icon: Minus },
 ];
@@ -134,6 +150,7 @@ interface SlashCommandMenuProps {
   keyHandlerRef: RefObject<SlashKeyHandler | null>;
   /** lets the form know whether Escape belongs to this menu */
   openRef: RefObject<boolean>;
+  onInsertImage?: () => void;
 }
 
 export function SlashCommandMenu({
@@ -141,6 +158,7 @@ export function SlashCommandMenu({
   enabled,
   keyHandlerRef,
   openRef,
+  onInsertImage,
 }: SlashCommandMenuProps) {
   // deepEqual by default, so this only re-renders when the trigger or the
   // caret's screen position actually changes.
@@ -190,6 +208,13 @@ export function SlashCommandMenu({
 
   const apply = (item: SlashCommand) => {
     if (!state) return;
+    // the image dialog takes over from here, so drop the typed `/image` first
+    if (item.id === "image") {
+      editor.chain().focus().deleteRange({ from: state.from, to: state.to }).run();
+      setDismissed(key);
+      onInsertImage?.();
+      return;
+    }
     const chain = editor.chain().focus().deleteRange({ from: state.from, to: state.to });
     switch (item.id) {
       case "text":
@@ -218,6 +243,9 @@ export function SlashCommandMenu({
         break;
       case "code":
         chain.setCodeBlock({ language: "javascript" }).run();
+        break;
+      case "table":
+        chain.insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
         break;
       case "divider":
         chain.setHorizontalRule().run();

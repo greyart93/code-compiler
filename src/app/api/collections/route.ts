@@ -34,7 +34,14 @@ type FolderRow = {
  * `filter` is the SQL that picks the owner's rows; `snippetId` only adds the
  * `contains` flag.
  */
-async function loadFolders(filter: Prisma.Sql, snippetId?: string): Promise<FolderRow[]> {
+async function loadFolders(
+  filter: Prisma.Sql,
+  snippetId?: string,
+  publicItemsOnly = false
+): Promise<FolderRow[]> {
+  const itemVisibility = publicItemsOnly
+    ? Prisma.sql`AND sn."isPublic"`
+    : Prisma.empty;
   const rows = await prisma.$queryRaw<{ folders: FolderRow[] }[]>`
     SELECT COALESCE(json_agg(row_to_json(f)), '[]'::json) AS folders
     FROM (
@@ -45,13 +52,15 @@ async function loadFolders(filter: Prisma.Sql, snippetId?: string): Promise<Fold
         c."isPublic",
         c."createdAt",
         c."updatedAt",
-        (SELECT count(*)::int FROM "CollectionItem" ci WHERE ci."collectionId" = c.id) AS count,
+        (SELECT count(*)::int FROM "CollectionItem" ci
+          JOIN "Snippet" sn ON sn.id = ci."snippetId"
+          WHERE ci."collectionId" = c.id ${itemVisibility}) AS count,
         (
           SELECT COALESCE(json_agg(row_to_json(p)), '[]'::json) FROM (
             SELECT sn.id, sn.title, sn.language, left(sn.code, 150) AS excerpt
             FROM "CollectionItem" ci2
             JOIN "Snippet" sn ON sn.id = ci2."snippetId"
-            WHERE ci2."collectionId" = c.id
+            WHERE ci2."collectionId" = c.id ${itemVisibility}
             ORDER BY ci2."createdAt" DESC
             LIMIT 4
           ) p
@@ -102,7 +111,9 @@ export async function GET(request: Request) {
         () =>
           loadFolders(
             Prisma.sql`c."userId" = (SELECT u.id FROM "User" u WHERE u.username = ${userParam})
-              ${isOwner ? Prisma.empty : Prisma.sql`AND c."isPublic"`}`
+              ${isOwner ? Prisma.empty : Prisma.sql`AND c."isPublic"`}`,
+            undefined,
+            !isOwner
           )
       );
       if (collections.length === 0) {

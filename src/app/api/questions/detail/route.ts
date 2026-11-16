@@ -43,6 +43,16 @@ export async function GET(request: Request) {
         userId: true,
         user: { select: { username: true, name: true } },
         _count: { select: { votes: true } },
+        replies: {
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true,
+            body: true,
+            createdAt: true,
+            userId: true,
+            user: { select: { username: true, name: true } },
+          },
+        },
         ...(viewer
           ? { votes: { where: { userId: viewer.id }, select: { id: true } } }
           : {}),

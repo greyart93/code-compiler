@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { cached, invalidate } from "@/lib/server-cache";
+import { tutorialPreview } from "@/lib/tutorial-preview";
 
 // GET /api/tutorials            → latest published tutorials
 // GET /api/tutorials?user=alice → just alice's published tutorials
@@ -25,8 +26,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ tutorial });
     }
 
-    const tutorials = await cached(`tutorials:${username ?? "all"}`, 30_000, () =>
-      prisma.tutorial.findMany({
+    // Excerpts and read time are derived here, once, so the index needs a
+    // single request instead of one full-content request per card.
+    const tutorials = await cached(`tutorials:${username ?? "all"}`, 30_000, async () => {
+      const rows = await prisma.tutorial.findMany({
         where: { published: true, ...(username ? { user: { username } } : {}) },
         orderBy: { createdAt: "desc" },
         take: 50,
@@ -34,11 +37,17 @@ export async function GET(request: Request) {
           id: true,
           title: true,
           language: true,
+          coverImage: true,
           createdAt: true,
+          content: true,
           user: { select: { username: true, name: true } },
         },
-      })
-    );
+      });
+      return rows.map(({ content, ...tutorial }) => ({
+        ...tutorial,
+        ...tutorialPreview(content),
+      }));
+    });
     return NextResponse.json({ tutorials });
   } catch (error) {
     console.error("tutorials GET error:", error);
@@ -57,7 +66,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { title, content, language } = await request.json();
+    const { title, content, language, coverImage } = await request.json();
     if (!title || !content) {
       return NextResponse.json(
         { error: "title and content are required" },
@@ -70,6 +79,7 @@ export async function POST(request: Request) {
         title: String(title).slice(0, 150),
         content: String(content),
         language: language ? String(language) : null,
+        coverImage: coverImage ? String(coverImage).slice(0, 500) : null,
         published: true,
         userId: user.id,
       },
@@ -101,16 +111,20 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { title, content, language } = await request.json();
+    const { title, content, language, coverImage } = await request.json();
     const tutorial = await prisma.tutorial.update({
       where: { id },
       data: {
         ...(title !== undefined ? { title: String(title).slice(0, 150) } : {}),
         ...(content !== undefined ? { content: String(content) } : {}),
         ...(language !== undefined ? { language: language ? String(language) : null } : {}),
+        ...(coverImage !== undefined
+          ? { coverImage: coverImage ? String(coverImage).slice(0, 500) : null }
+          : {}),
       },
       select: { id: true, title: true },
     });
+    invalidate("tutorials:");
     return NextResponse.json({ tutorial });
   } catch (error) {
     console.error("tutorials PUT error:", error);
@@ -137,6 +151,7 @@ export async function DELETE(request: Request) {
     }
 
     await prisma.tutorial.delete({ where: { id } });
+    invalidate("tutorials:");
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("tutorials DELETE error:", error);

@@ -1,43 +1,25 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, ViewTransition } from "react";
 import Link from "next/link";
 import { ArrowUpRight, FileText, Loader2, Pencil, Plus, Sparkles } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { Avatar, Empty, SectionHead, Tag } from "@/components/ui/primitives";
+import { BlogPostLink } from "@/components/blog-post-link";
 import { cn } from "@/lib/utils";
+import { cacheTutorialList, getCachedTutorialList } from "@/lib/blog-cache";
+import { getJson } from "@/lib/api-cache";
 
 type Tutorial = {
   id: string;
   title: string;
   language: string | null;
+  coverImage: string | null;
   createdAt: string;
+  excerpt: string;
+  minutes: number;
   user: { username: string; name: string | null };
 };
-
-type Preview = { excerpt: string; minutes: number };
-
-function stripHtml(html: string) {
-  return html
-    .replace(/<pre[\s\S]*?<\/pre>/g, " ")
-    .replace(/<[^>]+>/g, " ")
-    // tolerate markdown seeds / imported posts as well as the editor's HTML
-    .replace(/```[a-z0-9+#-]*/gi, " ")
-    .replace(/^#{1,6}\s+/gm, "")
-    .replace(/[*_`>]/g, "")
-    .replace(/&[a-z]+;/gi, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function makePreview(html: string): Preview {
-  const text = stripHtml(html);
-  const words = text ? text.split(/\s+/).length : 0;
-  return {
-    excerpt: text.length > 220 ? text.slice(0, 220).trimEnd() + "…" : text,
-    minutes: Math.max(1, Math.round(words / 200)),
-  };
-}
 
 function dateLabel(value: string) {
   return new Date(value).toLocaleDateString("en-GB", {
@@ -48,40 +30,20 @@ function dateLabel(value: string) {
 }
 
 export default function BlogIndex() {
-  const [tutorials, setTutorials] = useState<Tutorial[] | null>(null);
-  const [previews, setPreviews] = useState<Record<string, Preview>>({});
+  const [tutorials, setTutorials] = useState<Tutorial[] | null>(() => getCachedTutorialList());
   const [language, setLanguage] = useState("all");
 
   useEffect(() => {
-    fetch("/api/tutorials")
-      .then((r) => r.json())
-      .then((d) => setTutorials(d.tutorials ?? []))
-      .catch(() => setTutorials([]));
+    // getJson shares an in-flight request between mounts (and with any
+    // navigation back to this page) instead of downloading the list twice.
+    getJson<{ tutorials: Tutorial[] }>("/api/tutorials")
+      .then((d) => {
+        const list = d.tutorials ?? [];
+        cacheTutorialList(list);
+        setTutorials(list);
+      })
+      .catch(() => setTutorials((current) => current ?? []));
   }, []);
-
-  // Fetch the first few full posts so the index can show real excerpts and read time.
-  useEffect(() => {
-    if (!tutorials || tutorials.length === 0) return;
-    let alive = true;
-    const top = tutorials.slice(0, 6);
-    Promise.all(
-      top.map((t) =>
-        fetch(`/api/tutorials?id=${t.id}`)
-          .then((r) => (r.ok ? r.json() : null))
-          .catch(() => null)
-      )
-    ).then((rows) => {
-      if (!alive) return;
-      const map: Record<string, Preview> = {};
-      rows.forEach((row, i) => {
-        if (row?.tutorial?.content) map[top[i].id] = makePreview(row.tutorial.content);
-      });
-      setPreviews(map);
-    });
-    return () => {
-      alive = false;
-    };
-  }, [tutorials]);
 
   const languages = useMemo(() => {
     const counts = new Map<string, number>();
@@ -104,7 +66,6 @@ export default function BlogIndex() {
 
   const featured = filtered && filtered.length > 0 && language === "all" ? filtered[0] : null;
   const rest = featured ? filtered!.slice(1) : filtered;
-  const featuredPreview = featured ? previews[featured.id] : undefined;
 
   return (
     <div className="app-shell">
@@ -154,7 +115,7 @@ export default function BlogIndex() {
           <>
             {/* ── featured essay ───────────────────────────────────── */}
             {featured && (
-              <article className="reveal reveal-2 mt-7 overflow-hidden rounded-3xl border border-border bg-card">
+              <article className="mt-7 overflow-hidden rounded-3xl border border-border bg-card">
                 <div className="grid lg:grid-cols-[1.2fr_0.8fr]">
                   <div className="flex flex-col p-6 sm:p-8 lg:p-10">
                     <div className="flex flex-wrap items-center gap-2">
@@ -162,20 +123,23 @@ export default function BlogIndex() {
                         <Sparkles className="size-3" /> Featured essay
                       </span>
                       <span className="mono-label !text-[10px]">
-                        {dateLabel(featured.createdAt)}
-                        {featuredPreview ? ` · ${featuredPreview.minutes} min read` : ""}
+                        {dateLabel(featured.createdAt)} · {featured.minutes} min read
                       </span>
                     </div>
 
-                    <Link href={`/blog/${featured.id}`} className="group mt-6 block">
+                    <BlogPostLink
+                      postId={featured.id}
+                      href={`/blog/${featured.id}`}
+                      className="group mt-6 block"
+                    >
                       <h2 className="display max-w-[18ch] text-[clamp(32px,5.2vw,58px)] leading-[1.0] transition-colors group-hover:text-primary">
                         {featured.title}
                       </h2>
-                    </Link>
+                    </BlogPostLink>
 
-                    {featuredPreview?.excerpt && (
+                    {featured.excerpt && (
                       <p className="mt-5 line-clamp-3 max-w-[60ch] text-[14.5px] leading-relaxed text-muted-foreground">
-                        {featuredPreview.excerpt}
+                        {featured.excerpt}
                       </p>
                     )}
 
@@ -193,7 +157,8 @@ export default function BlogIndex() {
                         </div>
                       </Link>
 
-                      <Link
+                      <BlogPostLink
+                        postId={featured.id}
                         href={`/blog/${featured.id}`}
                         className="group/read inline-flex items-center gap-2 text-[13.5px] font-semibold text-foreground transition-colors hover:text-primary"
                       >
@@ -201,34 +166,78 @@ export default function BlogIndex() {
                         <span className="grid size-8 place-items-center rounded-full border border-border transition-colors group-hover/read:border-primary/40 group-hover/read:bg-primary/5">
                           <ArrowUpRight className="size-3.5" />
                         </span>
-                      </Link>
+                      </BlogPostLink>
                     </div>
                   </div>
 
-                  <aside className="relative flex flex-col justify-between overflow-hidden bg-[var(--ink)] p-6 text-[var(--paper)] sm:p-8">
-                    <div className="flex items-start justify-between">
-                      <p className="mono-label !text-[var(--paper)]/50">Issue 01</p>
-                      <Tag tone="accent" className="border-white/15 bg-white/10 text-[var(--paper)]">
-                        {featured.language ?? "general"}
-                      </Tag>
-                    </div>
+                  <aside
+                    className={cn(
+                      "relative min-h-[280px] overflow-hidden",
+                      featured.coverImage
+                        ? "bg-card"
+                        : "bg-[var(--ink)] text-[var(--paper)]"
+                    )}
+                  >
+                    {featured.coverImage ? (
+                      <BlogPostLink
+                        postId={featured.id}
+                        href={`/blog/${featured.id}`}
+                        className="group/cover absolute inset-0 block text-white"
+                        aria-label={`Read ${featured.title}`}
+                      >
+                        <ViewTransition
+                          name={`blog-cover-${featured.id}`}
+                          share="morph"
+                          default="none"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={featured.coverImage}
+                            alt=""
+                            decoding="async"
+                            fetchPriority="high"
+                            className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover/cover:scale-105"
+                          />
+                        </ViewTransition>
+                        <div className="absolute right-5 top-5 sm:right-6 sm:top-6">
+                          <Tag
+                            tone="accent"
+                            className="border-white/25 bg-black/35 !text-white backdrop-blur-sm"
+                          >
+                            {featured.language ?? "general"}
+                          </Tag>
+                        </div>
+                      </BlogPostLink>
+                    ) : (
+                      <div className="flex h-full flex-col justify-between p-6 sm:p-8">
+                        <div className="flex items-start justify-between">
+                          <p className="mono-label !text-[var(--paper)]/50">Issue 01</p>
+                          <Tag
+                            tone="accent"
+                            className="border-white/15 bg-white/10 text-[var(--paper)]"
+                          >
+                            {featured.language ?? "general"}
+                          </Tag>
+                        </div>
 
-                    <div className="pointer-events-none my-8 select-none">
-                      <p className="font-mono text-[120px] font-bold leading-[0.75] tracking-tighter text-[var(--paper)]/[0.08]">
-                        01
-                      </p>
-                      <p className="mt-4 max-w-[24ch] text-[13px] leading-relaxed text-[var(--paper)]/60">
-                        A workshop note on {featured.language ?? "software"}, filed{" "}
-                        {dateLabel(featured.createdAt)}.
-                      </p>
-                    </div>
+                        <div className="pointer-events-none my-8 select-none">
+                          <p className="font-mono text-[120px] font-bold leading-[0.75] tracking-tighter text-[var(--paper)]/[0.08]">
+                            01
+                          </p>
+                          <p className="mt-4 max-w-[24ch] text-[13px] leading-relaxed text-[var(--paper)]/60">
+                            A workshop note on {featured.language ?? "software"}, filed{" "}
+                            {dateLabel(featured.createdAt)}.
+                          </p>
+                        </div>
 
-                    <div className="border-t border-white/15 pt-4">
-                      <p className="mono-label !text-[var(--paper)]/45">In this issue</p>
-                      <p className="mt-1.5 line-clamp-2 text-[15px] font-medium leading-snug">
-                        {featured.title}
-                      </p>
-                    </div>
+                        <div className="border-t border-white/15 pt-4">
+                          <p className="mono-label !text-[var(--paper)]/45">In this issue</p>
+                          <p className="mt-1.5 line-clamp-2 text-[15px] font-medium leading-snug">
+                            {featured.title}
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </aside>
                 </div>
               </article>
@@ -260,10 +269,10 @@ export default function BlogIndex() {
                 ) : (
                   <div className="divide-y divide-border">
                     {rest!.map((t, i) => {
-                      const p = previews[t.id];
                       return (
-                        <Link
+                        <BlogPostLink
                           key={t.id}
+                          postId={t.id}
                           href={`/blog/${t.id}`}
                           className="group grid grid-cols-[34px_1fr_auto] items-start gap-3 py-5 transition-colors sm:gap-5"
                         >
@@ -274,9 +283,9 @@ export default function BlogIndex() {
                             <h3 className="text-[18px] font-semibold leading-snug tracking-[-0.015em] transition-colors group-hover:text-primary sm:text-[20px]">
                               {t.title}
                             </h3>
-                            {p?.excerpt && (
+                            {t.excerpt && (
                               <p className="mt-1.5 line-clamp-2 max-w-[68ch] text-[13px] leading-relaxed text-muted-foreground">
-                                {p.excerpt}
+                                {t.excerpt}
                               </p>
                             )}
                             <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1">
@@ -285,12 +294,8 @@ export default function BlogIndex() {
                               </span>
                               <span className="size-1 rounded-full bg-border" />
                               <span className="mono-label !text-[9px]">{dateLabel(t.createdAt)}</span>
-                              {p && (
-                                <>
-                                  <span className="size-1 rounded-full bg-border" />
-                                  <span className="mono-label !text-[9px]">{p.minutes} min</span>
-                                </>
-                              )}
+                              <span className="size-1 rounded-full bg-border" />
+                              <span className="mono-label !text-[9px]">{t.minutes} min</span>
                               {t.language && (
                                 <>
                                   <span className="size-1 rounded-full bg-border" />
@@ -299,10 +304,28 @@ export default function BlogIndex() {
                               )}
                             </div>
                           </div>
-                          <span className="mt-1 grid size-8 place-items-center rounded-full border border-border text-muted-foreground transition-all duration-300 group-hover:border-primary/40 group-hover:text-primary">
-                            <ArrowUpRight className="size-3.5 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-                          </span>
-                        </Link>
+                          <div className="mt-1 flex items-center gap-2.5">
+                            {t.coverImage && (
+                              <ViewTransition
+                                name={`blog-cover-${t.id}`}
+                                share="morph"
+                                default="none"
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={t.coverImage}
+                                  alt=""
+                                  loading="lazy"
+                                  decoding="async"
+                                  className="hidden h-11 w-16 rounded-lg border border-border object-cover transition-transform duration-300 group-hover:scale-105 sm:block"
+                                />
+                              </ViewTransition>
+                            )}
+                            <span className="grid size-8 place-items-center rounded-full border border-border text-muted-foreground transition-all duration-300 group-hover:border-primary/40 group-hover:text-primary">
+                              <ArrowUpRight className="size-3.5 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                            </span>
+                          </div>
+                        </BlogPostLink>
                       );
                     })}
                   </div>

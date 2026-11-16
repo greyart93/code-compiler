@@ -76,6 +76,8 @@ export type LessonData = {
   minutes: number;
   /** Obsidian-style markdown — fenced code blocks render highlighted */
   md: string;
+  /** Optional lesson video: YouTube/Vimeo or a direct MP4/WebM URL. */
+  videoUrl?: string;
   raw?: string;
   /** first exercise — kept for single-exercise lessons */
   exercise?: Exercise;

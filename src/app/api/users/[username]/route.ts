@@ -112,13 +112,17 @@ export async function GET(
                 c.name,
                 c.description,
                 c."isPublic",
-                (SELECT count(*)::int FROM "CollectionItem" ci WHERE ci."collectionId" = c.id) AS count,
+                (SELECT count(*)::int FROM "CollectionItem" ci
+                  JOIN "Snippet" sn ON sn.id = ci."snippetId"
+                  WHERE ci."collectionId" = c.id
+                    AND (sn."isPublic" OR c."userId" = ${viewerId})) AS count,
                 (
                   SELECT COALESCE(json_agg(row_to_json(p)), '[]'::json) FROM (
                     SELECT sn.id, sn.title, sn.language, left(sn.code, 150) AS excerpt
                     FROM "CollectionItem" ci2
                     JOIN "Snippet" sn ON sn.id = ci2."snippetId"
                     WHERE ci2."collectionId" = c.id
+                      AND (sn."isPublic" OR c."userId" = ${viewerId})
                     ORDER BY ci2."createdAt" DESC
                     LIMIT 4
                   ) p

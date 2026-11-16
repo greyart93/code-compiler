@@ -57,6 +57,12 @@ export async function GET(
       return NextResponse.json({ error: "Collection not found" }, { status: 404 });
     }
 
+    // A public folder can index the owner's private snippets. They stay
+    // visible to the owner but must never leak into another viewer's response.
+    const items = isOwner
+      ? collection.items
+      : collection.items.filter((item) => item.snippet.isPublic);
+
     return NextResponse.json({
       collection: {
         id: collection.id,
@@ -66,8 +72,8 @@ export async function GET(
         createdAt: collection.createdAt,
         updatedAt: collection.updatedAt,
         user: collection.user,
-        count: collection.items.length,
-        items: collection.items,
+        count: items.length,
+        items,
       },
       isOwner,
     });

@@ -768,6 +768,13 @@ html.light .code-test-page .ct-tag.hard {
   }
   html {
     -webkit-text-size-adjust: 100%;
+    /* Chrome paints its default white canvas behind view-transition snapshots
+       unless the root element is painted and its color-scheme is declared. */
+    background-color: hsl(var(--background));
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
   }
   body {
     @apply bg-background text-foreground;
@@ -1113,6 +1120,41 @@ html.light .code-test-page .ct-tag.hard {
   border-radius: 10px;
   margin: 1.2em 0;
 }
+/* Images in a post sit in a clipped frame: hovering scales the picture inside
+   the frame (no layout shift), clicking opens the lightbox in rich-content. */
+.medium-article .zoom-figure {
+  display: block;
+  position: relative;
+  margin: 1.5em 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: hsl(var(--muted));
+  cursor: zoom-in;
+  outline: none;
+}
+.medium-article .zoom-figure:focus-visible {
+  box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--primary));
+}
+.medium-article .zoom-figure img {
+  display: block;
+  margin: 0;
+  border-radius: 0;
+  transition: transform 650ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+.medium-article .zoom-figure:hover img,
+.medium-article .zoom-figure:focus-visible img {
+  transform: scale(1.045);
+}
+@media (prefers-reduced-motion: reduce) {
+  .medium-article .zoom-figure img {
+    transition: none;
+  }
+  .medium-article .zoom-figure:hover img,
+  .medium-article .zoom-figure:focus-visible img {
+    transform: none;
+  }
+}
 /* Medium's pull-quote: grey rule on the left, slightly larger text */
 .medium-article blockquote {
   border-left: 3px solid hsl(var(--border));
@@ -1220,6 +1262,45 @@ html.light .code-test-page .ct-tag.hard {
 .medium-article pre:has(> code[class="language-json"])::after { content: "json"; }
 .medium-editor pre:has(> code[class="language-sql"])::after,
 .medium-article pre:has(> code[class="language-sql"])::after { content: "sql"; }
+/* In the editor the language label is a real, clickable widget (see
+   src/lib/code-lang-tag.ts), so hide the CSS-only label there. */
+.medium-editor pre[data-language]::after,
+.medium-editor pre:has(> code[class^="language-"])::after {
+  display: none;
+}
+.code-lang-tag {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.6rem;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.1rem 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #adbac7;
+  font-family: inherit;
+  font-size: 10.5px;
+  line-height: 1.6;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.code-lang-tag::after {
+  content: "▾";
+  font-size: 8px;
+  opacity: 0.7;
+}
+.code-lang-tag:hover,
+.code-lang-tag:focus-visible {
+  background: hsl(var(--primary) / 0.28);
+  border-color: hsl(var(--primary) / 0.55);
+  color: #fff;
+  outline: none;
+}
 /* copy button, revealed on hover — same trick as the lesson Run button */
 .medium-article pre .code-copy-btn {
   position: absolute;
@@ -1263,6 +1344,161 @@ html.light .code-test-page .ct-tag.hard {
 .medium-article th {
   background: hsl(var(--muted));
   font-weight: 600;
+}
+/* tables in the editor: TipTap wraps them in .tableWrapper for scrolling */
+.medium-editor .tableWrapper {
+  margin: 1.6em 0;
+  overflow-x: auto;
+}
+.medium-editor table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 0.95rem;
+}
+.medium-editor th,
+.medium-editor td {
+  position: relative;
+  min-width: 70px;
+  border: 1px solid hsl(var(--border));
+  padding: 0.45rem 0.65rem;
+  text-align: left;
+  vertical-align: top;
+}
+.medium-editor th {
+  background: hsl(var(--muted));
+  font-weight: 600;
+}
+.medium-editor th p,
+.medium-editor td p {
+  margin: 0;
+}
+.medium-editor .selectedCell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: hsl(var(--primary) / 0.12);
+}
+.medium-editor img {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 1em 0;
+  border-radius: 10px;
+}
+
+/* ── image lightbox ───────────────────────────────────────────────
+   The overlay image carries a view-transition-name that matches the
+   thumbnail's, so the browser morphs rect + scale between them. The
+   class hooks let us skip the default cross-fade and keep the artwork
+   crisp throughout the move. */
+.image-zoom-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 5vh 4vw;
+  background: rgba(8, 9, 12, 0.86);
+  backdrop-filter: blur(10px);
+  cursor: zoom-out;
+  animation: image-zoom-fade 200ms ease both;
+}
+@keyframes image-zoom-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.image-zoom-img {
+  max-width: 92vw;
+  max-height: 88vh;
+  width: auto;
+  height: auto;
+  border-radius: 14px;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55);
+  cursor: default;
+  user-select: none;
+}
+.image-zoom-close {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(20, 22, 28, 0.7);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+}
+.image-zoom-close:hover {
+  background: rgba(40, 44, 54, 0.9);
+  transform: scale(1.05);
+}
+/* blog card cover → article hero (React <ViewTransition share="morph">) */
+::view-transition {
+  background-color: hsl(var(--background));
+}
+::view-transition-group(.morph) {
+  animation-duration: 420ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+::view-transition-old(.morph) {
+  animation: none;
+  opacity: 0;
+}
+::view-transition-new(.morph) {
+  animation: none;
+  opacity: 1;
+}
+/* snapshots are rectangular by default; round them for the whole morph so the
+   card corners do not appear only after the transition ends. The new snapshot
+   lands on the destination radius: card 1.5rem, article cover 1rem. */
+::view-transition-old(.morph),
+::view-transition-new(.morph) {
+  border-radius: 1.5rem;
+  overflow: hidden;
+}
+@keyframes morph-radius-to-article {
+  from { border-radius: 1.5rem; }
+  to { border-radius: 1rem; }
+}
+@keyframes morph-radius-to-card {
+  from { border-radius: 1rem; }
+  to { border-radius: 1.5rem; }
+}
+html:active-view-transition-type(blog-forward)::view-transition-new(.morph) {
+  animation: morph-radius-to-article 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+html:active-view-transition-type(blog-back)::view-transition-new(.morph) {
+  animation: morph-radius-to-card 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+::view-transition-group(.zoom-image) {
+  animation-duration: 440ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+::view-transition-old(.zoom-image) {
+  animation: none;
+  opacity: 0;
+}
+::view-transition-new(.zoom-image) {
+  animation: none;
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .image-zoom-overlay {
+    animation: none;
+  }
+  ::view-transition-group(.zoom-image) {
+    animation-duration: 1ms;
+  }
 }
 
 /* ────────────────────────────────────────────────────────────────

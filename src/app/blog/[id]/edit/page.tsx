@@ -13,6 +13,7 @@ type Tutorial = {
   title: string;
   content: string;
   language: string | null;
+  coverImage: string | null;
   user: { id: string };
 };
 
@@ -46,7 +47,12 @@ export default function EditTutorialPage() {
       .catch(() => setNotFound(true));
   }, [id]);
 
-  const handleSave = async (data: { title: string; content: string; language: string }) => {
+  const handleSave = async (data: {
+    title: string;
+    content: string;
+    language: string;
+    coverImage: string | null;
+  }) => {
     setError(null);
     setBusy(true);
     try {
@@ -147,6 +153,7 @@ export default function EditTutorialPage() {
             initialTitle={tutorial.title}
             initialLanguage={tutorial.language ?? "general"}
             initialContent={tutorial.content}
+            initialCoverImage={tutorial.coverImage}
             submitLabel={busy ? "Saving…" : "Save changes"}
             busy={busy}
             error={error}

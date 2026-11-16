@@ -121,6 +121,18 @@ export type Like = Prisma.LikeModel
  */
 export type Comment = Prisma.CommentModel
 /**
+ * Model Media
+ * * Small uploaded images for discuss posts. Bytes live in Postgres so they work
+ *  *  on the same deploy as the rest of the app without a separate file host.
+ */
+export type Media = Prisma.MediaModel
+/**
+ * Model Video
+ * * A Mux-hosted video. Bytes live at Mux; this row owns the upload/asset ids
+ *  *  and the public playback id used by posts and lessons.
+ */
+export type Video = Prisma.VideoModel
+/**
  * Model Tutorial
  * 
  */
@@ -135,6 +147,11 @@ export type Question = Prisma.QuestionModel
  * 
  */
 export type Answer = Prisma.AnswerModel
+/**
+ * Model Reply
+ * * A follow-up under an answer; one level deep, shown collapsed by default.
+ */
+export type Reply = Prisma.ReplyModel
 /**
  * Model Vote
  * 

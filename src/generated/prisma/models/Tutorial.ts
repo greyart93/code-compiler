@@ -29,6 +29,7 @@ export type TutorialMinAggregateOutputType = {
   title: string | null
   content: string | null
   language: string | null
+  coverImage: string | null
   published: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -40,6 +41,7 @@ export type TutorialMaxAggregateOutputType = {
   title: string | null
   content: string | null
   language: string | null
+  coverImage: string | null
   published: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -51,6 +53,7 @@ export type TutorialCountAggregateOutputType = {
   title: number
   content: number
   language: number
+  coverImage: number
   published: number
   createdAt: number
   updatedAt: number
@@ -64,6 +67,7 @@ export type TutorialMinAggregateInputType = {
   title?: true
   content?: true
   language?: true
+  coverImage?: true
   published?: true
   createdAt?: true
   updatedAt?: true
@@ -75,6 +79,7 @@ export type TutorialMaxAggregateInputType = {
   title?: true
   content?: true
   language?: true
+  coverImage?: true
   published?: true
   createdAt?: true
   updatedAt?: true
@@ -86,6 +91,7 @@ export type TutorialCountAggregateInputType = {
   title?: true
   content?: true
   language?: true
+  coverImage?: true
   published?: true
   createdAt?: true
   updatedAt?: true
@@ -170,6 +176,7 @@ export type TutorialGroupByOutputType = {
   title: string
   content: string
   language: string | null
+  coverImage: string | null
   published: boolean
   createdAt: Date
   updatedAt: Date
@@ -202,6 +209,7 @@ export type TutorialWhereInput = {
   title?: Prisma.StringFilter<"Tutorial"> | string
   content?: Prisma.StringFilter<"Tutorial"> | string
   language?: Prisma.StringNullableFilter<"Tutorial"> | string | null
+  coverImage?: Prisma.StringNullableFilter<"Tutorial"> | string | null
   published?: Prisma.BoolFilter<"Tutorial"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Tutorial"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Tutorial"> | Date | string
@@ -214,6 +222,7 @@ export type TutorialOrderByWithRelationInput = {
   title?: Prisma.SortOrder
   content?: Prisma.SortOrder
   language?: Prisma.SortOrderInput | Prisma.SortOrder
+  coverImage?: Prisma.SortOrderInput | Prisma.SortOrder
   published?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -229,6 +238,7 @@ export type TutorialWhereUniqueInput = Prisma.AtLeast<{
   title?: Prisma.StringFilter<"Tutorial"> | string
   content?: Prisma.StringFilter<"Tutorial"> | string
   language?: Prisma.StringNullableFilter<"Tutorial"> | string | null
+  coverImage?: Prisma.StringNullableFilter<"Tutorial"> | string | null
   published?: Prisma.BoolFilter<"Tutorial"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Tutorial"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Tutorial"> | Date | string
@@ -241,6 +251,7 @@ export type TutorialOrderByWithAggregationInput = {
   title?: Prisma.SortOrder
   content?: Prisma.SortOrder
   language?: Prisma.SortOrderInput | Prisma.SortOrder
+  coverImage?: Prisma.SortOrderInput | Prisma.SortOrder
   published?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -258,6 +269,7 @@ export type TutorialScalarWhereWithAggregatesInput = {
   title?: Prisma.StringWithAggregatesFilter<"Tutorial"> | string
   content?: Prisma.StringWithAggregatesFilter<"Tutorial"> | string
   language?: Prisma.StringNullableWithAggregatesFilter<"Tutorial"> | string | null
+  coverImage?: Prisma.StringNullableWithAggregatesFilter<"Tutorial"> | string | null
   published?: Prisma.BoolWithAggregatesFilter<"Tutorial"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Tutorial"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Tutorial"> | Date | string
@@ -269,6 +281,7 @@ export type TutorialCreateInput = {
   title: string
   content: string
   language?: string | null
+  coverImage?: string | null
   published?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -280,6 +293,7 @@ export type TutorialUncheckedCreateInput = {
   title: string
   content: string
   language?: string | null
+  coverImage?: string | null
   published?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -291,6 +305,7 @@ export type TutorialUpdateInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   published?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -302,6 +317,7 @@ export type TutorialUncheckedUpdateInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   published?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -313,6 +329,7 @@ export type TutorialCreateManyInput = {
   title: string
   content: string
   language?: string | null
+  coverImage?: string | null
   published?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -324,6 +341,7 @@ export type TutorialUpdateManyMutationInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   published?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -334,6 +352,7 @@ export type TutorialUncheckedUpdateManyInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   published?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -355,6 +374,7 @@ export type TutorialCountOrderByAggregateInput = {
   title?: Prisma.SortOrder
   content?: Prisma.SortOrder
   language?: Prisma.SortOrder
+  coverImage?: Prisma.SortOrder
   published?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -366,6 +386,7 @@ export type TutorialMaxOrderByAggregateInput = {
   title?: Prisma.SortOrder
   content?: Prisma.SortOrder
   language?: Prisma.SortOrder
+  coverImage?: Prisma.SortOrder
   published?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -377,6 +398,7 @@ export type TutorialMinOrderByAggregateInput = {
   title?: Prisma.SortOrder
   content?: Prisma.SortOrder
   language?: Prisma.SortOrder
+  coverImage?: Prisma.SortOrder
   published?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -430,6 +452,7 @@ export type TutorialCreateWithoutUserInput = {
   title: string
   content: string
   language?: string | null
+  coverImage?: string | null
   published?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -440,6 +463,7 @@ export type TutorialUncheckedCreateWithoutUserInput = {
   title: string
   content: string
   language?: string | null
+  coverImage?: string | null
   published?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -479,6 +503,7 @@ export type TutorialScalarWhereInput = {
   title?: Prisma.StringFilter<"Tutorial"> | string
   content?: Prisma.StringFilter<"Tutorial"> | string
   language?: Prisma.StringNullableFilter<"Tutorial"> | string | null
+  coverImage?: Prisma.StringNullableFilter<"Tutorial"> | string | null
   published?: Prisma.BoolFilter<"Tutorial"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Tutorial"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Tutorial"> | Date | string
@@ -490,6 +515,7 @@ export type TutorialCreateManyUserInput = {
   title: string
   content: string
   language?: string | null
+  coverImage?: string | null
   published?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -500,6 +526,7 @@ export type TutorialUpdateWithoutUserInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   published?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -510,6 +537,7 @@ export type TutorialUncheckedUpdateWithoutUserInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   published?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -520,6 +548,7 @@ export type TutorialUncheckedUpdateManyWithoutUserInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
   language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   published?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -532,6 +561,7 @@ export type TutorialSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   title?: boolean
   content?: boolean
   language?: boolean
+  coverImage?: boolean
   published?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -544,6 +574,7 @@ export type TutorialSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   title?: boolean
   content?: boolean
   language?: boolean
+  coverImage?: boolean
   published?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -556,6 +587,7 @@ export type TutorialSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   title?: boolean
   content?: boolean
   language?: boolean
+  coverImage?: boolean
   published?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -568,13 +600,14 @@ export type TutorialSelectScalar = {
   title?: boolean
   content?: boolean
   language?: boolean
+  coverImage?: boolean
   published?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   userId?: boolean
 }
 
-export type TutorialOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "content" | "language" | "published" | "createdAt" | "updatedAt" | "userId", ExtArgs["result"]["tutorial"]>
+export type TutorialOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "content" | "language" | "coverImage" | "published" | "createdAt" | "updatedAt" | "userId", ExtArgs["result"]["tutorial"]>
 export type TutorialInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }
@@ -595,6 +628,7 @@ export type $TutorialPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     title: string
     content: string
     language: string | null
+    coverImage: string | null
     published: boolean
     createdAt: Date
     updatedAt: Date
@@ -1027,6 +1061,7 @@ export interface TutorialFieldRefs {
   readonly title: Prisma.FieldRef<"Tutorial", 'String'>
   readonly content: Prisma.FieldRef<"Tutorial", 'String'>
   readonly language: Prisma.FieldRef<"Tutorial", 'String'>
+  readonly coverImage: Prisma.FieldRef<"Tutorial", 'String'>
   readonly published: Prisma.FieldRef<"Tutorial", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"Tutorial", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Tutorial", 'DateTime'>

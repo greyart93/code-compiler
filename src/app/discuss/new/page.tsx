@@ -7,9 +7,9 @@ import { ArrowLeft, ArrowUpRight, Eye, Loader2, Pencil, Send } from "lucide-reac
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { SiteHeader } from "@/components/site-header";
 import { PostBody } from "@/components/post-body";
+import { DiscussComposer } from "@/components/discuss-composer";
 import { useMe } from "@/lib/use-me";
 import { cn } from "@/lib/utils";
 
@@ -136,20 +136,21 @@ export default function AskQuestionPage() {
                     )}
                   </div>
                 ) : (
-                  <Textarea
-                    id="body"
-                    required
-                    value={body}
-                    onChange={(e) => setBody(e.target.value)}
-                    placeholder={
-                      "Describe the problem.\n\nWhat did you try?\nWhat did you expect?\nWhat happened instead?\n\n```js\n// smallest failing snippet\n```"
-                    }
-                    className="mt-3 min-h-[220px] font-mono text-[13px] leading-relaxed"
-                  />
+                  <div className="mt-3">
+                    <DiscussComposer
+                      id="body"
+                      value={body}
+                      onChange={setBody}
+                      minHeight={220}
+                      placeholder={
+                        "Describe the problem.\n\nWhat did you try?\nWhat did you expect?\nWhat happened instead?"
+                      }
+                    />
+                  </div>
                 )}
                 <p className="mt-2 text-[11.5px] text-muted-foreground">
-                  Wrap code in triple backticks and name the language:{" "}
-                  <span className="font-mono text-foreground/70">```js … ```</span>
+                  Type <span className="font-mono text-foreground/70">/</span> for image, code, link or
+                  video — screenshots can be pasted or dropped in.
                 </p>
               </div>
 

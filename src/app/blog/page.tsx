@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, ViewTransition } from "react";
 import Link from "next/link";
-import { ArrowUpRight, FileText, Loader2, Pencil, Plus, Sparkles } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, FileText, Pencil, Plus, Sparkles } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { Avatar, Empty, SectionHead, Tag } from "@/components/ui/primitives";
 import { BlogPostLink } from "@/components/blog-post-link";
@@ -32,18 +32,33 @@ function dateLabel(value: string) {
 export default function BlogIndex() {
   const [tutorials, setTutorials] = useState<Tutorial[] | null>(() => getCachedTutorialList());
   const [language, setLanguage] = useState("all");
+  const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
+    let live = true;
+    setError(null);
+
     // getJson shares an in-flight request between mounts (and with any
     // navigation back to this page) instead of downloading the list twice.
     getJson<{ tutorials: Tutorial[] }>("/api/tutorials")
       .then((d) => {
+        if (!live) return;
         const list = d.tutorials ?? [];
         cacheTutorialList(list);
         setTutorials(list);
       })
-      .catch(() => setTutorials((current) => current ?? []));
-  }, []);
+      .catch((cause: unknown) => {
+        if (!live) return;
+        // A failed request is not an empty blog: keep any cached list and say
+        // plainly that the API failed instead of inviting a first essay.
+        setError(cause instanceof Error ? cause.message : "The request failed");
+      });
+
+    return () => {
+      live = false;
+    };
+  }, [attempt]);
 
   const languages = useMemo(() => {
     const counts = new Map<string, number>();
@@ -75,7 +90,13 @@ export default function BlogIndex() {
           <div className="flex flex-wrap items-end justify-between gap-6">
             <div className="min-w-0">
               <p className="mono-label">
-                Blog · {tutorials === null ? "loading" : `${tutorials.length} essays`} · free to read
+                Blog ·{" "}
+                {tutorials === null
+                  ? error
+                    ? "unavailable"
+                    : "loading"
+                  : `${tutorials.length} essays`}{" "}
+                · free to read
               </p>
               <h1 className="display mt-3 text-[clamp(44px,8vw,92px)]">Notes from the workshop.</h1>
               <p className="mt-4 max-w-[64ch] text-[15px] leading-relaxed text-muted-foreground sm:text-base">
@@ -95,10 +116,27 @@ export default function BlogIndex() {
         </header>
 
         {tutorials === null ? (
-          <div className="mt-8 grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-            <div className="h-[340px] animate-pulse rounded-3xl border border-border bg-muted/40" />
-            <div className="h-[340px] animate-pulse rounded-3xl border border-border bg-muted/40" />
-          </div>
+          error ? (
+            <Empty
+              icon={AlertTriangle}
+              title="The essays didn't load"
+              body="The blog couldn't reach its database, so this page is empty because the request failed — not because nobody has written anything yet."
+              className="mt-10"
+              action={
+                <div className="flex flex-col items-center gap-2.5">
+                  <button type="button" className="btn btn-ink" onClick={() => setAttempt((n) => n + 1)}>
+                    Try again
+                  </button>
+                  <p className="font-mono text-[10.5px] text-muted-foreground">{error}</p>
+                </div>
+              }
+            />
+          ) : (
+            <div className="mt-8 grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+              <div className="h-[340px] animate-pulse rounded-3xl border border-border bg-muted/40" />
+              <div className="h-[340px] animate-pulse rounded-3xl border border-border bg-muted/40" />
+            </div>
+          )
         ) : tutorials.length === 0 ? (
           <Empty
             icon={FileText}

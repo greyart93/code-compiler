@@ -9,6 +9,7 @@ import {
   Code2,
   Compass,
   FileText,
+  Film,
   FolderOpen,
   GraduationCap,
   HelpCircle,
@@ -57,6 +58,7 @@ const primaryNav: NavItem[] = [
 const indexNav: NavItem[] = [
   ...primaryNav,
   { href: "/feed", label: "Feed", icon: Rss, blurb: "Newest snippets from the people you follow" },
+  { href: "/videos", label: "Videos", icon: Film, blurb: "Playlists you can watch start to finish" },
   { href: "/interview", label: "Interview", icon: Mic, blurb: "Mock interviews with scored feedback" },
   { href: "/live", label: "Live rooms", icon: Radio, blurb: "Pair on code in a shared room" },
   { href: "/code-test", label: "Code test", icon: ListChecks, blurb: "Practice problems and timed mock tests" },

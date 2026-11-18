@@ -18,12 +18,22 @@ function numberEnv(name: string, fallback: number) {
   return Number.isFinite(value) && value > 0 ? value : fallback;
 }
 
-/** Keep a public discussion board from becoming an unlimited paid video host. */
+/**
+ * Keep a public discussion board from becoming an unlimited paid video host,
+ * while still fitting full-length lessons: a topic playlist is six 5–12 hour
+ * recordings, i.e. up to ~72 hours of video, so the defaults allow ~100 hours
+ * of ready video. The asset count defaults to Mux's Free plan ceiling of 10
+ * on-demand assets, which is a hard account-wide limit rather than a taste.
+ */
 export const VIDEO_LIMITS = {
   get activeUploads() {
-    return Math.min(20, numberEnv("MUX_MAX_ACTIVE_UPLOADS", 3));
+    return Math.min(20, numberEnv("MUX_MAX_ACTIVE_UPLOADS", 4));
   },
   get totalMinutes() {
-    return Math.min(10_000, numberEnv("MUX_MAX_TOTAL_MINUTES", 20));
+    // 10_000 min (≈166 h) is the hard ceiling for this deployment.
+    return Math.min(10_000, numberEnv("MUX_MAX_TOTAL_MINUTES", 6_000));
+  },
+  get storedVideos() {
+    return Math.min(10_000, numberEnv("MUX_MAX_STORED_VIDEOS", 10));
   },
 };

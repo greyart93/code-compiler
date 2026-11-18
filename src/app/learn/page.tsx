@@ -297,6 +297,9 @@ export default function LearnIndex() {
         <footer className="mt-14 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
           <p className="mono-label">Learn · read, run, keep the notes</p>
           <div className="flex items-center gap-5 text-[12.5px] text-muted-foreground">
+            <Link href="/videos" className="link-underline hover:text-foreground">
+              Video playlists
+            </Link>
             <Link href="/quiz" className="link-underline hover:text-foreground">
               Take a quiz
             </Link>

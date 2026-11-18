@@ -274,6 +274,7 @@ export type VideoWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Video"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Video"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  playlistItems?: Prisma.PlaylistItemListRelationFilter
 }
 
 export type VideoOrderByWithRelationInput = {
@@ -290,6 +291,7 @@ export type VideoOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   user?: Prisma.UserOrderByWithRelationInput
+  playlistItems?: Prisma.PlaylistItemOrderByRelationAggregateInput
 }
 
 export type VideoWhereUniqueInput = Prisma.AtLeast<{
@@ -309,6 +311,7 @@ export type VideoWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"Video"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Video"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  playlistItems?: Prisma.PlaylistItemListRelationFilter
 }, "id" | "muxUploadId" | "muxAssetId" | "playbackId">
 
 export type VideoOrderByWithAggregationInput = {
@@ -362,6 +365,7 @@ export type VideoCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutVideosInput
+  playlistItems?: Prisma.PlaylistItemCreateNestedManyWithoutVideoInput
 }
 
 export type VideoUncheckedCreateInput = {
@@ -377,6 +381,7 @@ export type VideoUncheckedCreateInput = {
   error?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  playlistItems?: Prisma.PlaylistItemUncheckedCreateNestedManyWithoutVideoInput
 }
 
 export type VideoUpdateInput = {
@@ -392,6 +397,7 @@ export type VideoUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutVideosNestedInput
+  playlistItems?: Prisma.PlaylistItemUpdateManyWithoutVideoNestedInput
 }
 
 export type VideoUncheckedUpdateInput = {
@@ -407,6 +413,7 @@ export type VideoUncheckedUpdateInput = {
   error?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  playlistItems?: Prisma.PlaylistItemUncheckedUpdateManyWithoutVideoNestedInput
 }
 
 export type VideoCreateManyInput = {
@@ -516,6 +523,11 @@ export type VideoSumOrderByAggregateInput = {
   duration?: Prisma.SortOrder
 }
 
+export type VideoScalarRelationFilter = {
+  is?: Prisma.VideoWhereInput
+  isNot?: Prisma.VideoWhereInput
+}
+
 export type VideoCreateNestedManyWithoutUserInput = {
   create?: Prisma.XOR<Prisma.VideoCreateWithoutUserInput, Prisma.VideoUncheckedCreateWithoutUserInput> | Prisma.VideoCreateWithoutUserInput[] | Prisma.VideoUncheckedCreateWithoutUserInput[]
   connectOrCreate?: Prisma.VideoCreateOrConnectWithoutUserInput | Prisma.VideoCreateOrConnectWithoutUserInput[]
@@ -570,6 +582,20 @@ export type NullableFloatFieldUpdateOperationsInput = {
   divide?: number
 }
 
+export type VideoCreateNestedOneWithoutPlaylistItemsInput = {
+  create?: Prisma.XOR<Prisma.VideoCreateWithoutPlaylistItemsInput, Prisma.VideoUncheckedCreateWithoutPlaylistItemsInput>
+  connectOrCreate?: Prisma.VideoCreateOrConnectWithoutPlaylistItemsInput
+  connect?: Prisma.VideoWhereUniqueInput
+}
+
+export type VideoUpdateOneRequiredWithoutPlaylistItemsNestedInput = {
+  create?: Prisma.XOR<Prisma.VideoCreateWithoutPlaylistItemsInput, Prisma.VideoUncheckedCreateWithoutPlaylistItemsInput>
+  connectOrCreate?: Prisma.VideoCreateOrConnectWithoutPlaylistItemsInput
+  upsert?: Prisma.VideoUpsertWithoutPlaylistItemsInput
+  connect?: Prisma.VideoWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.VideoUpdateToOneWithWhereWithoutPlaylistItemsInput, Prisma.VideoUpdateWithoutPlaylistItemsInput>, Prisma.VideoUncheckedUpdateWithoutPlaylistItemsInput>
+}
+
 export type VideoCreateWithoutUserInput = {
   id?: string
   muxUploadId?: string | null
@@ -582,6 +608,7 @@ export type VideoCreateWithoutUserInput = {
   error?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  playlistItems?: Prisma.PlaylistItemCreateNestedManyWithoutVideoInput
 }
 
 export type VideoUncheckedCreateWithoutUserInput = {
@@ -596,6 +623,7 @@ export type VideoUncheckedCreateWithoutUserInput = {
   error?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  playlistItems?: Prisma.PlaylistItemUncheckedCreateNestedManyWithoutVideoInput
 }
 
 export type VideoCreateOrConnectWithoutUserInput = {
@@ -642,6 +670,82 @@ export type VideoScalarWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"Video"> | Date | string
 }
 
+export type VideoCreateWithoutPlaylistItemsInput = {
+  id?: string
+  muxUploadId?: string | null
+  muxAssetId?: string | null
+  playbackId?: string | null
+  status?: $Enums.VideoStatus
+  title?: string | null
+  duration?: number | null
+  aspectRatio?: string | null
+  error?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  user: Prisma.UserCreateNestedOneWithoutVideosInput
+}
+
+export type VideoUncheckedCreateWithoutPlaylistItemsInput = {
+  id?: string
+  userId: string
+  muxUploadId?: string | null
+  muxAssetId?: string | null
+  playbackId?: string | null
+  status?: $Enums.VideoStatus
+  title?: string | null
+  duration?: number | null
+  aspectRatio?: string | null
+  error?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type VideoCreateOrConnectWithoutPlaylistItemsInput = {
+  where: Prisma.VideoWhereUniqueInput
+  create: Prisma.XOR<Prisma.VideoCreateWithoutPlaylistItemsInput, Prisma.VideoUncheckedCreateWithoutPlaylistItemsInput>
+}
+
+export type VideoUpsertWithoutPlaylistItemsInput = {
+  update: Prisma.XOR<Prisma.VideoUpdateWithoutPlaylistItemsInput, Prisma.VideoUncheckedUpdateWithoutPlaylistItemsInput>
+  create: Prisma.XOR<Prisma.VideoCreateWithoutPlaylistItemsInput, Prisma.VideoUncheckedCreateWithoutPlaylistItemsInput>
+  where?: Prisma.VideoWhereInput
+}
+
+export type VideoUpdateToOneWithWhereWithoutPlaylistItemsInput = {
+  where?: Prisma.VideoWhereInput
+  data: Prisma.XOR<Prisma.VideoUpdateWithoutPlaylistItemsInput, Prisma.VideoUncheckedUpdateWithoutPlaylistItemsInput>
+}
+
+export type VideoUpdateWithoutPlaylistItemsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  muxUploadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  muxAssetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  playbackId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumVideoStatusFieldUpdateOperationsInput | $Enums.VideoStatus
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  duration?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  aspectRatio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  error?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneRequiredWithoutVideosNestedInput
+}
+
+export type VideoUncheckedUpdateWithoutPlaylistItemsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  muxUploadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  muxAssetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  playbackId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumVideoStatusFieldUpdateOperationsInput | $Enums.VideoStatus
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  duration?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  aspectRatio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  error?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
 export type VideoCreateManyUserInput = {
   id?: string
   muxUploadId?: string | null
@@ -668,6 +772,7 @@ export type VideoUpdateWithoutUserInput = {
   error?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  playlistItems?: Prisma.PlaylistItemUpdateManyWithoutVideoNestedInput
 }
 
 export type VideoUncheckedUpdateWithoutUserInput = {
@@ -682,6 +787,7 @@ export type VideoUncheckedUpdateWithoutUserInput = {
   error?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  playlistItems?: Prisma.PlaylistItemUncheckedUpdateManyWithoutVideoNestedInput
 }
 
 export type VideoUncheckedUpdateManyWithoutUserInput = {
@@ -699,6 +805,35 @@ export type VideoUncheckedUpdateManyWithoutUserInput = {
 }
 
 
+/**
+ * Count Type VideoCountOutputType
+ */
+
+export type VideoCountOutputType = {
+  playlistItems: number
+}
+
+export type VideoCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  playlistItems?: boolean | VideoCountOutputTypeCountPlaylistItemsArgs
+}
+
+/**
+ * VideoCountOutputType without action
+ */
+export type VideoCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the VideoCountOutputType
+   */
+  select?: Prisma.VideoCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * VideoCountOutputType without action
+ */
+export type VideoCountOutputTypeCountPlaylistItemsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.PlaylistItemWhereInput
+}
+
 
 export type VideoSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -714,6 +849,8 @@ export type VideoSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   createdAt?: boolean
   updatedAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  playlistItems?: boolean | Prisma.Video$playlistItemsArgs<ExtArgs>
+  _count?: boolean | Prisma.VideoCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["video"]>
 
 export type VideoSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -766,6 +903,8 @@ export type VideoSelectScalar = {
 export type VideoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "muxUploadId" | "muxAssetId" | "playbackId" | "status" | "title" | "duration" | "aspectRatio" | "error" | "createdAt" | "updatedAt", ExtArgs["result"]["video"]>
 export type VideoInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  playlistItems?: boolean | Prisma.Video$playlistItemsArgs<ExtArgs>
+  _count?: boolean | Prisma.VideoCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type VideoIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -778,6 +917,7 @@ export type $VideoPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   name: "Video"
   objects: {
     user: Prisma.$UserPayload<ExtArgs>
+    playlistItems: Prisma.$PlaylistItemPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1187,6 +1327,7 @@ readonly fields: VideoFieldRefs;
 export interface Prisma__VideoClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  playlistItems<T extends Prisma.Video$playlistItemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Video$playlistItemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PlaylistItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1626,6 +1767,30 @@ export type VideoDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Interna
    * Limit how many Videos to delete.
    */
   limit?: number
+}
+
+/**
+ * Video.playlistItems
+ */
+export type Video$playlistItemsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the PlaylistItem
+   */
+  select?: Prisma.PlaylistItemSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the PlaylistItem
+   */
+  omit?: Prisma.PlaylistItemOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PlaylistItemInclude<ExtArgs> | null
+  where?: Prisma.PlaylistItemWhereInput
+  orderBy?: Prisma.PlaylistItemOrderByWithRelationInput | Prisma.PlaylistItemOrderByWithRelationInput[]
+  cursor?: Prisma.PlaylistItemWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.PlaylistItemScalarFieldEnum | Prisma.PlaylistItemScalarFieldEnum[]
 }
 
 /**

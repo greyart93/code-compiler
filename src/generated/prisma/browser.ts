@@ -109,6 +109,16 @@ export type Media = Prisma.MediaModel
  */
 export type Video = Prisma.VideoModel
 /**
+ * Model Playlist
+ * * A YouTube-style playlist: an ordered set of videos for one topic.
+ */
+export type Playlist = Prisma.PlaylistModel
+/**
+ * Model PlaylistItem
+ * 
+ */
+export type PlaylistItem = Prisma.PlaylistItemModel
+/**
  * Model Tutorial
  * 
  */
@@ -133,6 +143,17 @@ export type Reply = Prisma.ReplyModel
  * 
  */
 export type Vote = Prisma.VoteModel
+/**
+ * Model TranscriptionLog
+ * *
+ *  * Metadata-only log of one speech-to-text request from the interview page.
+ *  *
+ *  * Privacy boundary: this table never holds audio, never holds transcript
+ *  * text, and never holds the question. Only what is needed to tell "the mic
+ *  * heard nothing" (silence / no_speech_prob) apart from "the model misheard"
+ *  * (avg_logprob, provider failures, retries).
+ */
+export type TranscriptionLog = Prisma.TranscriptionLogModel
 /**
  * Model PasswordResetToken
  * 

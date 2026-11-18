@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { getCurrentUser, getSessionClaims } from "@/lib/auth";
-import { cached, invalidate } from "@/lib/server-cache";
+import { cached, invalidate, isUnavailable } from "@/lib/server-cache";
 
 // Collections (folders) of snippets — CodePen-style grouping.
 //
@@ -133,7 +133,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ collections, isOwner: true });
   } catch (error) {
     console.error("collections GET error:", error);
-    return NextResponse.json({ error: "Failed to load collections" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to load collections" }, { status: isUnavailable(error) ? 503 : 500 });
   }
 }
 

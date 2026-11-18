@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSessionClaims } from "@/lib/auth";
-import { cached } from "@/lib/server-cache";
+import { cached, isUnavailable } from "@/lib/server-cache";
 
 // Public profile: identity, counters, the work, the folders, the writing.
 //
@@ -173,6 +173,6 @@ export async function GET(
     });
   } catch (error) {
     console.error("profile GET error:", error);
-    return NextResponse.json({ error: "Failed to load profile" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to load profile" }, { status: isUnavailable(error) ? 503 : 500 });
   }
 }

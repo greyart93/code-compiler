@@ -1,8 +1,45 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
-import { cached, invalidate } from "@/lib/server-cache";
+import { cached, invalidate, isUnavailable } from "@/lib/server-cache";
 import { tutorialPreview } from "@/lib/tutorial-preview";
+import {
+  cloudinaryPublicIdFromUrl,
+  cloudinaryPublicIdsInHtml,
+  deleteCloudinaryAssets,
+} from "@/lib/cloudinary";
+
+function cloudinaryAssetIds(coverImage: string | null, content: string) {
+  const ids = [cloudinaryPublicIdFromUrl(coverImage), ...cloudinaryPublicIdsInHtml(content)];
+  return [...new Set(ids.filter((id): id is string => Boolean(id)))];
+}
+
+/**
+ * If the lookup fails, treat every candidate as referenced. Skipping cleanup is
+ * safer than deleting an asset another post may still use.
+ */
+async function referencedByOtherPosts(publicIds: string[], excludeId: string) {
+  if (publicIds.length === 0) return new Set<string>();
+
+  try {
+    const candidates = new Set(publicIds);
+    const rows = await prisma.tutorial.findMany({
+      where: { id: { not: excludeId } },
+      select: { coverImage: true, content: true },
+    });
+    const referenced = new Set<string>();
+
+    for (const row of rows) {
+      for (const publicId of cloudinaryAssetIds(row.coverImage, row.content)) {
+        if (candidates.has(publicId)) referenced.add(publicId);
+      }
+    }
+    return referenced;
+  } catch (error) {
+    console.error("Could not check Cloudinary references before cleanup:", error);
+    return new Set(publicIds);
+  }
+}
 
 // GET /api/tutorials            → latest published tutorials
 // GET /api/tutorials?user=alice → just alice's published tutorials
@@ -51,7 +88,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ tutorials });
   } catch (error) {
     console.error("tutorials GET error:", error);
-    return NextResponse.json({ error: "Failed to fetch tutorials" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch tutorials" }, { status: isUnavailable(error) ? 503 : 500 });
   }
 }
 
@@ -112,18 +149,32 @@ export async function PUT(request: Request) {
     }
 
     const { title, content, language, coverImage } = await request.json();
+    const nextContent = content !== undefined ? String(content) : existing.content;
+    const nextCover =
+      coverImage !== undefined
+        ? coverImage
+          ? String(coverImage).slice(0, 500)
+          : null
+        : existing.coverImage;
+
     const tutorial = await prisma.tutorial.update({
       where: { id },
       data: {
         ...(title !== undefined ? { title: String(title).slice(0, 150) } : {}),
-        ...(content !== undefined ? { content: String(content) } : {}),
+        content: nextContent,
         ...(language !== undefined ? { language: language ? String(language) : null } : {}),
-        ...(coverImage !== undefined
-          ? { coverImage: coverImage ? String(coverImage).slice(0, 500) : null }
-          : {}),
+        coverImage: nextCover,
       },
       select: { id: true, title: true },
     });
+
+    // Only remove assets that are no longer referenced by any post.
+    const before = cloudinaryAssetIds(existing.coverImage, existing.content);
+    const after = new Set(cloudinaryAssetIds(nextCover, nextContent));
+    const removed = before.filter((publicId) => !after.has(publicId));
+    const stillUsed = await referencedByOtherPosts(removed, id);
+    await deleteCloudinaryAssets(removed.filter((publicId) => !stillUsed.has(publicId)));
+
     invalidate("tutorials:");
     return NextResponse.json({ tutorial });
   } catch (error) {
@@ -150,7 +201,11 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    const assets = cloudinaryAssetIds(existing.coverImage, existing.content);
     await prisma.tutorial.delete({ where: { id } });
+    const stillUsed = await referencedByOtherPosts(assets, id);
+    await deleteCloudinaryAssets(assets.filter((publicId) => !stillUsed.has(publicId)));
+
     invalidate("tutorials:");
     return NextResponse.json({ ok: true });
   } catch (error) {

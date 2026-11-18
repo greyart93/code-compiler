@@ -85,7 +85,24 @@ type ProfileData = {
   stats?: { publicSnippets?: number; tutorials?: number };
 };
 
+type VideoQuota = {
+  enabled: boolean;
+  storedVideos: number;
+  activeUploads: number;
+  readyMinutes: number;
+  remainingVideos: number;
+  remainingMinutes: number;
+  limits: { storedVideos: number; activeUploads: number; totalMinutes: number };
+  atVideoLimit: boolean;
+  atActiveLimit: boolean;
+  atMinuteLimit: boolean;
+};
+
 const WEEK_DAYS = 84;
+
+function minuteValue(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
 
 function shortDate(value: string) {
   return new Date(value).toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
@@ -136,6 +153,7 @@ export default function Dashboard() {
     () => peek<{ streak: StreakData; days: string[] }>("/api/streak") ?? null
   );
   const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [videoQuota, setVideoQuota] = useState<VideoQuota | null>(null);
   const [ready, setReady] = useState(
     () => peek("/api/snippets?mine=1") !== undefined && peek("/api/collections") !== undefined
   );
@@ -208,6 +226,23 @@ export default function Dashboard() {
       alive = false;
     };
   }, [loaded, me, router]);
+
+  useEffect(() => {
+    if (!loaded || !me) return;
+
+    let alive = true;
+    getJson<VideoQuota>("/api/videos/quota")
+      .then((quota) => {
+        if (alive) setVideoQuota(quota);
+      })
+      .catch(() => {
+        if (alive) setVideoQuota(null);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [loaded, me]);
 
   const togglePublic = useCallback(async (s: Snippet) => {
     const next = !s.isPublic;
@@ -647,6 +682,91 @@ export default function Dashboard() {
                     </Link>
                   </div>
                 </section>
+
+                {videoQuota?.enabled && (
+                  <section className="card-surface overflow-hidden">
+                    <CardHead
+                      title="Video quota"
+                      hint={`Mux Free · ${videoQuota.limits.storedVideos}-asset cap`}
+                      action={<ArrowLink href="/dashboard/videos">Manage</ArrowLink>}
+                    />
+                    <div className="p-5">
+                      <div className="grid grid-cols-2 gap-4">
+                        {[
+                          {
+                            label: "Stored videos",
+                            value: `${videoQuota.storedVideos} / ${videoQuota.limits.storedVideos}`,
+                            hint: `${videoQuota.remainingVideos} slot${videoQuota.remainingVideos === 1 ? "" : "s"} left`,
+                          },
+                          {
+                            label: "Used ready minutes",
+                            value: `${minuteValue(videoQuota.readyMinutes)} / ${videoQuota.limits.totalMinutes} min`,
+                            hint: "Finished videos count",
+                          },
+                          {
+                            label: "Remaining minutes",
+                            value: `${minuteValue(videoQuota.remainingMinutes)} min`,
+                            hint: "Before the app quota",
+                          },
+                          {
+                            label: "Active uploads",
+                            value: `${videoQuota.activeUploads} / ${videoQuota.limits.activeUploads}`,
+                            hint: "Uploading or processing",
+                          },
+                        ].map((item) => (
+                          <div key={item.label}>
+                            <p className="mono-label">{item.label}</p>
+                            <p className="mt-1.5 text-xl font-semibold tabular-nums">
+                              {item.value}
+                            </p>
+                            <p className="mt-0.5 text-[10.5px] leading-snug text-muted-foreground">
+                              {item.hint}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="mt-4 border-t border-border pt-3">
+                        {videoQuota.atVideoLimit ? (
+                          <>
+                            <p className="text-[12px] font-semibold text-destructive">
+                              Mux Free's {videoQuota.limits.storedVideos}-asset account cap reached
+                            </p>
+                            <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                              Mux Free allows {videoQuota.limits.storedVideos} on-demand assets per
+                              account. This is blocking new uploads, even if you have minutes left.
+                              Delete a video to free a slot.
+                            </p>
+                          </>
+                        ) : videoQuota.atMinuteLimit ? (
+                          <>
+                            <p className="text-[12px] font-semibold text-destructive">
+                              Minute quota reached
+                            </p>
+                            <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                              Delete a ready video to free minutes.
+                            </p>
+                          </>
+                        ) : videoQuota.atActiveLimit ? (
+                          <>
+                            <p className="text-[12px] font-semibold text-destructive">
+                              Upload limit reached
+                            </p>
+                            <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                              Wait for an upload to finish before starting another.
+                            </p>
+                          </>
+                        ) : (
+                          <p className="text-[11px] leading-relaxed text-muted-foreground">
+                            {videoQuota.remainingVideos} video slot
+                            {videoQuota.remainingVideos === 1 ? "" : "s"} and{" "}
+                            {minuteValue(videoQuota.remainingMinutes)} minutes left.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </section>
+                )}
 
                 {/* languages */}
                 <section className="card-surface overflow-hidden">

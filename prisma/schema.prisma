@@ -41,6 +41,7 @@ model User {
   followers   Follow[]     @relation("Followers")
   collections Collection[]
   videos      Video[]
+  playlists   Playlist[]
 }
 
 /** A directed follow edge: `follower` follows `following`.
@@ -281,7 +282,38 @@ model Video {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
+  playlistItems PlaylistItem[]
+
   @@index([userId, createdAt])
+}
+
+/** A YouTube-style playlist: an ordered set of videos for one topic. */
+model Playlist {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String?
+  topic       String?
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items PlaylistItem[]
+
+  @@index([userId, createdAt])
+}
+
+model PlaylistItem {
+  id         String   @id @default(cuid())
+  playlistId String
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  videoId    String
+  video      Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  position   Int
+
+  @@unique([playlistId, videoId])
+  @@index([playlistId, position])
 }
 
 model Tutorial {
@@ -357,6 +389,38 @@ model Vote {
   @@unique([userId, answerId])
   @@index([questionId])
   @@index([answerId])
+}
+
+/**
+ * Metadata-only log of one speech-to-text request from the interview page.
+ *
+ * Privacy boundary: this table never holds audio, never holds transcript
+ * text, and never holds the question. Only what is needed to tell "the mic
+ * heard nothing" (silence / no_speech_prob) apart from "the model misheard"
+ * (avg_logprob, provider failures, retries).
+ */
+model TranscriptionLog {
+  id          String   @id @default(cuid())
+  userId      String? // pseudonymous; no relation so account deletion keeps counts
+  provider    String // "groq" | "openai"
+  model       String // "whisper-large-v3" | "whisper-1"
+  status      String // "ok" | "empty" | "error"
+  errorCode   String? // STT_UNAVAILABLE | provider HTTP status
+  httpStatus  Int?
+  latencyMs   Int
+  audioBytes  Int
+  audioMs     Int? // duration the browser actually recorded
+  durationMs  Int? // duration the provider decoded
+  silenceRatio Float? // 0..1: share of mic frames under the speech floor
+  noSpeechProb Float? // Whisper's own "is this silence" probability
+  avgLogprob  Float? // Whisper confidence; closer to 0 = more confident
+  compressionRatio Float?
+  retryCount  Int      @default(0) // 0 = first attempt for this take
+  transcriptChars Int  @default(0) // length only — never the words
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([status, createdAt])
 }
 
 model PasswordResetToken {

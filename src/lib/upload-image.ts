@@ -32,8 +32,8 @@ function toDataUrl(blob: Blob): Promise<string> {
   });
 }
 
-/** Resize/compress in the browser, then store the bytes on the server. */
-export async function uploadImageFile(file: File): Promise<string> {
+/** Resize and compress in the browser, then return a WebP data URL. */
+async function prepareImageDataUrl(file: File): Promise<string> {
   if (!file.type.startsWith("image/") || file.type === "image/svg+xml") {
     throw new Error("Use a PNG, JPEG, WebP or GIF image");
   }
@@ -61,14 +61,29 @@ export async function uploadImageFile(file: File): Promise<string> {
     throw new Error("That image is too large — try a smaller screenshot");
   }
 
-  const dataUrl = await toDataUrl(blob);
-  const res = await fetch("/api/uploads", {
+  return toDataUrl(blob);
+}
+
+async function postImage(endpoint: string, dataUrl: string, fallback: string) {
+  const res = await fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ dataUrl }),
   });
   const data = await res.json().catch(() => ({}));
   if (res.status === 401) throw new Error("Sign in to attach an image");
-  if (!res.ok || !data.url) throw new Error(data.error ?? "Upload failed");
+  if (!res.ok || !data.url) throw new Error(data.error ?? fallback);
   return String(data.url);
+}
+
+/** Resize/compress in the browser, then store the bytes on the server. */
+export async function uploadImageFile(file: File): Promise<string> {
+  const dataUrl = await prepareImageDataUrl(file);
+  return postImage("/api/uploads", dataUrl, "Upload failed");
+}
+
+/** Resize/compress in the browser, then upload to Cloudinary for blog images. */
+export async function uploadCloudinaryImage(file: File): Promise<string> {
+  const dataUrl = await prepareImageDataUrl(file);
+  return postImage("/api/uploads/cloudinary", dataUrl, "Image upload failed");
 }

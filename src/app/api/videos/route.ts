@@ -3,9 +3,8 @@ import { prisma } from "@/lib/db";
 import { getSessionClaims } from "@/lib/auth";
 import { appOrigin, isMuxConfigured } from "@/lib/mux";
 import { getMux } from "@/lib/mux";
-import { VIDEO_LIMITS, canUploadVideo } from "@/lib/video-access";
-
-const ACTIVE_STATUSES = ["WAITING", "UPLOADING", "PROCESSING"] as const;
+import { canUploadVideo } from "@/lib/video-access";
+import { getVideoUsage } from "@/lib/video-usage";
 
 function cleanTitle(value: unknown) {
   if (typeof value !== "string") return null;
@@ -36,28 +35,28 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}));
     const title = cleanTitle((body as { title?: unknown })?.title);
 
-    const [active, ready] = await Promise.all([
-      prisma.video.count({
-        where: { userId: user.id, status: { in: [...ACTIVE_STATUSES] } },
-      }),
-      prisma.video.aggregate({
-        where: { userId: user.id, status: "READY" },
-        _sum: { duration: true },
-      }),
-    ]);
+    const usage = await getVideoUsage(user.id);
 
-    if (active >= VIDEO_LIMITS.activeUploads) {
+    if (usage.atActiveLimit) {
       return NextResponse.json(
         {
-          error: `You can keep ${VIDEO_LIMITS.activeUploads} videos uploading at once. Wait for one to finish.`,
+          error: `You can keep ${usage.limits.activeUploads} videos uploading at once. Wait for one to finish.`,
         },
         { status: 429 }
       );
     }
-    if ((ready._sum.duration ?? 0) >= VIDEO_LIMITS.totalMinutes * 60) {
+    if (usage.atVideoLimit) {
       return NextResponse.json(
         {
-          error: `Video storage limit reached (${VIDEO_LIMITS.totalMinutes} minutes). Delete a video first.`,
+          error: `Mux Free's ${usage.limits.storedVideos}-asset account cap is reached. Delete a video from your library to free a slot.`,
+        },
+        { status: 429 }
+      );
+    }
+    if (usage.atMinuteLimit) {
+      return NextResponse.json(
+        {
+          error: `Video storage limit reached (${usage.limits.totalMinutes} minutes). Delete a video first.`,
         },
         { status: 429 }
       );
@@ -77,7 +76,8 @@ export async function POST(request: Request) {
           video_quality: "basic",
           passthrough: video.id,
         },
-        timeout: 3600,
+        // Direct-upload URLs must outlive a multi-hour lesson upload.
+        timeout: 60 * 60 * 24 * 7,
       });
 
       if (!upload.url) throw new Error("Mux did not return an upload URL");

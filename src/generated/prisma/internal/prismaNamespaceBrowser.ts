@@ -68,11 +68,14 @@ export const ModelName = {
   Comment: 'Comment',
   Media: 'Media',
   Video: 'Video',
+  Playlist: 'Playlist',
+  PlaylistItem: 'PlaylistItem',
   Tutorial: 'Tutorial',
   Question: 'Question',
   Answer: 'Answer',
   Reply: 'Reply',
   Vote: 'Vote',
+  TranscriptionLog: 'TranscriptionLog',
   PasswordResetToken: 'PasswordResetToken'
 } as const
 
@@ -303,6 +306,30 @@ export const VideoScalarFieldEnum = {
 export type VideoScalarFieldEnum = (typeof VideoScalarFieldEnum)[keyof typeof VideoScalarFieldEnum]
 
 
+export const PlaylistScalarFieldEnum = {
+  id: 'id',
+  slug: 'slug',
+  title: 'title',
+  description: 'description',
+  topic: 'topic',
+  userId: 'userId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PlaylistScalarFieldEnum = (typeof PlaylistScalarFieldEnum)[keyof typeof PlaylistScalarFieldEnum]
+
+
+export const PlaylistItemScalarFieldEnum = {
+  id: 'id',
+  playlistId: 'playlistId',
+  videoId: 'videoId',
+  position: 'position'
+} as const
+
+export type PlaylistItemScalarFieldEnum = (typeof PlaylistItemScalarFieldEnum)[keyof typeof PlaylistItemScalarFieldEnum]
+
+
 export const TutorialScalarFieldEnum = {
   id: 'id',
   title: 'title',
@@ -362,6 +389,30 @@ export const VoteScalarFieldEnum = {
 } as const
 
 export type VoteScalarFieldEnum = (typeof VoteScalarFieldEnum)[keyof typeof VoteScalarFieldEnum]
+
+
+export const TranscriptionLogScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  provider: 'provider',
+  model: 'model',
+  status: 'status',
+  errorCode: 'errorCode',
+  httpStatus: 'httpStatus',
+  latencyMs: 'latencyMs',
+  audioBytes: 'audioBytes',
+  audioMs: 'audioMs',
+  durationMs: 'durationMs',
+  silenceRatio: 'silenceRatio',
+  noSpeechProb: 'noSpeechProb',
+  avgLogprob: 'avgLogprob',
+  compressionRatio: 'compressionRatio',
+  retryCount: 'retryCount',
+  transcriptChars: 'transcriptChars',
+  createdAt: 'createdAt'
+} as const
+
+export type TranscriptionLogScalarFieldEnum = (typeof TranscriptionLogScalarFieldEnum)[keyof typeof TranscriptionLogScalarFieldEnum]
 
 
 export const PasswordResetTokenScalarFieldEnum = {

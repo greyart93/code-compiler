@@ -19,6 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ProblemStatement } from "@/components/problem-statement";
 import { SiteHeader } from "@/components/site-header";
 import { toast } from "@/components/ui/toaster";
 import {
@@ -31,8 +32,6 @@ import {
   labelFor,
   levelScore,
   nextProblem,
-  parseArgs,
-  programFor,
   sqlSchemaSummary,
   stubFor,
   trackOf,
@@ -42,6 +41,7 @@ import {
   type SqlProblem,
 } from "@/data/code-tests";
 import { runSqlProblem, prettyCell, type SqlRunResult } from "@/lib/code-test-sql";
+import { judgeProgram, type CodeTestRow } from "@/lib/code-judge";
 import { cn } from "@/lib/utils";
 
 const AceEditor = dynamic(() => import("../../_editor/(AceEditor)/page"), {
@@ -53,14 +53,11 @@ const AceEditor = dynamic(() => import("../../_editor/(AceEditor)/page"), {
   ),
 });
 
-// /api/runCode forwards the glot mux payload, which nests the run under `data`
-type RunResult = { stdout?: string | null; stderr?: string | null; error?: string | null };
-type RunResponse = RunResult & { data?: RunResult };
-type CodeRow = { label: string; pass: boolean; got: string; want: string };
+type CodeRow = CodeTestRow;
 
 const SQL_START = (task: string) => `-- ${task}\n-- tables: customers, products, orders, order_items, employees\n\nSELECT\n`;
 
-/** tiny inline-markdown pass for problem statements (**bold**, `code`) */
+/** inline-markdown rendering for hints and short notes */
 function Inline({ text }: { text: string }) {
   const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
   return (
@@ -83,34 +80,6 @@ function Inline({ text }: { text: string }) {
         return <span key={i}>{part}</span>;
       })}
     </>
-  );
-}
-
-function Statement({ text }: { text: string }) {
-  const blocks = text.replace(/\r/g, "").split(/```/);
-  return (
-    <div className="mt-3 grid gap-2 text-[13.5px] leading-relaxed text-foreground/90">
-      {blocks.map((block, index) => {
-        if (index % 2 === 1) {
-          return (
-            <pre
-              key={index}
-              className="overflow-x-auto rounded-xl border border-border bg-muted/40 p-3 font-mono text-[11.5px] leading-relaxed"
-            >
-              {block.replace(/^\n|\n$/g, "")}
-            </pre>
-          );
-        }
-        return block
-          .split("\n")
-          .filter((line) => line.trim())
-          .map((line, i) => (
-            <p key={`${index}-${i}`}>
-              <Inline text={line} />
-            </p>
-          ));
-      })}
-    </div>
   );
 }
 
@@ -215,26 +184,7 @@ export default function CodeTestSolvePage() {
         return;
       }
 
-      const collected: CodeRow[] = [];
-      for (const testCase of problem.tests) {
-        // The learner only wrote a function; the driver supplies the arguments
-        // and prints the returned value, so nothing reads stdin.
-        const program = programFor(problem, language, code, parseArgs(problem, testCase.input));
-        const res = await fetch("/api/runCode", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code: program, language, input: "" }),
-        });
-        const payload = (await res.json()) as RunResponse;
-        const data = payload.data ?? payload;
-        const out = (data.stdout ?? "").trim();
-        collected.push({
-          label: testCase.label,
-          pass: !data.error && out === testCase.expected,
-          got: data.error ? data.error : out,
-          want: testCase.expected,
-        });
-      }
+      const collected = await judgeProgram(problem, language, code);
       setRows(collected);
       const ok = collected.every((row) => row.pass);
       setAllPassed(ok);
@@ -366,7 +316,7 @@ export default function CodeTestSolvePage() {
           <aside className="grid gap-4">
             <section className="card-surface p-5">
               <p className="mono-label">The brief</p>
-              <Statement text={problem.statement} />
+              <ProblemStatement text={problem.statement} className="mt-3" />
               {problem.kind !== "sql" && (
                 <div className="mt-4 rounded-xl border border-border bg-muted/40 p-3">
                   <p className="mono-label !text-[9px]">Write this function</p>

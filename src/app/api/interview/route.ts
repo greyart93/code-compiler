@@ -8,6 +8,7 @@ import {
   fallbackScore,
   type BankQuestion,
 } from "@/lib/interview-data";
+import { codingProblemFor } from "@/lib/interview-code";
 import { recordActivity } from "@/lib/streak";
 
 type EvalBody = {
@@ -19,7 +20,8 @@ type EvalBody = {
 
 const clamp = (n: number) => Math.max(0, Math.min(10, n));
 
-// GET /api/interview/questions?topic=react → the round's question list
+// GET /api/interview/questions?topic=react → the round's question list,
+// plus the coding problem the technical round finishes with.
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const topic = searchParams.get("topic") ?? "javascript";
@@ -28,7 +30,19 @@ export async function GET(request: Request) {
   // shuffle and take 6
   const picked = [...bank].sort(() => Math.random() - 0.5).slice(0, 6);
 
-  return NextResponse.json({ questions: picked.map((q: BankQuestion) => ({ q: q.q, keywords: q.keywords })) });
+  const coding = codingProblemFor(topic === "english" ? "english" : "tech", topic);
+
+  return NextResponse.json({
+    questions: picked.map((q: BankQuestion) => ({ q: q.q, keywords: q.keywords })),
+    coding: coding
+      ? {
+          problemId: coding.id,
+          title: coding.title,
+          level: coding.level,
+          topics: coding.topics,
+        }
+      : null,
+  });
 }
 
 // POST /api/interview/evaluate  { question, answer, kind, keywords? } → { score, feedback }

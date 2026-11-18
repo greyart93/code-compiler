@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getCurrentUser, getSessionClaims } from "@/lib/auth";
-import { cached } from "@/lib/server-cache";
+import { cached, isUnavailable } from "@/lib/server-cache";
 
 // GET /api/snippets?user=username  → public profile showcase
 // GET /api/snippets?mine=1         → current user's snippets (incl. private)
@@ -135,7 +135,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ snippets });
   } catch (error) {
     console.error("snippets GET error:", error);
-    return NextResponse.json({ error: "Failed to fetch snippets" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch snippets" }, { status: isUnavailable(error) ? 503 : 500 });
   }
 }
 

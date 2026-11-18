@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSessionClaims } from "@/lib/auth";
-import { cached } from "@/lib/server-cache";
+import { cached, isUnavailable } from "@/lib/server-cache";
 
 // GET /api/feed → newest public snippets from the people you follow.
 //
@@ -64,6 +64,6 @@ export async function GET() {
     return NextResponse.json(payload);
   } catch (error) {
     console.error("feed GET error:", error);
-    return NextResponse.json({ error: "Failed to load your feed" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to load your feed" }, { status: isUnavailable(error) ? 503 : 500 });
   }
 }

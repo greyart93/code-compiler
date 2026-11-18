@@ -226,6 +226,7 @@ export type UserWhereInput = {
   followers?: Prisma.FollowListRelationFilter
   collections?: Prisma.CollectionListRelationFilter
   videos?: Prisma.VideoListRelationFilter
+  playlists?: Prisma.PlaylistListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -257,6 +258,7 @@ export type UserOrderByWithRelationInput = {
   followers?: Prisma.FollowOrderByRelationAggregateInput
   collections?: Prisma.CollectionOrderByRelationAggregateInput
   videos?: Prisma.VideoOrderByRelationAggregateInput
+  playlists?: Prisma.PlaylistOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -291,6 +293,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   followers?: Prisma.FollowListRelationFilter
   collections?: Prisma.CollectionListRelationFilter
   videos?: Prisma.VideoListRelationFilter
+  playlists?: Prisma.PlaylistListRelationFilter
 }, "id" | "email" | "username">
 
 export type UserOrderByWithAggregationInput = {
@@ -350,6 +353,7 @@ export type UserCreateInput = {
   followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -381,6 +385,7 @@ export type UserUncheckedCreateInput = {
   followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoUncheckedCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -412,6 +417,7 @@ export type UserUpdateInput = {
   followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -443,6 +449,7 @@ export type UserUncheckedUpdateInput = {
   followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUncheckedUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -745,6 +752,20 @@ export type UserUpdateOneRequiredWithoutVideosNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutVideosInput, Prisma.UserUpdateWithoutVideosInput>, Prisma.UserUncheckedUpdateWithoutVideosInput>
 }
 
+export type UserCreateNestedOneWithoutPlaylistsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPlaylistsInput, Prisma.UserUncheckedCreateWithoutPlaylistsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPlaylistsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutPlaylistsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPlaylistsInput, Prisma.UserUncheckedCreateWithoutPlaylistsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPlaylistsInput
+  upsert?: Prisma.UserUpsertWithoutPlaylistsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutPlaylistsInput, Prisma.UserUpdateWithoutPlaylistsInput>, Prisma.UserUncheckedUpdateWithoutPlaylistsInput>
+}
+
 export type UserCreateNestedOneWithoutTutorialsInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutTutorialsInput, Prisma.UserUncheckedCreateWithoutTutorialsInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutTutorialsInput
@@ -843,6 +864,7 @@ export type UserCreateWithoutFollowingInput = {
   followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutFollowingInput = {
@@ -873,6 +895,7 @@ export type UserUncheckedCreateWithoutFollowingInput = {
   followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoUncheckedCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutFollowingInput = {
@@ -908,6 +931,7 @@ export type UserCreateWithoutFollowersInput = {
   following?: Prisma.FollowCreateNestedManyWithoutFollowerInput
   collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutFollowersInput = {
@@ -938,6 +962,7 @@ export type UserUncheckedCreateWithoutFollowersInput = {
   following?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowerInput
   collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoUncheckedCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutFollowersInput = {
@@ -984,6 +1009,7 @@ export type UserUpdateWithoutFollowingInput = {
   followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutFollowingInput = {
@@ -1014,6 +1040,7 @@ export type UserUncheckedUpdateWithoutFollowingInput = {
   followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUncheckedUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserUpsertWithoutFollowersInput = {
@@ -1055,6 +1082,7 @@ export type UserUpdateWithoutFollowersInput = {
   following?: Prisma.FollowUpdateManyWithoutFollowerNestedInput
   collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutFollowersInput = {
@@ -1085,6 +1113,7 @@ export type UserUncheckedUpdateWithoutFollowersInput = {
   following?: Prisma.FollowUncheckedUpdateManyWithoutFollowerNestedInput
   collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUncheckedUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutCollectionsInput = {
@@ -1115,6 +1144,7 @@ export type UserCreateWithoutCollectionsInput = {
   following?: Prisma.FollowCreateNestedManyWithoutFollowerInput
   followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
   videos?: Prisma.VideoCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutCollectionsInput = {
@@ -1145,6 +1175,7 @@ export type UserUncheckedCreateWithoutCollectionsInput = {
   following?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowerInput
   followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
   videos?: Prisma.VideoUncheckedCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutCollectionsInput = {
@@ -1191,6 +1222,7 @@ export type UserUpdateWithoutCollectionsInput = {
   following?: Prisma.FollowUpdateManyWithoutFollowerNestedInput
   followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
   videos?: Prisma.VideoUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCollectionsInput = {
@@ -1221,6 +1253,7 @@ export type UserUncheckedUpdateWithoutCollectionsInput = {
   following?: Prisma.FollowUncheckedUpdateManyWithoutFollowerNestedInput
   followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
   videos?: Prisma.VideoUncheckedUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutActivityDaysInput = {
@@ -1251,6 +1284,7 @@ export type UserCreateWithoutActivityDaysInput = {
   followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutActivityDaysInput = {
@@ -1281,6 +1315,7 @@ export type UserUncheckedCreateWithoutActivityDaysInput = {
   followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoUncheckedCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutActivityDaysInput = {
@@ -1327,6 +1362,7 @@ export type UserUpdateWithoutActivityDaysInput = {
   followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutActivityDaysInput = {
@@ -1357,6 +1393,7 @@ export type UserUncheckedUpdateWithoutActivityDaysInput = {
   followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUncheckedUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutStreakInput = {
@@ -1387,6 +1424,7 @@ export type UserCreateWithoutStreakInput = {
   followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutStreakInput = {
@@ -1417,6 +1455,7 @@ export type UserUncheckedCreateWithoutStreakInput = {
   followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoUncheckedCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutStreakInput = {
@@ -1463,6 +1502,7 @@ export type UserUpdateWithoutStreakInput = {
   followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutStreakInput = {
@@ -1493,6 +1533,7 @@ export type UserUncheckedUpdateWithoutStreakInput = {
   followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUncheckedUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutNotesInput = {
@@ -1523,6 +1564,7 @@ export type UserCreateWithoutNotesInput = {
   followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutNotesInput = {
@@ -1553,6 +1595,7 @@ export type UserUncheckedCreateWithoutNotesInput = {
   followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoUncheckedCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutNotesInput = {
@@ -1599,6 +1642,7 @@ export type UserUpdateWithoutNotesInput = {
   followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutNotesInput = {
@@ -1629,6 +1673,7 @@ export type UserUncheckedUpdateWithoutNotesInput = {
   followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUncheckedUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutInterviewSessionsInput = {
@@ -1659,6 +1704,7 @@ export type UserCreateWithoutInterviewSessionsInput = {
   followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutInterviewSessionsInput = {
@@ -1689,6 +1735,7 @@ export type UserUncheckedCreateWithoutInterviewSessionsInput = {
   followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoUncheckedCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutInterviewSessionsInput = {
@@ -1735,6 +1782,7 @@ export type UserUpdateWithoutInterviewSessionsInput = {
   followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutInterviewSessionsInput = {
@@ -1765,6 +1813,7 @@ export type UserUncheckedUpdateWithoutInterviewSessionsInput = {
   followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUncheckedUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutLiveInterviewsHostedInput = {
@@ -1795,6 +1844,7 @@ export type UserCreateWithoutLiveInterviewsHostedInput = {
   followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutLiveInterviewsHostedInput = {
@@ -1825,6 +1875,7 @@ export type UserUncheckedCreateWithoutLiveInterviewsHostedInput = {
   followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoUncheckedCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutLiveInterviewsHostedInput = {
@@ -1860,6 +1911,7 @@ export type UserCreateWithoutLiveInterviewsTakenInput = {
   followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutLiveInterviewsTakenInput = {
@@ -1890,6 +1942,7 @@ export type UserUncheckedCreateWithoutLiveInterviewsTakenInput = {
   followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoUncheckedCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutLiveInterviewsTakenInput = {
@@ -1936,6 +1989,7 @@ export type UserUpdateWithoutLiveInterviewsHostedInput = {
   followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutLiveInterviewsHostedInput = {
@@ -1966,6 +2020,7 @@ export type UserUncheckedUpdateWithoutLiveInterviewsHostedInput = {
   followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUncheckedUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserUpsertWithoutLiveInterviewsTakenInput = {
@@ -2007,6 +2062,7 @@ export type UserUpdateWithoutLiveInterviewsTakenInput = {
   followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutLiveInterviewsTakenInput = {
@@ -2037,6 +2093,7 @@ export type UserUncheckedUpdateWithoutLiveInterviewsTakenInput = {
   followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUncheckedUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutCodeAttemptsInput = {
@@ -2067,6 +2124,7 @@ export type UserCreateWithoutCodeAttemptsInput = {
   followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutCodeAttemptsInput = {
@@ -2097,6 +2155,7 @@ export type UserUncheckedCreateWithoutCodeAttemptsInput = {
   followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoUncheckedCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutCodeAttemptsInput = {
@@ -2143,6 +2202,7 @@ export type UserUpdateWithoutCodeAttemptsInput = {
   followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCodeAttemptsInput = {
@@ -2173,6 +2233,7 @@ export type UserUncheckedUpdateWithoutCodeAttemptsInput = {
   followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUncheckedUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutCourseProgressInput = {
@@ -2203,6 +2264,7 @@ export type UserCreateWithoutCourseProgressInput = {
   followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutCourseProgressInput = {
@@ -2233,6 +2295,7 @@ export type UserUncheckedCreateWithoutCourseProgressInput = {
   followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoUncheckedCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutCourseProgressInput = {
@@ -2279,6 +2342,7 @@ export type UserUpdateWithoutCourseProgressInput = {
   followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCourseProgressInput = {
@@ -2309,6 +2373,7 @@ export type UserUncheckedUpdateWithoutCourseProgressInput = {
   followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUncheckedUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutSnippetsInput = {
@@ -2339,6 +2404,7 @@ export type UserCreateWithoutSnippetsInput = {
   followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutSnippetsInput = {
@@ -2369,6 +2435,7 @@ export type UserUncheckedCreateWithoutSnippetsInput = {
   followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoUncheckedCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutSnippetsInput = {
@@ -2415,6 +2482,7 @@ export type UserUpdateWithoutSnippetsInput = {
   followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSnippetsInput = {
@@ -2445,6 +2513,7 @@ export type UserUncheckedUpdateWithoutSnippetsInput = {
   followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUncheckedUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutLikesInput = {
@@ -2475,6 +2544,7 @@ export type UserCreateWithoutLikesInput = {
   followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutLikesInput = {
@@ -2505,6 +2575,7 @@ export type UserUncheckedCreateWithoutLikesInput = {
   followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoUncheckedCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutLikesInput = {
@@ -2551,6 +2622,7 @@ export type UserUpdateWithoutLikesInput = {
   followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutLikesInput = {
@@ -2581,6 +2653,7 @@ export type UserUncheckedUpdateWithoutLikesInput = {
   followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUncheckedUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutCommentsInput = {
@@ -2611,6 +2684,7 @@ export type UserCreateWithoutCommentsInput = {
   followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutCommentsInput = {
@@ -2641,6 +2715,7 @@ export type UserUncheckedCreateWithoutCommentsInput = {
   followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoUncheckedCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutCommentsInput = {
@@ -2687,6 +2762,7 @@ export type UserUpdateWithoutCommentsInput = {
   followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCommentsInput = {
@@ -2717,6 +2793,7 @@ export type UserUncheckedUpdateWithoutCommentsInput = {
   followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUncheckedUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutVideosInput = {
@@ -2747,6 +2824,7 @@ export type UserCreateWithoutVideosInput = {
   following?: Prisma.FollowCreateNestedManyWithoutFollowerInput
   followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutVideosInput = {
@@ -2777,6 +2855,7 @@ export type UserUncheckedCreateWithoutVideosInput = {
   following?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowerInput
   followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutVideosInput = {
@@ -2823,6 +2902,7 @@ export type UserUpdateWithoutVideosInput = {
   following?: Prisma.FollowUpdateManyWithoutFollowerNestedInput
   followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutVideosInput = {
@@ -2853,6 +2933,147 @@ export type UserUncheckedUpdateWithoutVideosInput = {
   following?: Prisma.FollowUncheckedUpdateManyWithoutFollowerNestedInput
   followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutPlaylistsInput = {
+  id?: string
+  email: string
+  username: string
+  name?: string | null
+  password?: string | null
+  bio?: string | null
+  image?: string | null
+  createdAt?: Date | string
+  snippets?: Prisma.SnippetCreateNestedManyWithoutUserInput
+  tutorials?: Prisma.TutorialCreateNestedManyWithoutUserInput
+  comments?: Prisma.CommentCreateNestedManyWithoutUserInput
+  likes?: Prisma.LikeCreateNestedManyWithoutUserInput
+  questions?: Prisma.QuestionCreateNestedManyWithoutUserInput
+  answers?: Prisma.AnswerCreateNestedManyWithoutUserInput
+  replies?: Prisma.ReplyCreateNestedManyWithoutUserInput
+  votes?: Prisma.VoteCreateNestedManyWithoutUserInput
+  courseProgress?: Prisma.CourseProgressCreateNestedManyWithoutUserInput
+  activityDays?: Prisma.ActivityDayCreateNestedManyWithoutUserInput
+  notes?: Prisma.NoteCreateNestedManyWithoutUserInput
+  interviewSessions?: Prisma.InterviewSessionCreateNestedManyWithoutUserInput
+  codeAttempts?: Prisma.CodeAttemptCreateNestedManyWithoutUserInput
+  streak?: Prisma.StreakCreateNestedOneWithoutUserInput
+  liveInterviewsHosted?: Prisma.LiveInterviewRoomCreateNestedManyWithoutInterviewerInput
+  liveInterviewsTaken?: Prisma.LiveInterviewRoomCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
+  videos?: Prisma.VideoCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutPlaylistsInput = {
+  id?: string
+  email: string
+  username: string
+  name?: string | null
+  password?: string | null
+  bio?: string | null
+  image?: string | null
+  createdAt?: Date | string
+  snippets?: Prisma.SnippetUncheckedCreateNestedManyWithoutUserInput
+  tutorials?: Prisma.TutorialUncheckedCreateNestedManyWithoutUserInput
+  comments?: Prisma.CommentUncheckedCreateNestedManyWithoutUserInput
+  likes?: Prisma.LikeUncheckedCreateNestedManyWithoutUserInput
+  questions?: Prisma.QuestionUncheckedCreateNestedManyWithoutUserInput
+  answers?: Prisma.AnswerUncheckedCreateNestedManyWithoutUserInput
+  replies?: Prisma.ReplyUncheckedCreateNestedManyWithoutUserInput
+  votes?: Prisma.VoteUncheckedCreateNestedManyWithoutUserInput
+  courseProgress?: Prisma.CourseProgressUncheckedCreateNestedManyWithoutUserInput
+  activityDays?: Prisma.ActivityDayUncheckedCreateNestedManyWithoutUserInput
+  notes?: Prisma.NoteUncheckedCreateNestedManyWithoutUserInput
+  interviewSessions?: Prisma.InterviewSessionUncheckedCreateNestedManyWithoutUserInput
+  codeAttempts?: Prisma.CodeAttemptUncheckedCreateNestedManyWithoutUserInput
+  streak?: Prisma.StreakUncheckedCreateNestedOneWithoutUserInput
+  liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutInterviewerInput
+  liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedCreateNestedManyWithoutCandidateInput
+  following?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowerInput
+  followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
+  collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
+  videos?: Prisma.VideoUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutPlaylistsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutPlaylistsInput, Prisma.UserUncheckedCreateWithoutPlaylistsInput>
+}
+
+export type UserUpsertWithoutPlaylistsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutPlaylistsInput, Prisma.UserUncheckedUpdateWithoutPlaylistsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutPlaylistsInput, Prisma.UserUncheckedCreateWithoutPlaylistsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutPlaylistsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutPlaylistsInput, Prisma.UserUncheckedUpdateWithoutPlaylistsInput>
+}
+
+export type UserUpdateWithoutPlaylistsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  snippets?: Prisma.SnippetUpdateManyWithoutUserNestedInput
+  tutorials?: Prisma.TutorialUpdateManyWithoutUserNestedInput
+  comments?: Prisma.CommentUpdateManyWithoutUserNestedInput
+  likes?: Prisma.LikeUpdateManyWithoutUserNestedInput
+  questions?: Prisma.QuestionUpdateManyWithoutUserNestedInput
+  answers?: Prisma.AnswerUpdateManyWithoutUserNestedInput
+  replies?: Prisma.ReplyUpdateManyWithoutUserNestedInput
+  votes?: Prisma.VoteUpdateManyWithoutUserNestedInput
+  courseProgress?: Prisma.CourseProgressUpdateManyWithoutUserNestedInput
+  activityDays?: Prisma.ActivityDayUpdateManyWithoutUserNestedInput
+  notes?: Prisma.NoteUpdateManyWithoutUserNestedInput
+  interviewSessions?: Prisma.InterviewSessionUpdateManyWithoutUserNestedInput
+  codeAttempts?: Prisma.CodeAttemptUpdateManyWithoutUserNestedInput
+  streak?: Prisma.StreakUpdateOneWithoutUserNestedInput
+  liveInterviewsHosted?: Prisma.LiveInterviewRoomUpdateManyWithoutInterviewerNestedInput
+  liveInterviewsTaken?: Prisma.LiveInterviewRoomUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
+  videos?: Prisma.VideoUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutPlaylistsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  snippets?: Prisma.SnippetUncheckedUpdateManyWithoutUserNestedInput
+  tutorials?: Prisma.TutorialUncheckedUpdateManyWithoutUserNestedInput
+  comments?: Prisma.CommentUncheckedUpdateManyWithoutUserNestedInput
+  likes?: Prisma.LikeUncheckedUpdateManyWithoutUserNestedInput
+  questions?: Prisma.QuestionUncheckedUpdateManyWithoutUserNestedInput
+  answers?: Prisma.AnswerUncheckedUpdateManyWithoutUserNestedInput
+  replies?: Prisma.ReplyUncheckedUpdateManyWithoutUserNestedInput
+  votes?: Prisma.VoteUncheckedUpdateManyWithoutUserNestedInput
+  courseProgress?: Prisma.CourseProgressUncheckedUpdateManyWithoutUserNestedInput
+  activityDays?: Prisma.ActivityDayUncheckedUpdateManyWithoutUserNestedInput
+  notes?: Prisma.NoteUncheckedUpdateManyWithoutUserNestedInput
+  interviewSessions?: Prisma.InterviewSessionUncheckedUpdateManyWithoutUserNestedInput
+  codeAttempts?: Prisma.CodeAttemptUncheckedUpdateManyWithoutUserNestedInput
+  streak?: Prisma.StreakUncheckedUpdateOneWithoutUserNestedInput
+  liveInterviewsHosted?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutInterviewerNestedInput
+  liveInterviewsTaken?: Prisma.LiveInterviewRoomUncheckedUpdateManyWithoutCandidateNestedInput
+  following?: Prisma.FollowUncheckedUpdateManyWithoutFollowerNestedInput
+  followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
+  collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
+  videos?: Prisma.VideoUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutTutorialsInput = {
@@ -2883,6 +3104,7 @@ export type UserCreateWithoutTutorialsInput = {
   followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutTutorialsInput = {
@@ -2913,6 +3135,7 @@ export type UserUncheckedCreateWithoutTutorialsInput = {
   followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoUncheckedCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutTutorialsInput = {
@@ -2959,6 +3182,7 @@ export type UserUpdateWithoutTutorialsInput = {
   followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutTutorialsInput = {
@@ -2989,6 +3213,7 @@ export type UserUncheckedUpdateWithoutTutorialsInput = {
   followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUncheckedUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutQuestionsInput = {
@@ -3019,6 +3244,7 @@ export type UserCreateWithoutQuestionsInput = {
   followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutQuestionsInput = {
@@ -3049,6 +3275,7 @@ export type UserUncheckedCreateWithoutQuestionsInput = {
   followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoUncheckedCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutQuestionsInput = {
@@ -3095,6 +3322,7 @@ export type UserUpdateWithoutQuestionsInput = {
   followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutQuestionsInput = {
@@ -3125,6 +3353,7 @@ export type UserUncheckedUpdateWithoutQuestionsInput = {
   followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUncheckedUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutAnswersInput = {
@@ -3155,6 +3384,7 @@ export type UserCreateWithoutAnswersInput = {
   followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutAnswersInput = {
@@ -3185,6 +3415,7 @@ export type UserUncheckedCreateWithoutAnswersInput = {
   followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoUncheckedCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutAnswersInput = {
@@ -3231,6 +3462,7 @@ export type UserUpdateWithoutAnswersInput = {
   followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAnswersInput = {
@@ -3261,6 +3493,7 @@ export type UserUncheckedUpdateWithoutAnswersInput = {
   followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUncheckedUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutRepliesInput = {
@@ -3291,6 +3524,7 @@ export type UserCreateWithoutRepliesInput = {
   followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutRepliesInput = {
@@ -3321,6 +3555,7 @@ export type UserUncheckedCreateWithoutRepliesInput = {
   followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoUncheckedCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutRepliesInput = {
@@ -3367,6 +3602,7 @@ export type UserUpdateWithoutRepliesInput = {
   followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRepliesInput = {
@@ -3397,6 +3633,7 @@ export type UserUncheckedUpdateWithoutRepliesInput = {
   followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUncheckedUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutVotesInput = {
@@ -3427,6 +3664,7 @@ export type UserCreateWithoutVotesInput = {
   followers?: Prisma.FollowCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutVotesInput = {
@@ -3457,6 +3695,7 @@ export type UserUncheckedCreateWithoutVotesInput = {
   followers?: Prisma.FollowUncheckedCreateNestedManyWithoutFollowingInput
   collections?: Prisma.CollectionUncheckedCreateNestedManyWithoutUserInput
   videos?: Prisma.VideoUncheckedCreateNestedManyWithoutUserInput
+  playlists?: Prisma.PlaylistUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutVotesInput = {
@@ -3503,6 +3742,7 @@ export type UserUpdateWithoutVotesInput = {
   followers?: Prisma.FollowUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutVotesInput = {
@@ -3533,6 +3773,7 @@ export type UserUncheckedUpdateWithoutVotesInput = {
   followers?: Prisma.FollowUncheckedUpdateManyWithoutFollowingNestedInput
   collections?: Prisma.CollectionUncheckedUpdateManyWithoutUserNestedInput
   videos?: Prisma.VideoUncheckedUpdateManyWithoutUserNestedInput
+  playlists?: Prisma.PlaylistUncheckedUpdateManyWithoutUserNestedInput
 }
 
 
@@ -3560,6 +3801,7 @@ export type UserCountOutputType = {
   followers: number
   collections: number
   videos: number
+  playlists: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -3582,6 +3824,7 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   followers?: boolean | UserCountOutputTypeCountFollowersArgs
   collections?: boolean | UserCountOutputTypeCountCollectionsArgs
   videos?: boolean | UserCountOutputTypeCountVideosArgs
+  playlists?: boolean | UserCountOutputTypeCountPlaylistsArgs
 }
 
 /**
@@ -3727,6 +3970,13 @@ export type UserCountOutputTypeCountVideosArgs<ExtArgs extends runtime.Types.Ext
   where?: Prisma.VideoWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountPlaylistsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.PlaylistWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -3757,6 +4007,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   followers?: boolean | Prisma.User$followersArgs<ExtArgs>
   collections?: boolean | Prisma.User$collectionsArgs<ExtArgs>
   videos?: boolean | Prisma.User$videosArgs<ExtArgs>
+  playlists?: boolean | Prisma.User$playlistsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -3815,6 +4066,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   followers?: boolean | Prisma.User$followersArgs<ExtArgs>
   collections?: boolean | Prisma.User$collectionsArgs<ExtArgs>
   videos?: boolean | Prisma.User$videosArgs<ExtArgs>
+  playlists?: boolean | Prisma.User$playlistsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -3843,6 +4095,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     followers: Prisma.$FollowPayload<ExtArgs>[]
     collections: Prisma.$CollectionPayload<ExtArgs>[]
     videos: Prisma.$VideoPayload<ExtArgs>[]
+    playlists: Prisma.$PlaylistPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -4267,6 +4520,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   followers<T extends Prisma.User$followersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$followersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FollowPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   collections<T extends Prisma.User$collectionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$collectionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CollectionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   videos<T extends Prisma.User$videosArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$videosArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$VideoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  playlists<T extends Prisma.User$playlistsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$playlistsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PlaylistPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -5169,6 +5423,30 @@ export type User$videosArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
   take?: number
   skip?: number
   distinct?: Prisma.VideoScalarFieldEnum | Prisma.VideoScalarFieldEnum[]
+}
+
+/**
+ * User.playlists
+ */
+export type User$playlistsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Playlist
+   */
+  select?: Prisma.PlaylistSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Playlist
+   */
+  omit?: Prisma.PlaylistOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PlaylistInclude<ExtArgs> | null
+  where?: Prisma.PlaylistWhereInput
+  orderBy?: Prisma.PlaylistOrderByWithRelationInput | Prisma.PlaylistOrderByWithRelationInput[]
+  cursor?: Prisma.PlaylistWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.PlaylistScalarFieldEnum | Prisma.PlaylistScalarFieldEnum[]
 }
 
 /**

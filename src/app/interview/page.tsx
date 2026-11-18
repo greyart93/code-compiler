@@ -2,26 +2,65 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { AnimatePresence, motion } from "motion/react";
 import {
+  AlertTriangle,
   ArrowRight,
+  Code2,
+  Check,
   Languages,
   Loader2,
   Mic,
   MicOff,
+  Play,
   RotateCcw,
   Sparkles,
+  Terminal,
   Volume2,
   VolumeX,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ProblemStatement } from "@/components/problem-statement";
 import { Textarea } from "@/components/ui/textarea";
 import { SiteHeader } from "@/components/site-header";
 import { toast } from "@/components/ui/toaster";
-import { fixupTranscript } from "@/lib/speech-fixups";
+import {
+  PRACTICE_LANGUAGES,
+  aceMode,
+  describeSignature,
+  fileFor,
+  getProblem,
+  labelFor,
+  stubFor,
+  type PracticeLanguage,
+} from "@/data/code-tests";
+import { judgeProgram } from "@/lib/code-judge";
+import { codeEval, type CodeRound, type CodeTestResult } from "@/lib/interview-code";
 import { cn } from "@/lib/utils";
 
-type Question = { q: string; keywords?: string[]; a?: string; eval?: { score: number; feedback: string; simulated: boolean } | null };
+const AceEditor = dynamic(() => import("../_editor/(AceEditor)/page"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[360px] items-center justify-center font-mono text-[12px] text-white/40">
+      Loading editor…
+    </div>
+  ),
+});
+
+const CODE_LANG_KEY = "codevit:interview-code-language";
+
+type Question = {
+  q: string;
+  keywords?: string[];
+  a?: string;
+  eval?: { score: number; feedback: string; simulated: boolean } | null;
+  /** spoken wording, when it should differ from the heading */
+  speech?: string;
+  /** present on the round's coding question */
+  code?: CodeRound | null;
+};
 type Session = { id: string; kind: string; topic: string; score: number | null };
 
 const TOPICS = [
@@ -34,34 +73,6 @@ const TOPICS = [
 ];
 
 // ───────────────────────── speech utilities ─────────────────────────
-
-// minimal SpeechRecognition typings (lib.dom doesn't ship them)
-interface SRResultItem { transcript: string }
-interface SRResult { isFinal: boolean; 0: SRResultItem; length: number }
-interface SREvent extends Event { resultIndex: number; results: { length: number; [i: number]: SRResult } }
-interface SpeechRecognitionEvent extends SREvent {}
-interface SpeechRecognitionErrorEvent extends Event { error: string }
-interface SpeechRecognition extends EventTarget {
-  lang: string;
-  continuous: boolean;
-  interimResults: boolean;
-  maxAlternatives: number;
-  start(): void;
-  stop(): void;
-  onresult: ((event: SpeechRecognitionEvent) => void) | null;
-  onend: (() => void) | null;
-  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
-}
-
-/** Browser SpeechRecognition (Chrome/Edge; Firefox uses its own). */
-function getRecognition(): SpeechRecognition | null {
-  const w = window as unknown as {
-    SpeechRecognition?: new () => SpeechRecognition;
-    webkitSpeechRecognition?: new () => SpeechRecognition;
-  };
-  const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
-  return Ctor ? new Ctor() : null;
-}
 
 // Female voice heuristics for the browser fallback. Prefer neural/natural
 // voices, and never let a male system voice win by accident.
@@ -185,25 +196,63 @@ function joinText(a: string, b: string): string {
   return `${left} ${right}`;
 }
 
-async function transcribeAudio(blob: Blob): Promise<string | null> {
-  try {
-    const body = new FormData();
-    const ext = blob.type.includes("mp4")
-      ? "m4a"
-      : blob.type.includes("ogg")
-        ? "ogg"
-        : "webm";
-    body.append("audio", blob, `answer.${ext}`);
-    body.append("language", "en");
+/**
+ * One take → text. The result is explicit so the UI can keep the recording
+ * and offer a retry instead of silently grading nothing (or stale preview).
+ */
+type TranscriptionResult = { ok: true; text: string } | { ok: false; message: string };
 
-    const res = await fetch("/api/stt", { method: "POST", body });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { text?: string };
-    const text = String(data.text ?? "").trim();
-    return text || null;
+/**
+ * Metadata for the server's transcription diagnostics. Never includes audio or
+ * words — just how long the take was, how quiet it was, and how many times
+ * this particular take has been retried.
+ */
+type TakeHints = {
+  durationMs: number | null;
+  silenceRatio: number | null;
+  retryCount: number;
+};
+
+async function transcribeAudio(blob: Blob, hints: TakeHints): Promise<TranscriptionResult> {
+  const body = new FormData();
+  const ext = blob.type.includes("mp4")
+    ? "m4a"
+    : blob.type.includes("ogg")
+      ? "ogg"
+      : "webm";
+  body.append("audio", blob, `answer.${ext}`);
+  body.append("language", "en");
+  if (hints.durationMs !== null) body.append("durationMs", String(hints.durationMs));
+  if (hints.silenceRatio !== null) body.append("silenceRatio", hints.silenceRatio.toFixed(3));
+  body.append("retryCount", String(hints.retryCount));
+
+  let res: Response;
+  try {
+    res = await fetch("/api/stt", { method: "POST", body });
   } catch {
-    return null;
+    return { ok: false, message: "Couldn't reach the transcriber — your recording is kept. Retry." };
   }
+
+  if (!res.ok) {
+    const data = (await res.json().catch(() => null)) as { error?: string } | null;
+    if (res.status === 413) {
+      return { ok: false, message: data?.error || "That recording is too long." };
+    }
+    if (res.status === 503) {
+      return {
+        ok: false,
+        message: "Speech-to-text isn't configured on the server — type your answer instead.",
+      };
+    }
+    return { ok: false, message: "IRIS couldn't transcribe that take — retry, or type it out." };
+  }
+
+  const data = (await res.json().catch(() => null)) as { text?: string } | null;
+  const text = String(data?.text ?? "").trim();
+  if (!text) {
+    return { ok: false, message: "No speech detected in that take — check the mic and retry." };
+  }
+  return { ok: true, text };
 }
 
 // ───────────────────────── small UI atoms ─────────────────────────
@@ -286,18 +335,22 @@ export default function InterviewPage() {
   const [stage, setStage] = useState<"loading" | "asking" | "listening" | "grading" | "done">("loading");
   const [questions, setQuestions] = useState<Question[]>([]);
   const [idx, setIdx] = useState(0);
-  const [transcript, setTranscript] = useState(""); // live interim words
-  const [previewFinal, setPreviewFinal] = useState(""); // browser preview of the current take
   const [finalAnswer, setFinalAnswer] = useState(""); // committed answer (typed + Whisper)
   const [listening, setListening] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
-  const [previewUnavailable, setPreviewUnavailable] = useState(false);
+  const [sttError, setSttError] = useState<string | null>(null);
+  const [hearing, setHearing] = useState(false);
+  const [micDevices, setMicDevices] = useState<{ id: string; label: string }[]>([]);
+  const [micId, setMicId] = useState("default");
   const [muted, setMuted] = useState(false);
   const [sttSupported, setSttSupported] = useState(true);
 
+  // coding round
+  const [codeSource, setCodeSource] = useState("");
+  const [codeRows, setCodeRows] = useState<CodeTestResult[]>([]);
+  const [codeRunning, setCodeRunning] = useState(false);
+
   // speech / recording refs
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
-  const previewActiveRef = useRef(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const abortSpeechRef = useRef<AbortController | null>(null);
   const finishSpeechRef = useRef<(() => void) | null>(null);
@@ -310,17 +363,30 @@ export default function InterviewPage() {
   const streamRef = useRef<MediaStream | null>(null);
   const captureEpochRef = useRef(0);
   const startingRef = useRef(false);
+  const levelRafRef = useRef<number | null>(null);
+  const levelBarRef = useRef<HTMLDivElement | null>(null);
+  const micSignalRef = useRef(false);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const captureStartRef = useRef<number | null>(null);
+  const codeRunTokenRef = useRef(0);
+  // Mic frames counted while recording, so we know whether a take was mostly
+  // silence (mic problem) rather than trusting the transcript.
+  const framesRef = useRef({ silent: 0, total: 0 });
+  const failedBlobRef = useRef<{ blob: Blob; retries: number } | null>(null);
 
   // answer / question tracking
   const finalAnswerRef = useRef("");
-  const previewFinalRef = useRef("");
+  const micIdRef = useRef("default");
   const mutedRef = useRef(false);
   const spokenIdxRef = useRef<number | null>(null);
   const introRef = useRef<string | null>(null);
 
   const current = questions[idx];
   const answered = questions.filter((q) => q.eval).length;
-  const displayAnswer = joinText(finalAnswer, previewFinal);
+  const displayAnswer = finalAnswer;
+  const codeRound = current?.code ?? null;
+  const codeCandidate = codeRound ? getProblem(codeRound.problemId) : null;
+  const codeProblem = codeCandidate && codeCandidate.kind !== "sql" ? codeCandidate : null;
 
   const commitAnswer = useCallback((value: string) => {
     finalAnswerRef.current = value;
@@ -429,87 +495,112 @@ export default function InterviewPage() {
         });
     });
 
-  // ── browser preview (interim words only; Whisper is authoritative) ──
-  const stopPreview = useCallback(() => {
-    previewActiveRef.current = false;
-    const rec = recognitionRef.current;
-    recognitionRef.current = null;
-    if (rec) {
-      rec.onresult = null;
-      rec.onend = null;
-      rec.onerror = null;
-      try {
-        rec.stop();
-      } catch {
-        /* not started */
-      }
+  // ── input level meter (render-free: writes width straight to the DOM) ──
+  const stopLevelMeter = useCallback(() => {
+    if (levelRafRef.current !== null) {
+      cancelAnimationFrame(levelRafRef.current);
+      levelRafRef.current = null;
     }
-    setTranscript("");
+    const ctx = audioCtxRef.current;
+    audioCtxRef.current = null;
+    if (ctx) void ctx.close().catch(() => {});
+    if (levelBarRef.current) levelBarRef.current.style.width = "0%";
+    micSignalRef.current = false;
+    setHearing(false);
   }, []);
 
-  const startPreview = useCallback((epoch: number) => {
-    if (!getRecognition()) {
-      setPreviewUnavailable(true);
-      return;
+  const startLevelMeter = useCallback((stream: MediaStream) => {
+    if (typeof AudioContext === "undefined") return;
+    try {
+      const ctx = new AudioContext();
+      audioCtxRef.current = ctx;
+      void ctx.resume().catch(() => {});
+
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 1024;
+      analyser.smoothingTimeConstant = 0.7;
+      ctx.createMediaStreamSource(stream).connect(analyser);
+
+      framesRef.current = { silent: 0, total: 0 };
+      const data = new Uint8Array(analyser.fftSize);
+      const tick = () => {
+        if (audioCtxRef.current !== ctx) return;
+        analyser.getByteTimeDomainData(data);
+        let peak = 0;
+        for (let i = 0; i < data.length; i++) {
+          const v = Math.abs(data[i] - 128) / 128;
+          if (v > peak) peak = v;
+        }
+        const bar = levelBarRef.current;
+        if (bar) bar.style.width = `${Math.min(100, Math.round(peak * 180))}%`;
+
+        const frames = framesRef.current;
+        frames.total += 1;
+        if (peak <= 0.04) frames.silent += 1;
+
+        const heard = peak > 0.04;
+        if (heard !== micSignalRef.current) {
+          micSignalRef.current = heard;
+          setHearing(heard);
+        }
+        levelRafRef.current = requestAnimationFrame(tick);
+      };
+      levelRafRef.current = requestAnimationFrame(tick);
+    } catch {
+      // the meter is cosmetic — recording continues without it
     }
+  }, []);
 
-    previewActiveRef.current = true;
+  // ── microphone selection ──
+  const refreshMics = useCallback(async () => {
+    if (!navigator.mediaDevices?.enumerateDevices) return;
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const inputs = devices
+        .filter((device) => device.kind === "audioinput")
+        .map((device, i) => ({
+          id: device.deviceId || "default",
+          label: device.label || `Microphone ${i + 1}`,
+        }));
+      setMicDevices(inputs.filter((d, i) => inputs.findIndex((x) => x.id === d.id) === i));
+    } catch {
+      /* enumeration is optional */
+    }
+  }, []);
 
-    const open = () => {
-      if (!previewActiveRef.current || captureEpochRef.current !== epoch) return;
-      const rec = getRecognition();
-      if (!rec) return;
+  useEffect(() => {
+    micIdRef.current = micId;
+  }, [micId]);
 
-      recognitionRef.current = rec;
-      rec.lang = "en-US";
-      rec.continuous = true;
-      rec.interimResults = true;
-      rec.maxAlternatives = 1;
+  useEffect(() => {
+    void refreshMics();
+    const media = navigator.mediaDevices;
+    if (!media?.addEventListener) return;
+    const onChange = () => void refreshMics();
+    media.addEventListener("devicechange", onChange);
+    return () => media.removeEventListener("devicechange", onChange);
+  }, [refreshMics]);
 
-      rec.onresult = (event: SpeechRecognitionEvent) => {
-        let interim = "";
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const result = event.results[i];
-          if (result.isFinal) {
-            const text = fixupTranscript(result[0].transcript);
-            if (text) {
-              previewFinalRef.current = joinText(previewFinalRef.current, text);
-              setPreviewFinal(previewFinalRef.current);
-            }
-          } else {
-            interim += result[0].transcript;
-          }
-        }
-        setTranscript(interim.trim());
-      };
-
-      rec.onerror = (event) => {
-        const err = event.error;
-        // A dead preview must not stop the MediaRecorder; Whisper still has the audio.
-        if (err === "no-speech" || err === "aborted") return;
-        previewActiveRef.current = false;
-        setPreviewUnavailable(true);
-      };
-
-      rec.onend = () => {
-        recognitionRef.current = null;
-        // Chrome ends continuous recognition after a pause. Keep the preview
-        // alive for as long as the user is still recording.
-        if (previewActiveRef.current && captureEpochRef.current === epoch) {
-          window.setTimeout(() => {
-            if (previewActiveRef.current && captureEpochRef.current === epoch) open();
-          }, 280);
-        }
-      };
-
-      try {
-        rec.start();
-      } catch {
-        /* Chrome can throw if two starts race; the next onend retry handles it */
-      }
+  /** Open the selected mic; a remembered device that's gone falls back to default. */
+  const openStream = useCallback(async (deviceId: string): Promise<MediaStream> => {
+    const base: MediaTrackConstraints = {
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true,
     };
+    const constraints: MediaTrackConstraints =
+      deviceId && deviceId !== "default" ? { ...base, deviceId: { exact: deviceId } } : base;
 
-    open();
+    try {
+      return await navigator.mediaDevices.getUserMedia({ audio: constraints });
+    } catch (err) {
+      if ((err as DOMException).name !== "OverconstrainedError" || deviceId === "default") {
+        throw err;
+      }
+      micIdRef.current = "default";
+      setMicId("default");
+      return navigator.mediaDevices.getUserMedia({ audio: base });
+    }
   }, []);
 
   // ── recording ──
@@ -544,7 +635,8 @@ export default function InterviewPage() {
     };
 
     try {
-      recorder.start(250);
+      // No timeslice: one complete encoded take, which decodes reliably.
+      recorder.start();
     } catch {
       recorderRef.current = null;
       return false;
@@ -555,7 +647,7 @@ export default function InterviewPage() {
   }, []);
 
   const stopCapture = useCallback(async (): Promise<Blob | null> => {
-    stopPreview();
+    stopLevelMeter();
 
     const recorder = recorderRef.current;
     recorderRef.current = null;
@@ -585,17 +677,15 @@ export default function InterviewPage() {
 
     stream?.getTracks().forEach((track) => track.stop());
     return blob;
-  }, [stopPreview]);
+  }, [stopLevelMeter]);
 
   const startListening = useCallback(async () => {
     if (listening || recorderRef.current || transcribing || startingRef.current) return;
     startingRef.current = true;
 
     cancelSpeech();
-    previewFinalRef.current = "";
-    setPreviewFinal("");
-    setTranscript("");
-    setPreviewUnavailable(false);
+    setSttError(null);
+    failedBlobRef.current = null;
 
     const epoch = ++captureEpochRef.current;
     const canRecord =
@@ -605,29 +695,15 @@ export default function InterviewPage() {
 
     if (!canRecord) {
       startingRef.current = false;
-      if (!getRecognition()) {
-        setSttSupported(false);
-        toast(
-          "This browser can't record audio — use Chrome or Edge, or type your answer.",
-          { variant: "error" }
-        );
-        return;
-      }
-      // Last-resort browsers: live recognition becomes the answer text.
-      startPreview(epoch);
-      setListening(true);
-      setStage("listening");
+      setSttSupported(false);
+      toast("This browser can't record audio — use Chrome or Edge, or type your answer.", {
+        variant: "error",
+      });
       return;
     }
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-      });
+      const stream = await openStream(micIdRef.current);
       startingRef.current = false;
 
       if (captureEpochRef.current !== epoch) {
@@ -636,8 +712,19 @@ export default function InterviewPage() {
       }
 
       streamRef.current = stream;
-      startRecorder(stream);
-      startPreview(epoch);
+      if (!startRecorder(stream)) {
+        stream.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+        toast("This browser can't record audio — type your answer instead.", {
+          variant: "error",
+        });
+        return;
+      }
+
+      captureStartRef.current = performance.now();
+      startLevelMeter(stream);
+      // Device labels are only exposed once permission has been granted.
+      void refreshMics();
       setListening(true);
       setStage("listening");
     } catch (err) {
@@ -664,24 +751,52 @@ export default function InterviewPage() {
       setListening(false);
       setStage("listening");
     }
-  }, [cancelSpeech, listening, startPreview, startRecorder, transcribing]);
+  }, [
+    cancelSpeech,
+    listening,
+    openStream,
+    refreshMics,
+    startLevelMeter,
+    startRecorder,
+    transcribing,
+  ]);
 
-  /** Turn the take into text: Whisper first, browser preview only as fallback. */
-  const resolveCapture = useCallback(async (blob: Blob | null, epoch: number) => {
-    let whispered: string | null = null;
-    if (blob) whispered = await transcribeAudio(blob);
+  /**
+   * Transcribe one take and commit it. Whisper is the only source of answer
+   * text; a failure keeps the recording so it can be retried instead of being
+   * silently graded as empty.
+   */
+  const applyTake = useCallback(
+    async (blob: Blob, retries = 0): Promise<boolean> => {
+      const epoch = captureEpochRef.current;
+      setTranscribing(true);
+      setSttError(null);
 
-    // A reset/new question happened while Whisper was working — discard.
-    if (captureEpochRef.current !== epoch) return finalAnswerRef.current;
+      const startedAt = captureStartRef.current;
+      const frames = framesRef.current;
+      const hints: TakeHints = {
+        durationMs: startedAt ? Math.round(performance.now() - startedAt) : null,
+        silenceRatio: frames.total ? Math.min(1, frames.silent / frames.total) : null,
+        retryCount: retries,
+      };
 
-    const heard = whispered || previewFinalRef.current;
-    const merged = joinText(finalAnswerRef.current, heard);
-    commitAnswer(merged);
-    previewFinalRef.current = "";
-    setPreviewFinal("");
-    setTranscript("");
-    return merged;
-  }, [commitAnswer]);
+      const result = await transcribeAudio(blob, hints);
+      if (captureEpochRef.current !== epoch) return false;
+
+      setTranscribing(false);
+
+      if (!result.ok) {
+        failedBlobRef.current = { blob, retries };
+        setSttError(result.message);
+        return false;
+      }
+
+      failedBlobRef.current = null;
+      commitAnswer(joinText(finalAnswerRef.current, result.text));
+      return true;
+    },
+    [commitAnswer]
+  );
 
   const closeMic = useCallback(async () => {
     if (transcribing) return;
@@ -689,17 +804,32 @@ export default function InterviewPage() {
     const epoch = captureEpochRef.current;
     setTranscribing(true);
     const blob = await stopCapture();
-    const merged = await resolveCapture(blob, epoch);
-    setTranscribing(false);
 
-    if (captureEpochRef.current !== epoch) return;
-
-    if (!merged.trim()) {
-      toast("I didn't catch that — press Answer and speak again, or type your answer.", {
+    if (captureEpochRef.current !== epoch) {
+      setTranscribing(false);
+      return;
+    }
+    if (!blob) {
+      setTranscribing(false);
+      toast("Nothing was recorded — check the mic level and press Answer again.", {
         variant: "error",
       });
+      return;
     }
-  }, [resolveCapture, stopCapture, transcribing]);
+
+    await applyTake(blob);
+  }, [applyTake, stopCapture, transcribing]);
+
+  const retryTake = useCallback(async () => {
+    const take = failedBlobRef.current;
+    if (!take || transcribing) return;
+    await applyTake(take.blob, take.retries + 1);
+  }, [applyTake, transcribing]);
+
+  const discardTake = useCallback(() => {
+    failedBlobRef.current = null;
+    setSttError(null);
+  }, []);
 
   const askQuestion = useCallback(
     async (text: string) => {
@@ -730,7 +860,8 @@ export default function InterviewPage() {
     const intro = introRef.current;
     introRef.current = null;
 
-    void askQuestion(intro ? `${intro} ${current.q}` : current.q);
+    const line = current.speech || current.q;
+    void askQuestion(intro ? `${intro} ${line}` : line);
   }, [current, idx, stage, askQuestion]);
 
   useEffect(() => {
@@ -743,7 +874,7 @@ export default function InterviewPage() {
       typeof MediaRecorder !== "undefined" &&
       typeof navigator !== "undefined" &&
       !!navigator.mediaDevices?.getUserMedia;
-    setSttSupported(canRecord || !!getRecognition());
+    setSttSupported(canRecord);
   }, []);
 
   // hard cleanup on unmount — no mic left open, no audio after navigation
@@ -752,12 +883,11 @@ export default function InterviewPage() {
       speechEpochRef.current += 1;
       abortSpeechRef.current?.abort();
       if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-      previewActiveRef.current = false;
-      try {
-        recognitionRef.current?.stop();
-      } catch {
-        /* not started */
-      }
+      if (levelRafRef.current !== null) cancelAnimationFrame(levelRafRef.current);
+      levelRafRef.current = null;
+      const ctx = audioCtxRef.current;
+      audioCtxRef.current = null;
+      if (ctx) void ctx.close().catch(() => {});
       try {
         recorderRef.current?.stop();
       } catch {
@@ -771,16 +901,36 @@ export default function InterviewPage() {
     if (!current || stage === "grading" || transcribing) return;
 
     const epoch = captureEpochRef.current;
-    let answer = finalAnswerRef.current.trim();
 
     // If the mic is still open, stop it and transcribe before grading.
     if (listening || recorderRef.current) {
+      setSttError(null);
       setTranscribing(true);
       const blob = await stopCapture();
-      answer = (await resolveCapture(blob, epoch)).trim();
-      setTranscribing(false);
+
+      if (captureEpochRef.current !== epoch) {
+        setTranscribing(false);
+        return;
+      }
+      if (!blob) {
+        setTranscribing(false);
+        toast("Nothing was recorded — check the mic level and press Answer again.", {
+          variant: "error",
+        });
+        setStage("listening");
+        return;
+      }
+
+      const ok = await applyTake(blob);
       if (captureEpochRef.current !== epoch) return;
+      if (!ok) {
+        // Transcription failed: keep the take, let the user retry or type.
+        setStage("listening");
+        return;
+      }
     }
+
+    const answer = finalAnswerRef.current.trim();
 
     cancelSpeech();
 
@@ -812,9 +962,8 @@ export default function InterviewPage() {
       );
       setQuestions(updated);
       commitAnswer("");
-      previewFinalRef.current = "";
-      setPreviewFinal("");
-      setTranscript("");
+      failedBlobRef.current = null;
+      setSttError(null);
 
       if (idx < questions.length - 1) {
         // The effect above speaks the next question exactly once.
@@ -837,7 +986,7 @@ export default function InterviewPage() {
         body: JSON.stringify({
           kind,
           topic: kind === "english" ? "english" : topic,
-          questions: finalQs.map(({ q, a, eval: e }) => ({ q, a, eval: e })),
+          questions: finalQs.map(({ q, a, eval: e, code }) => ({ q, a, eval: e, ...(code ? { code } : {}) })),
         }),
       });
       const data = await res.json();
@@ -846,6 +995,92 @@ export default function InterviewPage() {
       /* best effort */
     }
     setStage("done");
+  };
+
+  // ── coding round ──
+
+  // Seed the editor and the last run whenever the coding question comes up.
+  useEffect(() => {
+    const round = questions[idx]?.code;
+    if (!round) return;
+    setCodeSource(round.source);
+    setCodeRows(round.results ?? []);
+    setCodeRunning(false);
+    codeRunTokenRef.current += 1;
+    // only re-seed when the question changes, not on every keystroke
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idx, questions[idx]?.code?.problemId]);
+
+  /** Run every stored test against the editor's code. Returns the results too. */
+  const runCodeTests = useCallback(async (): Promise<CodeTestResult[] | null> => {
+    const round = questions[idx]?.code;
+    const problem = round ? getProblem(round.problemId) : null;
+    if (!round || !problem || problem.kind === "sql" || codeRunning) return null;
+
+    const token = ++codeRunTokenRef.current;
+    setCodeRunning(true);
+    setCodeRows([]);
+
+    try {
+      const collected = await judgeProgram(problem, round.language, codeSource);
+
+      if (codeRunTokenRef.current !== token) return null;
+      setCodeRows(collected);
+      return collected;
+    } catch {
+      if (codeRunTokenRef.current === token) {
+        toast("Could not run the tests — check your connection.", { variant: "error" });
+      }
+      return null;
+    } finally {
+      if (codeRunTokenRef.current === token) setCodeRunning(false);
+    }
+  }, [codeRunning, codeSource, idx, questions]);
+
+  const submitCode = useCallback(async () => {
+    const round = questions[idx]?.code;
+    if (!round || stage === "grading" || codeRunning) return;
+
+    let results = codeRows;
+    if (!results.length) {
+      const fresh = await runCodeTests();
+      if (!fresh) return;
+      results = fresh;
+    }
+
+    cancelSpeech();
+
+    const passed = results.filter((result) => result.pass).length;
+    const graded = codeEval(results);
+    const summary = `${labelFor(round.language)} · ${passed}/${results.length} tests passed`;
+
+    const updated = questions.map((q, i) =>
+      i === idx ? { ...q, a: summary, eval: graded, code: { ...round, source: codeSource, results } } : q
+    );
+    setQuestions(updated);
+    setStage("grading");
+
+    if (idx < questions.length - 1) {
+      setIdx(idx + 1);
+      setStage("listening");
+    } else {
+      await finishSession(updated);
+    }
+  }, [cancelSpeech, codeRows, codeRunning, codeSource, idx, questions, runCodeTests, stage]);
+
+  const changeCodeLanguage = (next: PracticeLanguage) => {
+    const round = questions[idx]?.code;
+    const problem = round ? getProblem(round.problemId) : null;
+    if (!round || !problem || problem.kind === "sql") return;
+
+    window.localStorage.setItem(CODE_LANG_KEY, next);
+    codeRunTokenRef.current += 1;
+    setCodeRows([]);
+    setCodeRunning(false);
+    setCodeSource(stubFor(problem, next));
+    setQuestions((rows) =>
+      rows.map((q, i) => (i === idx && q.code ? { ...q, code: { ...q.code, language: next } } : q))
+    );
   };
 
   // ── start a round ──
@@ -859,9 +1094,10 @@ export default function InterviewPage() {
     setQuestions([]);
     setIdx(0);
     commitAnswer("");
-    previewFinalRef.current = "";
-    setPreviewFinal("");
-    setTranscript("");
+    failedBlobRef.current = null;
+    setSttError(null);
+    setCodeRows([]);
+    setCodeSource("");
     spokenIdxRef.current = null;
     introRef.current =
       k === "english"
@@ -875,7 +1111,27 @@ export default function InterviewPage() {
       const next = (data.questions ?? []) as Question[];
       if (!next.length) throw new Error("empty question bank");
 
-      setQuestions(next);
+      // The technical round closes with one real coding problem, judged by the
+      // same tests the practice library uses.
+      let round = next;
+      const coding = getProblem((data.coding as { problemId?: string } | null)?.problemId);
+      if (k === "tech" && coding && coding.kind !== "sql") {
+        const stored = window.localStorage.getItem(CODE_LANG_KEY);
+        const language = PRACTICE_LANGUAGES.some((entry) => entry.value === stored)
+          ? (stored as PracticeLanguage)
+          : "javascript";
+        round = [
+          ...next,
+          {
+            q: coding.title,
+            speech: `One last thing — a coding task. ${coding.blurb}`,
+            keywords: coding.topics,
+            code: { problemId: coding.id, language, source: stubFor(coding, language) },
+          },
+        ];
+      }
+
+      setQuestions(round);
       setIdx(0);
     } catch {
       introRef.current = null;
@@ -897,9 +1153,10 @@ export default function InterviewPage() {
     setIdx(0);
     setStage("loading");
     commitAnswer("");
-    previewFinalRef.current = "";
-    setPreviewFinal("");
-    setTranscript("");
+    failedBlobRef.current = null;
+    setSttError(null);
+    setCodeRows([]);
+    setCodeSource("");
     spokenIdxRef.current = null;
     introRef.current = null;
   };
@@ -920,13 +1177,16 @@ export default function InterviewPage() {
       void stopCapture();
     }
     commitAnswer("");
-    previewFinalRef.current = "";
-    setPreviewFinal("");
-    setTranscript("");
+    discardTake();
   };
 
-  const iriStatus =
-    stage === "asking"
+  const iriStatus = codeRound
+    ? codeRunning
+      ? "Running tests…"
+      : stage === "grading"
+        ? "Scoring…"
+        : "Coding round"
+    : stage === "asking"
       ? "Speaking…"
       : stage === "grading"
         ? "Grading…"
@@ -993,8 +1253,9 @@ export default function InterviewPage() {
                     Sharp questions.
                   </h2>
                   <p className="mt-3 max-w-[46ch] text-[13px] leading-relaxed text-muted-foreground">
-                    Rapid-fire questions on a single topic, graded for correctness and depth. Pick
-                    the subject you want to be questioned on.
+                    Six rapid-fire questions on a single topic, graded for correctness and depth,
+                    then a coding problem you solve in the editor. Pick the subject you want to be
+                    questioned on.
                   </p>
 
                   <p className="mono-label mt-6">Choose a topic</p>
@@ -1077,7 +1338,7 @@ export default function InterviewPage() {
               <div className="mt-5 grid grid-cols-3 divide-x divide-border overflow-hidden rounded-2xl border border-border bg-card">
                 {[
                   [`${TOPICS.length}`, "topics"],
-                  ["6", "questions"],
+                  ["7", "questions + code"],
                   ["/10", "feedback"],
                 ].map(([v, l]) => (
                   <div key={l} className="px-5 py-4">
@@ -1177,6 +1438,11 @@ export default function InterviewPage() {
                       <p className="mt-2 whitespace-pre-line text-[12.5px] leading-relaxed text-muted-foreground">
                         {q.a || "— no answer recorded —"}
                       </p>
+                      {q.code?.source && (
+                        <pre className="mt-2 max-h-64 overflow-auto rounded-xl border border-border bg-muted/40 p-3 font-mono text-[11px] leading-relaxed">
+                          {q.code.source}
+                        </pre>
+                      )}
                       <div className="mt-3 border-t border-border pt-3">
                         <p className="mono-label !text-[8px]">IRIS feedback</p>
                         <p className="mt-1 text-[12px] leading-relaxed text-foreground/80">
@@ -1291,10 +1557,174 @@ export default function InterviewPage() {
                       </motion.div>
                     </AnimatePresence>
 
+                    {codeRound && codeProblem && (
+                      <div className="mt-4 grid gap-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="chip">
+                              <Code2 className="size-3" /> coding round
+                            </span>
+                            <span className="mono-label !text-[8.5px]">
+                              level {codeProblem.level * 10}/100 · {codeProblem.topics.slice(0, 2).join(" · ")}
+                            </span>
+                          </div>
+                          <label className="flex items-center gap-2 text-[11.5px] text-muted-foreground">
+                            <span className="mono-label !text-[8.5px]">language</span>
+                            <select
+                              aria-label="Language"
+                              value={codeRound.language}
+                              onChange={(event) =>
+                                changeCodeLanguage(event.target.value as PracticeLanguage)
+                              }
+                              disabled={codeRunning}
+                              className="h-7 rounded-full border border-border bg-card px-2 text-[12px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
+                            >
+                              {PRACTICE_LANGUAGES.map((entry) => (
+                                <option key={entry.value} value={entry.value}>
+                                  {entry.label}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        </div>
+
+                        <div className="rounded-2xl border border-border bg-muted/20 p-4">
+                          <p className="mono-label !text-[8.5px]">The brief</p>
+                          <ProblemStatement text={codeProblem.statement} className="mt-2" />
+                          <p className="mt-3 break-words border-t border-border pt-3 font-mono text-[11.5px] text-foreground">
+                            {describeSignature(codeProblem)}
+                          </p>
+                          <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">
+                            Return the answer — the runner calls your function with the test inputs
+                            and prints the result.
+                          </p>
+                        </div>
+
+                        <div className="overflow-hidden rounded-2xl border border-border bg-[#0b0c0f]">
+                          <div className="flex h-10 items-center justify-between gap-2 border-b border-white/10 bg-white/[0.03] px-3">
+                            <div className="flex items-center gap-2">
+                              <span className="flex items-center gap-1.5" aria-hidden>
+                                <span className="size-2 rounded-full bg-[#ff5f57]/80" />
+                                <span className="size-2 rounded-full bg-[#febc2e]/80" />
+                                <span className="size-2 rounded-full bg-[#28c840]/80" />
+                              </span>
+                              <span className="ml-1 font-mono text-[11px] text-white/45">
+                                {fileFor(codeRound.language)}
+                              </span>
+                            </div>
+                            <span className="mono-label !text-[8.5px] !text-white/25">
+                              {aceMode(codeRound.language)} · ace
+                            </span>
+                          </div>
+                          <AceEditor
+                            language={aceMode(codeRound.language)}
+                            theme="monokai"
+                            defaultCode={codeRound.source}
+                            scode={codeSource}
+                            onValueChange={setCodeSource}
+                            onRun={() => void runCodeTests()}
+                            height="360px"
+                          />
+                          <div className="flex items-center justify-between border-t border-white/10 px-3 py-1.5">
+                            <span className="mono-label !text-[8px] !text-white/20">
+                              Ctrl + Enter to run
+                            </span>
+                            <span className="mono-label !text-[8px] !text-white/20">
+                              {codeSource.split("\n").length} lines
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => void runCodeTests()}
+                            disabled={codeRunning || stage === "grading"}
+                            className="gap-1.5"
+                          >
+                            {codeRunning ? (
+                              <Loader2 className="size-4 animate-spin" />
+                            ) : (
+                              <Play className="size-4" />
+                            )}
+                            {codeRunning ? "Running tests…" : "Run tests"}
+                          </Button>
+                          <Button
+                            onClick={() => void submitCode()}
+                            disabled={codeRunning || stage === "grading"}
+                            className="ml-auto gap-1.5"
+                          >
+                            {stage === "grading" ? (
+                              <Loader2 className="size-4 animate-spin" />
+                            ) : (
+                              <ArrowRight className="size-4" />
+                            )}
+                            {stage === "grading" ? "Scoring…" : "Submit code"}
+                          </Button>
+                        </div>
+
+                        {codeRows.length > 0 && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="overflow-hidden rounded-2xl border border-border bg-card"
+                          >
+                            <div
+                              className={cn(
+                                "flex items-center gap-2 border-b px-4 py-2.5 text-[12.5px] font-medium",
+                                codeRows.every((row) => row.pass)
+                                  ? "border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-700 dark:text-emerald-300"
+                                  : "border-amber-500/25 bg-amber-500/[0.06] text-amber-700 dark:text-amber-300"
+                              )}
+                            >
+                              {codeRows.every((row) => row.pass) ? (
+                                <Check className="size-4" />
+                              ) : (
+                                <Terminal className="size-4" />
+                              )}
+                              {codeRows.filter((row) => row.pass).length}/{codeRows.length} tests
+                              passed
+                            </div>
+                            <div className="divide-y divide-border">
+                              {codeRows.map((row, i) => (
+                                <div key={i} className="flex items-start gap-2.5 px-4 py-2.5 text-[12px]">
+                                  {row.pass ? (
+                                    <Check className="mt-0.5 size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                                  ) : (
+                                    <X className="mt-0.5 size-3.5 shrink-0 text-red-600 dark:text-red-400" />
+                                  )}
+                                  <div className="min-w-0 flex-1">
+                                    <p className="font-medium">{row.label}</p>
+                                    {!row.pass && (
+                                      <p className="mt-1 whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-muted-foreground">
+                                        got{" "}
+                                        <span className="text-foreground">
+                                          {row.got || "(empty)"}
+                                        </span>
+                                        , want{" "}
+                                        <span className="text-foreground">{row.want}</span>
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+
+                        <p className="text-[11px] leading-relaxed text-muted-foreground">
+                          Same tests the practice library uses. A passing run scores 10/10 and joins
+                          your spoken answers in the session average — talk through your approach
+                          while you write if you want the voice half graded too.
+                        </p>
+                      </div>
+                    )}
+
+                    <div hidden={!!(codeRound && codeProblem)}>
                     <div className="mt-5 min-h-[140px] rounded-2xl bg-[var(--ink)] p-4 text-[var(--paper)]">
                       <div className="flex items-center justify-between">
                         <span className="mono-label !text-[8px] !text-[var(--paper)]/35">
-                          live transcript
+                          your answer
                         </span>
                         {(listening || transcribing) && <SoundBars active />}
                       </div>
@@ -1304,14 +1734,46 @@ export default function InterviewPage() {
                             Press “Answer” and speak — IRIS records, then transcribes accurately.
                           </span>
                         )}
-                        {transcript && <span className="text-[var(--paper)]/45"> {transcript}</span>}
                         {listening && (
                           <span className="ml-0.5 inline-block h-4 w-[2px] animate-pulse rounded-full bg-primary align-text-bottom" />
                         )}
                       </div>
                     </div>
 
-                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
+                      <Mic className="size-3.5 shrink-0 text-muted-foreground" />
+                      <select
+                        aria-label="Microphone"
+                        value={micDevices.some((d) => d.id === micId) ? micId : "default"}
+                        onChange={(e) => setMicId(e.target.value)}
+                        disabled={listening || transcribing || stage === "grading"}
+                        className="h-8 max-w-[240px] min-w-0 rounded-full border border-border bg-card px-3 text-[11.5px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
+                      >
+                        <option value="default">System default</option>
+                        {micDevices
+                          .filter((d) => d.id !== "default")
+                          .map((d) => (
+                            <option key={d.id} value={d.id}>
+                              {d.label}
+                            </option>
+                          ))}
+                      </select>
+                      <div className="h-1.5 w-24 overflow-hidden rounded-full bg-muted" aria-hidden>
+                        <div
+                          ref={levelBarRef}
+                          className="h-full w-0 rounded-full bg-primary transition-[width] duration-75 ease-out"
+                        />
+                      </div>
+                      <span className="text-[10.5px] text-muted-foreground">
+                        {listening
+                          ? hearing
+                            ? "Hearing you"
+                            : "No sound yet — check the mic"
+                          : "Input level"}
+                      </span>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
                       <AnimatePresence mode="wait" initial={false}>
                         {listening ? (
                           <motion.div
@@ -1371,7 +1833,7 @@ export default function InterviewPage() {
                         disabled={
                           stage === "grading" ||
                           transcribing ||
-                          (!finalAnswer.trim() && !previewFinal.trim() && !listening)
+                          (!finalAnswer.trim() && !listening)
                         }
                       >
                         {stage === "grading" ? (
@@ -1402,8 +1864,9 @@ export default function InterviewPage() {
                       disabled={transcribing}
                     />
                     <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-                      Live words above are a preview. When you stop the mic, IRIS transcribes the
-                      recording accurately — type here to fix anything before submitting.
+                      IRIS records the whole take and transcribes it with Whisper when you stop —
+                      the text above is her transcription, so fix anything in this box before
+                      submitting.
                     </p>
 
                     {listening && (
@@ -1420,11 +1883,38 @@ export default function InterviewPage() {
                       </motion.p>
                     )}
 
-                    {listening && previewUnavailable && (
-                      <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-                        Live preview isn&apos;t available in this browser, but the recording is
-                        still running — stop the mic and IRIS will transcribe it accurately.
-                      </p>
+                    {sttError && (
+                      <motion.div
+                        className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[11.5px] leading-relaxed"
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        role="alert"
+                      >
+                        <AlertTriangle className="size-3.5 shrink-0 text-destructive" />
+                        <span className="min-w-0 flex-1 text-foreground/80">{sttError}</span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={retryTake}
+                          disabled={transcribing}
+                          className="gap-1.5"
+                        >
+                          {transcribing ? (
+                            <Loader2 className="size-3.5 animate-spin" />
+                          ) : (
+                            <RotateCcw className="size-3.5" />
+                          )}
+                          Retry
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={discardTake}
+                          disabled={transcribing}
+                        >
+                          Dismiss
+                        </Button>
+                      </motion.div>
                     )}
 
                     {transcribing && (
@@ -1437,6 +1927,7 @@ export default function InterviewPage() {
                         Transcribing your answer…
                       </motion.p>
                     )}
+                    </div>
                   </div>
                 </section>
               </div>

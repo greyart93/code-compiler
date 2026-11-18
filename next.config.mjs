@@ -19,6 +19,9 @@ const nextConfig = {
     "sharp",
     "@img/sharp-win32-x64",
   ],
+  experimental: {
+    agentUpgrade: "security",
+  },
 };
 
 export default nextConfig;

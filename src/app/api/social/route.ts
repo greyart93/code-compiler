@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getCurrentUser, type SessionUser } from "@/lib/auth";
-import { cached } from "@/lib/server-cache";
+import { cached, isUnavailable } from "@/lib/server-cache";
 
 // GET /api/social              → your own connections (friends / following / followers)
 // GET /api/social?user=alice   → someone else's connections, read-only
@@ -155,6 +155,6 @@ export async function GET(request: Request) {
     return NextResponse.json(payload.body, { status: payload.status });
   } catch (error) {
     console.error("social GET error:", error);
-    return NextResponse.json({ error: "Failed to load connections" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to load connections" }, { status: isUnavailable(error) ? 503 : 500 });
   }
 }

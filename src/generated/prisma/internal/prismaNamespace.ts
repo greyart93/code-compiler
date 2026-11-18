@@ -414,11 +414,14 @@ export const ModelName = {
   Comment: 'Comment',
   Media: 'Media',
   Video: 'Video',
+  Playlist: 'Playlist',
+  PlaylistItem: 'PlaylistItem',
   Tutorial: 'Tutorial',
   Question: 'Question',
   Answer: 'Answer',
   Reply: 'Reply',
   Vote: 'Vote',
+  TranscriptionLog: 'TranscriptionLog',
   PasswordResetToken: 'PasswordResetToken'
 } as const
 
@@ -435,7 +438,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "follow" | "collection" | "collectionItem" | "activityDay" | "streak" | "note" | "interviewSession" | "liveInterviewRoom" | "signal" | "codeAttempt" | "courseProgress" | "snippet" | "like" | "comment" | "media" | "video" | "tutorial" | "question" | "answer" | "reply" | "vote" | "passwordResetToken"
+    modelProps: "user" | "follow" | "collection" | "collectionItem" | "activityDay" | "streak" | "note" | "interviewSession" | "liveInterviewRoom" | "signal" | "codeAttempt" | "courseProgress" | "snippet" | "like" | "comment" | "media" | "video" | "playlist" | "playlistItem" | "tutorial" | "question" | "answer" | "reply" | "vote" | "transcriptionLog" | "passwordResetToken"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1697,6 +1700,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    Playlist: {
+      payload: Prisma.$PlaylistPayload<ExtArgs>
+      fields: Prisma.PlaylistFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PlaylistFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlaylistPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PlaylistFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlaylistPayload>
+        }
+        findFirst: {
+          args: Prisma.PlaylistFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlaylistPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PlaylistFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlaylistPayload>
+        }
+        findMany: {
+          args: Prisma.PlaylistFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlaylistPayload>[]
+        }
+        create: {
+          args: Prisma.PlaylistCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlaylistPayload>
+        }
+        createMany: {
+          args: Prisma.PlaylistCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PlaylistCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlaylistPayload>[]
+        }
+        delete: {
+          args: Prisma.PlaylistDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlaylistPayload>
+        }
+        update: {
+          args: Prisma.PlaylistUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlaylistPayload>
+        }
+        deleteMany: {
+          args: Prisma.PlaylistDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PlaylistUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PlaylistUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlaylistPayload>[]
+        }
+        upsert: {
+          args: Prisma.PlaylistUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlaylistPayload>
+        }
+        aggregate: {
+          args: Prisma.PlaylistAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePlaylist>
+        }
+        groupBy: {
+          args: Prisma.PlaylistGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PlaylistGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PlaylistCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PlaylistCountAggregateOutputType> | number
+        }
+      }
+    }
+    PlaylistItem: {
+      payload: Prisma.$PlaylistItemPayload<ExtArgs>
+      fields: Prisma.PlaylistItemFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PlaylistItemFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlaylistItemPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PlaylistItemFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlaylistItemPayload>
+        }
+        findFirst: {
+          args: Prisma.PlaylistItemFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlaylistItemPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PlaylistItemFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlaylistItemPayload>
+        }
+        findMany: {
+          args: Prisma.PlaylistItemFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlaylistItemPayload>[]
+        }
+        create: {
+          args: Prisma.PlaylistItemCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlaylistItemPayload>
+        }
+        createMany: {
+          args: Prisma.PlaylistItemCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PlaylistItemCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlaylistItemPayload>[]
+        }
+        delete: {
+          args: Prisma.PlaylistItemDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlaylistItemPayload>
+        }
+        update: {
+          args: Prisma.PlaylistItemUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlaylistItemPayload>
+        }
+        deleteMany: {
+          args: Prisma.PlaylistItemDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PlaylistItemUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PlaylistItemUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlaylistItemPayload>[]
+        }
+        upsert: {
+          args: Prisma.PlaylistItemUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlaylistItemPayload>
+        }
+        aggregate: {
+          args: Prisma.PlaylistItemAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePlaylistItem>
+        }
+        groupBy: {
+          args: Prisma.PlaylistItemGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PlaylistItemGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PlaylistItemCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PlaylistItemCountAggregateOutputType> | number
+        }
+      }
+    }
     Tutorial: {
       payload: Prisma.$TutorialPayload<ExtArgs>
       fields: Prisma.TutorialFieldRefs
@@ -2067,6 +2218,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    TranscriptionLog: {
+      payload: Prisma.$TranscriptionLogPayload<ExtArgs>
+      fields: Prisma.TranscriptionLogFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.TranscriptionLogFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TranscriptionLogPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.TranscriptionLogFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TranscriptionLogPayload>
+        }
+        findFirst: {
+          args: Prisma.TranscriptionLogFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TranscriptionLogPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.TranscriptionLogFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TranscriptionLogPayload>
+        }
+        findMany: {
+          args: Prisma.TranscriptionLogFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TranscriptionLogPayload>[]
+        }
+        create: {
+          args: Prisma.TranscriptionLogCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TranscriptionLogPayload>
+        }
+        createMany: {
+          args: Prisma.TranscriptionLogCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.TranscriptionLogCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TranscriptionLogPayload>[]
+        }
+        delete: {
+          args: Prisma.TranscriptionLogDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TranscriptionLogPayload>
+        }
+        update: {
+          args: Prisma.TranscriptionLogUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TranscriptionLogPayload>
+        }
+        deleteMany: {
+          args: Prisma.TranscriptionLogDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.TranscriptionLogUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.TranscriptionLogUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TranscriptionLogPayload>[]
+        }
+        upsert: {
+          args: Prisma.TranscriptionLogUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TranscriptionLogPayload>
+        }
+        aggregate: {
+          args: Prisma.TranscriptionLogAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateTranscriptionLog>
+        }
+        groupBy: {
+          args: Prisma.TranscriptionLogGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TranscriptionLogGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.TranscriptionLogCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TranscriptionLogCountAggregateOutputType> | number
+        }
+      }
+    }
     PasswordResetToken: {
       payload: Prisma.$PasswordResetTokenPayload<ExtArgs>
       fields: Prisma.PasswordResetTokenFieldRefs
@@ -2391,6 +2616,30 @@ export const VideoScalarFieldEnum = {
 export type VideoScalarFieldEnum = (typeof VideoScalarFieldEnum)[keyof typeof VideoScalarFieldEnum]
 
 
+export const PlaylistScalarFieldEnum = {
+  id: 'id',
+  slug: 'slug',
+  title: 'title',
+  description: 'description',
+  topic: 'topic',
+  userId: 'userId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PlaylistScalarFieldEnum = (typeof PlaylistScalarFieldEnum)[keyof typeof PlaylistScalarFieldEnum]
+
+
+export const PlaylistItemScalarFieldEnum = {
+  id: 'id',
+  playlistId: 'playlistId',
+  videoId: 'videoId',
+  position: 'position'
+} as const
+
+export type PlaylistItemScalarFieldEnum = (typeof PlaylistItemScalarFieldEnum)[keyof typeof PlaylistItemScalarFieldEnum]
+
+
 export const TutorialScalarFieldEnum = {
   id: 'id',
   title: 'title',
@@ -2450,6 +2699,30 @@ export const VoteScalarFieldEnum = {
 } as const
 
 export type VoteScalarFieldEnum = (typeof VoteScalarFieldEnum)[keyof typeof VoteScalarFieldEnum]
+
+
+export const TranscriptionLogScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  provider: 'provider',
+  model: 'model',
+  status: 'status',
+  errorCode: 'errorCode',
+  httpStatus: 'httpStatus',
+  latencyMs: 'latencyMs',
+  audioBytes: 'audioBytes',
+  audioMs: 'audioMs',
+  durationMs: 'durationMs',
+  silenceRatio: 'silenceRatio',
+  noSpeechProb: 'noSpeechProb',
+  avgLogprob: 'avgLogprob',
+  compressionRatio: 'compressionRatio',
+  retryCount: 'retryCount',
+  transcriptChars: 'transcriptChars',
+  createdAt: 'createdAt'
+} as const
+
+export type TranscriptionLogScalarFieldEnum = (typeof TranscriptionLogScalarFieldEnum)[keyof typeof TranscriptionLogScalarFieldEnum]
 
 
 export const PasswordResetTokenScalarFieldEnum = {
@@ -2781,11 +3054,14 @@ export type GlobalOmitConfig = {
   comment?: Prisma.CommentOmit
   media?: Prisma.MediaOmit
   video?: Prisma.VideoOmit
+  playlist?: Prisma.PlaylistOmit
+  playlistItem?: Prisma.PlaylistItemOmit
   tutorial?: Prisma.TutorialOmit
   question?: Prisma.QuestionOmit
   answer?: Prisma.AnswerOmit
   reply?: Prisma.ReplyOmit
   vote?: Prisma.VoteOmit
+  transcriptionLog?: Prisma.TranscriptionLogOmit
   passwordResetToken?: Prisma.PasswordResetTokenOmit
 }
 

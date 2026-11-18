@@ -455,6 +455,7 @@ export function TutorialForm({
         <ImageDialog
           open={coverOpen}
           heading="Add a cover image"
+          showAlt={false}
           onClose={() => setCoverOpen(false)}
           onInsert={({ src }) => {
             setCoverImage(src);
